@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Profit Quote</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1B2B4B;--navy-mid:#2C3E5D;--blue:#4A6FA5;--blue-light:#EEF3FA;
+  --off-white:#F6F9FD;--white:#FFFFFF;--border:#DDE4EF;
+  --green:#1A7A4A;--green-bg:#EBF7F0;--amber:#B35C00;--amber-bg:#FFF3E0;
+  --red:#C0392B;--red-bg:#FDECEA;--muted:#8896A8;--body:#4A5568;--heading:#1B2B4B;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --radius:10px;--shadow:0 2px 12px rgba(27,43,75,0.10);--shadow-lg:0 8px 32px rgba(27,43,75,0.15);
+}
+html,body{height:100%;font-family:var(--font);background:var(--off-white);color:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);box-shadow:0 0 40px rgba(0,0,0,0.12);}
+.topbar{background:var(--navy);padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-logo{font-weight:700;font-size:17px;color:var(--white);letter-spacing:-0.03em;}
+.topbar-logo span{color:#7BAFD4;}
+.topbar-user{width:34px;height:34px;background:rgba(255,255,255,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:13px;font-weight:600;cursor:pointer;border:none;}
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.bottom-nav{background:var(--white);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding:0 0 env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;border:none;background:none;gap:4px;}
+.nav-item svg{width:22px;height:22px;stroke-width:1.8;stroke:var(--muted);fill:none;transition:stroke 0.15s;}
+.nav-item span{font-size:10.5px;font-weight:500;color:var(--muted);transition:color 0.15s;letter-spacing:0.02em;}
+.nav-item.active svg{stroke:var(--navy);}
+.nav-item.active span{color:var(--navy);font-weight:700;}
+.section{display:none;padding:0 0 24px;}
+.section.active{display:block;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:0 16px 12px;box-shadow:var(--shadow);}
+.card-title{font-size:13px;font-weight:700;color:var(--heading);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;}
+.section-header{padding:20px 16px 4px;}
+.section-header h2{font-size:22px;font-weight:700;color:var(--heading);letter-spacing:-0.03em;}
+.section-header p{font-size:14px;color:var(--muted);margin-top:3px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:15px;padding:13px 20px;border-radius:8px;border:none;cursor:pointer;transition:all 0.15s;width:100%;}
+.btn-primary{background:var(--navy);color:var(--white);}
+.btn-primary:hover{background:var(--navy-mid);}
+.btn-primary:disabled{background:var(--muted);cursor:not-allowed;}
+.btn-secondary{background:var(--blue-light);color:var(--navy);border:1px solid var(--border);}
+.btn-secondary:hover{background:#e0eaf8;}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:6px;width:auto;}
+.btn-red{background:var(--red-bg);color:var(--red);border:1px solid #f0b8b8;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--heading);margin-bottom:5px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:7px;font-size:15px;font-family:var(--font);color:var(--heading);background:var(--blue-light);transition:border-color 0.15s;outline:none;-webkit-appearance:none;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(74,111,165,0.12);}
+.form-group textarea{resize:vertical;min-height:90px;line-height:1.5;}
+.form-hint{font-size:12px;color:var(--muted);margin-top:4px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.step-indicator{display:flex;align-items:center;padding:14px 16px 0;gap:6px;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.2s;}
+.step-dot.done{background:var(--green);}
+.step-dot.active{background:var(--navy);width:24px;border-radius:4px;}
+.step-label{font-size:12px;color:var(--muted);margin-left:auto;font-weight:500;}
+.spec-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.spec-btn{border:1.5px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;background:var(--white);transition:all 0.15s;}
+.spec-btn.selected{border-color:var(--navy);background:var(--blue-light);}
+.spec-btn .spec-name{font-size:13px;font-weight:700;color:var(--heading);}
+.spec-btn .spec-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.skip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.skip-type{border:1.5px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;background:var(--white);transition:all 0.15s;}
+.skip-type.selected{border-color:var(--navy);background:var(--blue-light);}
+.skip-type .skip-name{font-size:13px;font-weight:700;color:var(--heading);}
+.skip-type .skip-price{font-size:12px;color:var(--green);font-weight:600;margin-top:2px;}
+.skip-type .skip-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.ai-result{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);margin:0 16px;box-shadow:var(--shadow-lg);}
+.ai-result-header{background:var(--navy);padding:14px 16px;border-radius:calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0;display:flex;align-items:center;justify-content:space-between;}
+.ai-result-title{font-size:14px;font-weight:700;color:var(--white);}
+.ai-result-badge{font-size:11px;background:rgba(123,175,212,0.25);color:#7BAFD4;padding:3px 8px;border-radius:10px;font-weight:600;}
+.ai-result-body{padding:16px;}
+.quote-line{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:10px;}
+.quote-line:last-child{border-bottom:none;}
+.quote-line-label{font-size:14px;color:var(--body);flex:1;}
+.quote-line-amount{font-size:14px;font-weight:600;color:var(--heading);white-space:nowrap;}
+.quote-total-row{background:var(--navy);margin:-16px -16px -16px;padding:16px;border-radius:0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);margin-top:12px;}
+.quote-total-label{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:2px;}
+.quote-total-amount{font-size:28px;font-weight:700;color:var(--white);letter-spacing:-0.04em;}
+.quote-profit-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(26,122,74,0.25);color:#5de0a0;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;margin-top:6px;}
+.loading-ai{padding:32px 16px;text-align:center;}
+.loading-ai .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-ai p{font-size:14px;color:var(--muted);}
+.coach-box{background:var(--blue-light);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;}
+.coach-box h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+.coach-box p{font-size:13px;color:var(--body);line-height:1.5;}
+.protection-box{background:#fffbeb;border:1px solid #f0d0a0;border-radius:8px;padding:14px;margin-top:10px;}
+.protection-box h4{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px;}
+.protection-box p{font-size:13px;color:var(--body);line-height:1.5;}
+.issue-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;}
+.issue-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;background:var(--white);transition:all 0.15s;text-align:left;}
+.issue-card:hover{border-color:var(--blue);box-shadow:var(--shadow);}
+.issue-card .ic-icon{font-size:24px;margin-bottom:8px;}
+.issue-card .ic-name{font-size:13px;font-weight:700;color:var(--heading);}
+.issue-card .ic-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.asbestos-warning{background:#fff0f0;border:2px solid var(--red);border-radius:var(--radius);padding:16px;margin:0 16px;}
+.asbestos-warning h3{font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px;}
+.asbestos-warning p{font-size:13.5px;color:var(--body);line-height:1.5;margin-bottom:8px;}
+.asbestos-steps{counter-reset:step;list-style:none;padding:0;}
+.asbestos-steps li{font-size:13px;color:var(--body);padding:5px 0 5px 24px;position:relative;}
+.asbestos-steps li::before{content:counter(step);counter-increment:step;position:absolute;left:0;width:16px;height:16px;background:var(--red);color:white;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;top:7px;}
+.setup-section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:16px 16px 8px;}
+.rate-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--white);}
+.rate-row:last-child{border-bottom:none;}
+.rate-label{font-size:14px;color:var(--body);font-weight:500;}
+.rate-input-wrap{display:flex;align-items:center;gap:5px;}
+.rate-prefix{font-size:14px;color:var(--muted);font-weight:600;}
+.rate-input{width:80px;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;color:var(--heading);text-align:right;background:var(--blue-light);font-family:var(--font);}
+.rate-input:focus{outline:none;border-color:var(--blue);}
+.profile-hero{background:var(--blue-light);border-bottom:1px solid var(--border);padding:20px 16px;display:flex;align-items:center;gap:14px;}
+.profile-avatar{width:52px;height:52px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--white);flex-shrink:0;}
+.profile-name{font-size:17px;font-weight:700;color:var(--heading);}
+.profile-trade{font-size:13px;color:var(--muted);}
+.profile-plan{display:inline-flex;align-items:center;gap:4px;background:var(--navy);color:var(--white);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;margin-top:4px;}
+.home-hero{background:linear-gradient(135deg,var(--navy) 0%,#243a5e 100%);padding:24px 16px 28px;color:var(--white);}
+.home-hero h1{font-size:20px;font-weight:700;letter-spacing:-0.03em;margin-bottom:4px;}
+.home-hero p{font-size:14px;color:rgba(255,255,255,0.65);}
+.home-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;margin:16px 16px 14px;box-shadow:var(--shadow);}
+.stat-box{background:var(--white);padding:14px 10px;text-align:center;}
+.stat-box .stat-num{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-0.04em;line-height:1;}
+.stat-box .stat-label{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500;}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.qa-btn{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 14px;display:flex;flex-direction:column;gap:7px;cursor:pointer;text-align:left;transition:all 0.15s;box-shadow:var(--shadow);}
+.qa-btn:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(74,111,165,0.12);}
+.qa-icon{width:36px;height:36px;background:var(--blue-light);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.qa-icon svg{width:18px;height:18px;stroke:var(--blue);stroke-width:2;fill:none;}
+.qa-label{font-size:13px;font-weight:700;color:var(--heading);}
+.qa-sub{font-size:11.5px;color:var(--muted);}
+.qhi-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin:0 16px 10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:box-shadow 0.15s;}
+.qhi-item:hover{box-shadow:var(--shadow-lg);}
+.qhi-left{flex:1;min-width:0;}
+.qhi-title{font-size:14px;font-weight:700;color:var(--heading);}
+.qhi-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.qhi-right{text-align:right;flex-shrink:0;}
+.qhi-amount{font-size:16px;font-weight:700;color:var(--navy);}
+.qhi-profit{font-size:12px;color:var(--green);font-weight:600;}
+.empty-state{text-align:center;padding:48px 32px;}
+.empty-state .es-icon{font-size:40px;margin-bottom:12px;}
+.empty-state h3{font-size:16px;font-weight:700;color:var(--heading);margin-bottom:6px;}
+.empty-state p{font-size:14px;color:var(--muted);line-height:1.5;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:var(--white);padding:11px 20px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:all 0.25s;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.pill-toggle{display:flex;background:var(--blue-light);border-radius:8px;padding:3px;gap:3px;}
+.pill-toggle button{flex:1;padding:7px 12px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
+.pill-toggle button.active{background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+.modal-overlay{position:fixed;inset:0;background:rgba(10,20,40,0.5);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-sheet{background:var(--white);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:17px;font-weight:700;color:var(--heading);margin-bottom:16px;}
+/* Auth screen */
+#auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;}
+#auth-screen.hidden{display:none;}
+.auth-box{background:var(--white);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;}
+.auth-logo{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-0.03em;margin-bottom:4px;}
+.auth-logo span{color:#4A6FA5;}
+.auth-sub{font-size:14px;color:var(--muted);margin-bottom:24px;}
+.auth-toggle{font-size:14px;color:var(--blue);text-align:center;margin-top:16px;cursor:pointer;font-weight:500;}
+.auth-error{background:var(--red-bg);color:var(--red);font-size:13px;padding:10px 12px;border-radius:7px;margin-bottom:12px;display:none;}
+.mt8{margin-top:8px;} .mt12{margin-top:12px;} .mt16{margin-top:16px;} .mb12{margin-bottom:12px;}
+.flex-between{display:flex;align-items:center;justify-content:space-between;}
+.text-muted{color:var(--muted);font-size:13px;}
+.px16{padding-left:16px;padding-right:16px;}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Profit<span>Quote</span></div>
+    <div class="auth-sub" id="auth-sub">Sign in to your account</div>
+    <div class="auth-error" id="auth-error"></div>
+
+    <div id="register-fields" style="display:none;">
+      <div class="form-group">
+        <label>Your name</label>
+        <input type="text" id="reg-name" placeholder="Dave Smith"/>
+      </div>
+      <div class="form-group">
+        <label>Your trade</label>
+        <select id="reg-trade">
+          <option value="">Select trade</option>
+          <option>Plumber</option><option>Bathroom Fitter</option><option>Kitchen Installer</option>
+          <option>Builder / General Trades</option><option>Electrician</option><option>Tiler</option>
+          <option>Plasterer</option><option>Decorator</option><option>Roofer</option><option>Carpenter / Joiner</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com"/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••"/>
+    </div>
+    <button class="btn btn-primary" id="auth-btn" onclick="doAuth()">Sign In</button>
+    <div class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register free</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">Profit<span>Quote</span></div>
+    <button class="topbar-user" id="user-initials" onclick="showToast('Tap Setup to manage your account')">?</button>
+  </div>
+
+  <div class="page">
+
+    <!-- HOME -->
+    <div class="section active" id="sec-home">
+      <div class="home-hero">
+        <h1 id="home-greeting">Good morning 👋</h1>
+        <p id="home-date"></p>
+      </div>
+      <div class="home-stats">
+        <div class="stat-box"><div class="stat-num" id="stat-quotes">0</div><div class="stat-label">Quotes sent</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-value">£0</div><div class="stat-label">Total value</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-profit">0%</div><div class="stat-label">Avg margin</div></div>
+      </div>
+      <div style="padding:0 16px 4px;" class="flex-between">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Quick Actions</div>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <div class="quick-actions">
+          <button class="qa-btn" onclick="goToQuoteBuilder()">
+            <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <div class="qa-label">New Quote</div><div class="qa-sub">AI-powered builder</div>
+          </button>
+          <button class="qa-btn" onclick="switchTab('issues')">
+            <div class="qa-icon" style="background:#fff0f0;"><svg viewBox="0 0 24 24" style="stroke:#C0392B;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="qa-label">Mid-Job Issue</div><div class="qa-sub">Log a variation</div>
+          </button>
+          <button class="qa-btn" onclick="switchTab('quotes')">
+            <div class="qa-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+            <div class="qa-label">All Quotes</div><div class="qa-sub">History &amp; drafts</div>
+          </button>
+          <button class="qa-btn" onclick="switchTab('setup')">
+            <div class="qa-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <div class="qa-label">My Rates</div><div class="qa-sub">Labour &amp; skip prices</div>
+          </button>
+        </div>
+      </div>
+      <div style="padding:0 16px 8px;" class="flex-between">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Recent Quotes</div>
+        <button style="font-size:12px;color:var(--blue);font-weight:600;background:none;border:none;cursor:pointer;" onclick="switchTab('quotes')">See all</button>
+      </div>
+      <div id="home-recent"></div>
+    </div>
+
+    <!-- QUOTES -->
+    <div class="section" id="sec-quotes">
+      <div class="section-header"><h2>Quotes</h2><p>All your saved quotes</p></div>
+      <div style="padding:12px 16px;">
+        <button class="btn btn-primary" onclick="goToQuoteBuilder()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Quote
+        </button>
+      </div>
+      <div id="quotes-list"></div>
+    </div>
+
+    <!-- QUOTE BUILDER -->
+    <div class="section" id="sec-builder">
+      <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 0;">
+        <button onclick="exitBuilder()" style="background:var(--blue-light);border:none;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;">← Back</button>
+        <div style="font-size:16px;font-weight:700;color:var(--heading);">New Quote</div>
+      </div>
+      <div class="step-indicator mt8">
+        <div class="step-dot active" id="dot-1"></div><div class="step-dot" id="dot-2"></div>
+        <div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div><div class="step-dot" id="dot-5"></div>
+        <div class="step-label" id="step-label">Step 1 of 5</div>
+      </div>
+      <div id="step-1" style="padding:16px;">
+        <div class="card-title" style="margin-bottom:8px;">Describe the Job</div>
+        <p class="text-muted mb12">Tell the AI what needs doing — plain English is fine.</p>
+        <div class="form-group"><label>What's the job?</label><textarea id="job-description" placeholder="e.g. Full bathroom strip-out and refit. Remove old suite, re-tile floor and walls, new bath, toilet, basin, radiator."></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>Customer name</label><input type="text" id="customer-name" placeholder="Mrs. Jones"/></div>
+          <div class="form-group"><label>Postcode</label><input type="text" id="job-postcode" placeholder="SA1 1AA"/></div>
+        </div>
+        <div class="form-group"><label>Trade type</label>
+          <select id="trade-type">
+            <option value="">Select your trade</option>
+            <option>Plumber</option><option>Bathroom Fitter</option><option>Kitchen Installer</option>
+            <option>Builder / General Trades</option><option>Electrician</option><option>Tiler</option>
+            <option>Plasterer</option><option>Decorator</option><option>Roofer</option><option>Carpenter / Joiner</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="nextStep(2)">Continue →</button>
+      </div>
+      <div id="step-2" style="padding:16px;display:none;">
+        <div class="card-title" style="margin-bottom:8px;">Room Size &amp; Spec Level</div>
+        <div class="form-group"><label>Room width</label>
+          <div class="form-row">
+            <div><input type="number" id="room-w-m" placeholder="0.0" step="0.1" min="0"/><div class="form-hint">metres</div></div>
+            <div><input type="number" id="room-w-ft" placeholder="0" step="1" min="0"/><div class="form-hint">feet</div></div>
+          </div>
+        </div>
+        <div class="form-group"><label>Room length</label>
+          <div class="form-row">
+            <div><input type="number" id="room-l-m" placeholder="0.0" step="0.1" min="0"/><div class="form-hint">metres</div></div>
+            <div><input type="number" id="room-l-ft" placeholder="0" step="1" min="0"/><div class="form-hint">feet</div></div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:16px;"><label>Spec level</label>
+          <div class="spec-grid" style="margin-top:6px;">
+            <div class="spec-btn" onclick="selectSpec('basic',this)"><div class="spec-name">Basic</div><div class="spec-sub">Budget range</div></div>
+            <div class="spec-btn selected" onclick="selectSpec('mid',this)"><div class="spec-name">Mid</div><div class="spec-sub">Good quality</div></div>
+            <div class="spec-btn" onclick="selectSpec('premium',this)"><div class="spec-name">Premium</div><div class="spec-sub">High-end</div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn-secondary" onclick="nextStep(1)" style="flex:0 0 80px;">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep(3)">Continue →</button>
+        </div>
+      </div>
+      <div id="step-3" style="padding:16px;display:none;">
+        <div class="card-title" style="margin-bottom:4px;">Waste &amp; Skip</div>
+        <p class="text-muted mb12">What waste will you be removing?</p>
+        <div class="skip-grid">
+          <div class="skip-type selected" onclick="selectSkip('none',this,0)"><div class="skip-name">No Skip</div><div class="skip-price">£0</div><div class="skip-sub">Customer disposes</div></div>
+          <div class="skip-type" onclick="selectSkip('clean',this)"><div class="skip-name">Clean Waste</div><div class="skip-price">£<span id="sp-clean">180</span></div><div class="skip-sub">Tiles, plasterboard</div></div>
+          <div class="skip-type" onclick="selectSkip('mixed',this)"><div class="skip-name">Mixed Waste</div><div class="skip-price">£<span id="sp-mixed">240</span></div><div class="skip-sub">General builders</div></div>
+          <div class="skip-type" onclick="selectSkip('plasterboard',this)"><div class="skip-name">Plasterboard</div><div class="skip-price">£<span id="sp-pb">320</span></div><div class="skip-sub">Segregated only</div></div>
+          <div class="skip-type" onclick="selectSkip('inert',this)"><div class="skip-name">Inert Waste</div><div class="skip-price">£<span id="sp-inert">200</span></div><div class="skip-sub">Soil, bricks, concrete</div></div>
+          <div class="skip-type" onclick="selectSkip('hazardous',this)"><div class="skip-name">Hazardous</div><div class="skip-price">£<span id="sp-haz">480</span></div><div class="skip-sub">Specialist disposal</div></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn-secondary" onclick="nextStep(2)" style="flex:0 0 80px;">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep(4)">Continue →</button>
+        </div>
+      </div>
+      <div id="step-4" style="padding:16px;display:none;">
+        <div class="card-title" style="margin-bottom:4px;">Labour &amp; Profit</div>
+        <p class="text-muted mb12">Adjust for this specific job if needed.</p>
+        <div class="form-row">
+          <div class="form-group"><label>Day rate (£/day)</label><input type="number" id="q-day-rate" placeholder="250" min="0"/></div>
+          <div class="form-group"><label>Days on job</label><input type="number" id="q-days" placeholder="3" min="0" step="0.5"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Materials markup %</label><input type="number" id="q-markup" placeholder="20" min="0" max="100"/></div>
+          <div class="form-group"><label>Profit target %</label><input type="number" id="q-profit-target" placeholder="30" min="0" max="100"/></div>
+        </div>
+        <div class="form-group"><label>Other costs (optional)</label><input type="text" id="q-other" placeholder="e.g. Subcontractor £300"/></div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn btn-secondary" onclick="nextStep(3)" style="flex:0 0 80px;">← Back</button>
+          <button class="btn btn-primary" onclick="buildQuote()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+            Build AI Quote
+          </button>
+        </div>
+      </div>
+      <div id="step-5" style="padding:16px;display:none;">
+        <div id="ai-loading" class="loading-ai"><div class="spinner"></div><p>Building your quote…</p></div>
+        <div id="ai-output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ISSUES -->
+    <div class="section" id="sec-issues">
+      <div class="section-header"><h2>Mid-Job Issues</h2><p>Log a variation or unexpected problem</p></div>
+      <div id="issues-home">
+        <div style="padding:0 16px 12px;"><p class="text-muted" style="font-size:14px;line-height:1.5;">Something come up on site? Pick the issue type and the AI will generate a variation notice.</p></div>
+        <div style="padding:0 16px 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Common Issues</div>
+        <div class="issue-type-grid mt8">
+          <button class="issue-card" onclick="selectIssue('leak')"><div class="ic-icon">💧</div><div class="ic-name">Leak Found</div><div class="ic-sub">Hidden pipe or water damage</div></button>
+          <button class="issue-card" onclick="selectIssue('rotten')"><div class="ic-icon">🪵</div><div class="ic-name">Rotten Subfloor</div><div class="ic-sub">Joists, boards, substrate</div></button>
+          <button class="issue-card" onclick="selectIssue('extra-labour')"><div class="ic-icon">⏱️</div><div class="ic-name">Extra Labour</div><div class="ic-sub">Job taking longer than scoped</div></button>
+          <button class="issue-card" onclick="selectIssue('materials')"><div class="ic-icon">🧱</div><div class="ic-name">Extra Materials</div><div class="ic-sub">More needed than quoted</div></button>
+          <button class="issue-card" onclick="selectIssue('scope')"><div class="ic-icon">📐</div><div class="ic-name">Scope Creep</div><div class="ic-sub">Customer requesting extras</div></button>
+          <button class="issue-card" onclick="selectIssue('breakage')"><div class="ic-icon">💥</div><div class="ic-name">Breakage / Damage</div><div class="ic-sub">Accidental damage on site</div></button>
+        </div>
+        <div style="margin:16px 16px 0;">
+          <button class="btn btn-red" onclick="selectIssue('asbestos')">⚠️ &nbsp;Asbestos Protocol — Emergency</button>
+        </div>
+      </div>
+      <div id="issue-form" style="display:none;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button onclick="closeIssueForm()" style="background:var(--blue-light);border:none;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;">← Back</button>
+          <div style="font-size:16px;font-weight:700;color:var(--heading);" id="issue-form-title">Log Issue</div>
+        </div>
+        <div id="asbestos-panel" style="display:none;">
+          <div class="asbestos-warning">
+            <h3>⛔ Stop Work Immediately</h3>
+            <p>If you suspect asbestos, stop all work in the affected area immediately.</p>
+            <ol class="asbestos-steps">
+              <li>Seal off the area and prevent access</li>
+              <li>Inform your customer in writing right now</li>
+              <li>Do not remove or bag the material yourself</li>
+              <li>Contact a licensed asbestos surveyor</li>
+              <li>Document everything with photos</li>
+              <li>Only return once a clearance certificate is issued</li>
+            </ol>
+          </div>
+          <div class="card mt12">
+            <div class="card-title">Variation Notice Wording</div>
+            <p style="font-size:14px;color:var(--body);line-height:1.6;">"Work has been suspended in [area] following discovery of a suspected asbestos-containing material. Under HSE regulations and my duty of care, all work must cease until a licensed surveyor has assessed and cleared the site. This falls outside the scope of our original agreement."</p>
+            <button class="btn btn-secondary btn-sm mt12" onclick="copyAsbestos()">Copy Wording</button>
+          </div>
+          <div class="mt12"><a href="tel:08000320117" class="btn btn-red">📞 HSE Helpline: 0800 032 0117</a></div>
+        </div>
+        <div id="standard-issue-panel">
+          <div class="form-group"><label>Describe what you found</label><textarea id="issue-description" placeholder="Describe the issue…"></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label>Extra hours</label><input type="number" id="issue-hours" placeholder="4" min="0" step="0.5"/></div>
+            <div class="form-group"><label>Extra materials (£)</label><input type="number" id="issue-materials-cost" placeholder="120" min="0"/></div>
+          </div>
+          <div class="form-group"><label>Your hourly rate (£)</label><input type="number" id="issue-hourly" placeholder="35" min="0"/></div>
+          <button class="btn btn-primary mt8" onclick="buildVariation()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+            Generate Variation Notice
+          </button>
+        </div>
+        <div id="variation-result" style="display:none;margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- SETUP -->
+    <div class="section" id="sec-setup">
+      <div class="section-header"><h2>Setup</h2><p>Your rates, profile &amp; preferences</p></div>
+      <div class="profile-hero mt8" id="profile-hero">
+        <div class="profile-avatar" id="setup-avatar">?</div>
+        <div><div class="profile-name" id="setup-name">Loading…</div><div class="profile-trade" id="setup-trade"></div><div class="profile-plan">⭐ Solo Plan</div></div>
+      </div>
+      <div class="setup-section-label">Labour Rates</div>
+      <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div class="rate-row"><div class="rate-label">Day rate</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-day-rate" value="250"/><span style="font-size:12px;color:var(--muted);margin-left:4px;">/day</span></div></div>
+        <div class="rate-row"><div class="rate-label">Hourly rate</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-hourly" value="35"/><span style="font-size:12px;color:var(--muted);margin-left:4px;">/hr</span></div></div>
+        <div class="rate-row"><div class="rate-label">Materials markup</div><div class="rate-input-wrap"><input type="number" class="rate-input" id="setup-markup" value="20"/><span style="font-size:12px;color:var(--muted);margin-left:4px;">%</span></div></div>
+        <div class="rate-row"><div class="rate-label">Target profit margin</div><div class="rate-input-wrap"><input type="number" class="rate-input" id="setup-profit" value="30"/><span style="font-size:12px;color:var(--muted);margin-left:4px;">%</span></div></div>
+      </div>
+      <div class="setup-section-label">Skip / Waste Prices</div>
+      <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div class="rate-row"><div class="rate-label">Clean waste</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-skip-clean" value="180"/></div></div>
+        <div class="rate-row"><div class="rate-label">Mixed waste</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-skip-mixed" value="240"/></div></div>
+        <div class="rate-row"><div class="rate-label">Plasterboard</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-skip-pb" value="320"/></div></div>
+        <div class="rate-row"><div class="rate-label">Inert waste</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-skip-inert" value="200"/></div></div>
+        <div class="rate-row"><div class="rate-label">Hazardous waste</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-skip-haz" value="480"/></div></div>
+      </div>
+      <div class="setup-section-label">VAT</div>
+      <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div class="rate-row"><div class="rate-label">VAT registered?</div>
+          <div class="pill-toggle" style="width:150px;">
+            <button id="vat-yes" onclick="setVat(true)" class="active">Yes (20%)</button>
+            <button id="vat-no" onclick="setVat(false)">No</button>
+          </div>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        <button class="btn btn-primary" onclick="saveSettings()">Save All Settings</button>
+        <button class="btn btn-secondary mt8" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+
+  </div><!-- end .page -->
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span>
+    </button>
+    <button class="nav-item" id="nav-quotes" onclick="switchTab('quotes')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes</span>
+    </button>
+    <button class="nav-item" id="nav-issues" onclick="switchTab('issues')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Issues</span>
+    </button>
+    <button class="nav-item" id="nav-setup" onclick="switchTab('setup')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Setup</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';  // same origin
+let token = localStorage.getItem('pq-token');
+let currentUser = null;
+let quotes = [];
+let selectedSpec = 'mid';
+let selectedSkip = 'none';
+let skipCost = 0;
+let vatRegistered = true;
+let currentIssueType = '';
+
+// ── AUTH ──
+let authMode = 'login';
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('register-fields').style.display = authMode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-sub').textContent = authMode === 'login' ? 'Sign in to your account' : 'Create your free account';
+  document.getElementById('auth-btn').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+  document.getElementById('auth-toggle').textContent = authMode === 'login' ? "Don't have an account? Register free" : 'Already have an account? Sign in';
+  document.getElementById('auth-error').style.display = 'none';
+}
+async function doAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  if(!email || !password){ errEl.textContent='Please fill in all fields'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = true; btn.textContent = 'Please wait…';
+  try {
+    let body = { email, password };
+    if(authMode === 'register'){
+      const name = document.getElementById('reg-name').value.trim();
+      if(!name){ errEl.textContent='Please enter your name'; errEl.style.display='block'; btn.disabled=false; btn.textContent='Create Account'; return; }
+      body.name = name;
+      body.trade = document.getElementById('reg-trade').value;
+    }
+    const res = await fetch(API+'/api/auth/'+(authMode==='login'?'login':'register'), {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok){ errEl.textContent = data.error || 'Something went wrong'; errEl.style.display='block'; btn.disabled=false; btn.textContent=authMode==='login'?'Sign In':'Create Account'; return; }
+    token = data.token;
+    localStorage.setItem('pq-token', token);
+    currentUser = data.user;
+    document.getElementById('auth-screen').classList.add('hidden');
+    initApp();
+  } catch(e){ errEl.textContent='Connection error — please try again'; errEl.style.display='block'; btn.disabled=false; btn.textContent=authMode==='login'?'Sign In':'Create Account'; }
+}
+function doLogout(){
+  localStorage.removeItem('pq-token');
+  token = null; currentUser = null;
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-password').value='';
+  document.getElementById('auth-btn').disabled=false;
+  document.getElementById('auth-btn').textContent='Sign In';
+}
+
+// ── INIT ──
+async function initApp() {
+  if(!token){ return; }
+  try {
+    const res = await fetch(API+'/api/auth/me', {headers:{Authorization:'Bearer '+token}});
+    if(!res.ok){ doLogout(); return; }
+    currentUser = await res.json();
+  } catch(e){ doLogout(); return; }
+  document.getElementById('auth-screen').classList.add('hidden');
+  populateUserUI();
+  await loadQuotes();
+  prefillRates();
+  updateSkipPrices();
+  updateHomeStats();
+  const d = new Date();
+  const h = d.getHours();
+  const greet = h<12?'Good morning':'h<17'?'Good afternoon':'Good evening';
+  document.getElementById('home-greeting').textContent = (h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
+  document.getElementById('home-date').textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+}
+
+function populateUserUI(){
+  const initials = (currentUser.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('user-initials').textContent = initials;
+  document.getElementById('setup-avatar').textContent = initials;
+  document.getElementById('setup-name').textContent = currentUser.name||'';
+  document.getElementById('setup-trade').textContent = currentUser.trade||'';
+  document.getElementById('setup-day-rate').value = currentUser.day_rate||250;
+  document.getElementById('setup-hourly').value = currentUser.hourly_rate||35;
+  document.getElementById('setup-markup').value = currentUser.markup_percent||20;
+  document.getElementById('setup-profit').value = currentUser.profit_target||30;
+  document.getElementById('setup-skip-clean').value = currentUser.skip_clean||180;
+  document.getElementById('setup-skip-mixed').value = currentUser.skip_mixed||240;
+  document.getElementById('setup-skip-pb').value = currentUser.skip_plasterboard||320;
+  document.getElementById('setup-skip-inert').value = currentUser.skip_inert||200;
+  document.getElementById('setup-skip-haz').value = currentUser.skip_hazardous||480;
+  vatRegistered = currentUser.vat_registered !== false;
+  document.getElementById('vat-yes').classList.toggle('active', vatRegistered);
+  document.getElementById('vat-no').classList.toggle('active', !vatRegistered);
+  updateSkipPrices();
+}
+
+function prefillRates(){
+  if(!currentUser) return;
+  document.getElementById('q-day-rate').value = currentUser.day_rate||250;
+  document.getElementById('q-markup').value = currentUser.markup_percent||20;
+  document.getElementById('q-profit-target').value = currentUser.profit_target||30;
+  document.getElementById('issue-hourly').value = currentUser.hourly_rate||35;
+}
+
+function updateSkipPrices(){
+  if(!currentUser) return;
+  document.getElementById('sp-clean').textContent = currentUser.skip_clean||180;
+  document.getElementById('sp-mixed').textContent = currentUser.skip_mixed||240;
+  document.getElementById('sp-pb').textContent = currentUser.skip_plasterboard||320;
+  document.getElementById('sp-inert').textContent = currentUser.skip_inert||200;
+  document.getElementById('sp-haz').textContent = currentUser.skip_hazardous||480;
+}
+
+// ── NAV ──
+function switchTab(tab){
+  ['home','quotes','issues','setup','builder'].forEach(t=>{
+    document.getElementById('sec-'+t)?.classList.remove('active');
+    document.getElementById('nav-'+t)?.classList.remove('active');
+  });
+  document.getElementById('sec-'+tab)?.classList.add('active');
+  document.getElementById('nav-'+tab)?.classList.add('active');
+  document.querySelector('.page').scrollTop=0;
+}
+function goToQuoteBuilder(){ switchTab('builder'); resetBuilder(); }
+function exitBuilder(){ switchTab('quotes'); }
+
+// ── QUOTES ──
+async function loadQuotes(){
+  try {
+    const res = await fetch(API+'/api/quotes', {headers:{Authorization:'Bearer '+token}});
+    quotes = res.ok ? await res.json() : [];
+  } catch(e){ quotes=[]; }
+  renderQuotesList();
+  updateHomeStats();
+}
+
+async function saveQuote(quoteData, formData){
+  try {
+    const res = await fetch(API+'/api/quotes', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({...formData, quote_data: quoteData, total: quoteData.total, profit_percent: quoteData.profitPercent})
+    });
+    if(res.ok){ await loadQuotes(); }
+  } catch(e){}
+}
+
+function renderQuotesList(){
+  const list = document.getElementById('quotes-list');
+  const homeRecent = document.getElementById('home-recent');
+  if(!quotes.length){
+    const empty = `<div class="empty-state"><div class="es-icon">💼</div><h3>No quotes yet</h3><p>Tap "New Quote" to build your first AI-powered quote.</p></div>`;
+    list.innerHTML = empty; homeRecent.innerHTML = empty; return;
+  }
+  const makeItem = q => `<div class="qhi-item"><div class="qhi-left"><div class="qhi-title">${esc(q.customer_name||'Customer')} — ${esc(q.trade||'')}</div><div class="qhi-meta">${esc((q.job_description||'').substring(0,55))} · ${new Date(q.created_at).toLocaleDateString('en-GB')}</div></div><div class="qhi-right"><div class="qhi-amount">£${fmt(q.total)}</div><div class="qhi-profit">${(+q.profit_percent||0).toFixed(1)}% margin</div></div></div>`;
+  list.innerHTML = quotes.map(makeItem).join('');
+  homeRecent.innerHTML = quotes.slice(0,3).map(makeItem).join('');
+}
+
+function updateHomeStats(){
+  const total = quotes.reduce((s,q)=>s+(+q.total||0),0);
+  const avgM = quotes.length ? (quotes.reduce((s,q)=>s+(+q.profit_percent||0),0)/quotes.length).toFixed(0) : 0;
+  document.getElementById('stat-quotes').textContent = quotes.length;
+  document.getElementById('stat-value').textContent = '£'+fmt(total);
+  document.getElementById('stat-profit').textContent = avgM+'%';
+}
+
+// ── BUILDER ──
+function resetBuilder(){
+  selectedSpec='mid'; selectedSkip='none'; skipCost=0;
+  showStep(1);
+  ['job-description','customer-name','job-postcode','q-days','q-other'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('ai-output').style.display='none';
+  document.getElementById('ai-loading').style.display='block';
+  document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.spec-btn')[1]?.classList.add('selected');
+  document.querySelectorAll('.skip-type').forEach(b=>b.classList.remove('selected'));
+  document.querySelector('.skip-type')?.classList.add('selected');
+  prefillRates();
+}
+function showStep(n){ for(let i=1;i<=5;i++){ const el=document.getElementById('step-'+i); if(el) el.style.display=(i===n?'block':'none'); } updateStepDots(n); }
+function updateStepDots(active){ for(let i=1;i<=5;i++){ const d=document.getElementById('dot-'+i); if(!d) continue; d.classList.remove('active','done'); if(i<active) d.classList.add('done'); else if(i===active) d.classList.add('active'); } document.getElementById('step-label').textContent=`Step ${active} of 5`; }
+function nextStep(n){ if(n===2&&!document.getElementById('job-description').value.trim()){ showToast('Please describe the job first'); return; } if(n===4) prefillRates(); showStep(n); document.querySelector('.page').scrollTop=0; }
+function selectSpec(spec,el){ selectedSpec=spec; document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
+function selectSkip(type,el){ selectedSkip=type; const u=currentUser||{}; const rates={none:0,clean:u.skip_clean||180,mixed:u.skip_mixed||240,plasterboard:u.skip_plasterboard||320,inert:u.skip_inert||200,hazardous:u.skip_hazardous||480}; skipCost=rates[type]||0; document.querySelectorAll('.skip-type').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
+
+async function buildQuote(){
+  const dayRate=+document.getElementById('q-day-rate').value||250;
+  const days=+document.getElementById('q-days').value||0;
+  const markup=+document.getElementById('q-markup').value||20;
+  const profitTarget=+document.getElementById('q-profit-target').value||30;
+  const other=document.getElementById('q-other').value.trim();
+  const jobDesc=document.getElementById('job-description').value.trim();
+  const customer=document.getElementById('customer-name').value.trim()||'Customer';
+  const trade=document.getElementById('trade-type').value||'General Trades';
+  const wM=parseFloat(document.getElementById('room-w-m').value)||0;
+  const lM=parseFloat(document.getElementById('room-l-m').value)||0;
+  const roomArea=wM&&lM?(wM*lM).toFixed(1)+' m²':'not specified';
+  if(!days){ showToast('Please enter estimated days'); return; }
+  showStep(5); document.getElementById('ai-loading').style.display='block'; document.getElementById('ai-output').style.display='none'; document.querySelector('.page').scrollTop=0;
+  const labourCost=dayRate*days;
+  const skipStr=selectedSkip==='none'?'no skip required':`${selectedSkip} skip at £${skipCost}`;
+  const vatNote=vatRegistered?'VAT registered at 20%':'not VAT registered';
+  const prompt=`You are a UK trades profit coach. Build a detailed quote breakdown.
+JOB: ${jobDesc}
+TRADE: ${trade}
+CUSTOMER: ${customer}
+ROOM SIZE: ${roomArea}
+SPEC LEVEL: ${selectedSpec}
+SKIP: ${skipStr}
+LABOUR: £${dayRate}/day × ${days} days = £${labourCost}
+MATERIALS MARKUP: ${markup}%
+PROFIT TARGET: ${profitTarget}%
+VAT STATUS: ${vatNote}
+OTHER COSTS: ${other||'none'}
+Respond ONLY in this JSON format:
+{"lineItems":[{"label":"Labour (${days} days @ £${dayRate}/day)","amount":${labourCost}},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":${skipCost}}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}
+Rules: estimate realistic UK 2025 materials cost for spec level, apply ${markup}% markup, ${vatRegistered?'add 20% VAT':'no VAT'}, profitPercent=(revenue-costs)/revenue*100`;
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const q=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+    const formData={customer_name:customer,trade,job_description:jobDesc,spec_level:selectedSpec,skip_type:selectedSkip,skip_cost:skipCost,day_rate:dayRate,days,markup_percent:markup,profit_target:profitTarget,other_costs:other};
+    await saveQuote(q, formData);
+    renderQuoteResult(q,customer,trade);
+  } catch(e){ document.getElementById('ai-loading').style.display='none'; document.getElementById('ai-output').style.display='block'; document.getElementById('ai-output').innerHTML=`<div class="card" style="text-align:center;padding:24px;"><p style="color:var(--red);font-weight:600;">Couldn't build quote</p><p class="text-muted mt8">Check your connection and try again.</p><button class="btn btn-secondary mt12" onclick="buildQuote()">Retry</button></div>`; }
+}
+
+function renderQuoteResult(q,customer,trade){
+  document.getElementById('ai-loading').style.display='none';
+  const vatRow=vatRegistered?`<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£${fmt(q.vatAmount)}</span></div>`:'';
+  const lines=(q.lineItems||[]).map(l=>`<div class="quote-line"><span class="quote-line-label">${esc(l.label)}</span><span class="quote-line-amount">£${fmt(l.amount)}</span></div>`).join('');
+  window._protectionClause=q.protectionClause;
+  document.getElementById('ai-output').style.display='block';
+  document.getElementById('ai-output').innerHTML=`
+    <div class="ai-result">
+      <div class="ai-result-header"><div class="ai-result-title">${esc(customer)} · ${esc(trade)}</div><div class="ai-result-badge">AI Quote</div></div>
+      <div class="ai-result-body">
+        ${lines}
+        <div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£${fmt(q.subtotal)}</span></div>
+        ${vatRow}
+        <div class="quote-total-row">
+          <div class="quote-total-label">Total Quote Price</div>
+          <div class="quote-total-amount">£${fmt(q.total)}</div>
+          <div class="quote-profit-chip">✓ ${(+q.profitPercent).toFixed(1)}% profit · £${fmt(q.profitAmount)} in your pocket</div>
+        </div>
+      </div>
+    </div>
+    <div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>${esc(q.coachTip)}</p></div>
+    <div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>${esc(q.protectionClause)}</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._protectionClause).then(()=>showToast('Copied ✓'))">Copy Clause</button></div>
+    <div style="margin-top:14px;"><button class="btn btn-primary" onclick="showToast('Quote saved ✓');setTimeout(()=>switchTab('quotes'),800)">✓ Saved — View All Quotes</button></div>`;
+}
+
+// ── ISSUES ──
+function selectIssue(type){
+  currentIssueType=type;
+  document.getElementById('issues-home').style.display='none';
+  document.getElementById('issue-form').style.display='block';
+  const titles={leak:'💧 Leak Found',rotten:'🪵 Rotten Subfloor','extra-labour':'⏱️ Extra Labour',materials:'🧱 Extra Materials',scope:'📐 Scope Creep',breakage:'💥 Breakage / Damage',asbestos:'⛔ Asbestos Protocol'};
+  document.getElementById('issue-form-title').textContent=titles[type]||'Log Issue';
+  if(type==='asbestos'){ document.getElementById('asbestos-panel').style.display='block'; document.getElementById('standard-issue-panel').style.display='none'; }
+  else { document.getElementById('asbestos-panel').style.display='none'; document.getElementById('standard-issue-panel').style.display='block'; document.getElementById('variation-result').style.display='none'; document.getElementById('issue-description').value=''; document.getElementById('issue-hours').value=''; document.getElementById('issue-materials-cost').value=''; }
+  document.querySelector('.page').scrollTop=0;
+}
+function closeIssueForm(){ document.getElementById('issues-home').style.display='block'; document.getElementById('issue-form').style.display='none'; }
+function copyAsbestos(){ if(navigator.clipboard) navigator.clipboard.writeText('Work has been suspended in [area] following discovery of a suspected asbestos-containing material. Under HSE regulations and my duty of care, all work must cease until a licensed surveyor has assessed and cleared the site. This falls outside the scope of our original agreement.').then(()=>showToast('Copied ✓')); }
+
+async function buildVariation(){
+  const desc=document.getElementById('issue-description').value.trim();
+  if(!desc){ showToast('Please describe the issue'); return; }
+  const hours=+document.getElementById('issue-hours').value||0;
+  const matCost=+document.getElementById('issue-materials-cost').value||0;
+  const hourly=+document.getElementById('issue-hourly').value||(currentUser?.hourly_rate||35);
+  const extraLabour=hours*hourly; const totalExtra=extraLabour+matCost;
+  const resEl=document.getElementById('variation-result');
+  resEl.style.display='block'; resEl.innerHTML=`<div class="loading-ai"><div class="spinner"></div><p>Generating variation notice…</p></div>`; document.querySelector('.page').scrollTop=9999;
+  const prompt=`You are a UK trades assistant. Generate a professional variation notice.
+ISSUE TYPE: ${currentIssueType}
+DESCRIPTION: ${desc}
+EXTRA HOURS: ${hours} @ £${hourly}/hr = £${extraLabour}
+EXTRA MATERIALS: £${matCost}
+TOTAL EXTRA: £${totalExtra}
+Respond ONLY in JSON: {"variationTitle":"Short title","extraCost":${totalExtra},"variationNotice":"2-3 paragraph professional variation notice","customerMessage":"Short SMS to customer (max 2 sentences, include cost)","tip":"One practical tip"}`;
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const v=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+    window._variationNotice=v.variationNotice; window._customerSMS=v.customerMessage;
+    // Save to DB
+    fetch(API+'/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({issue_type:currentIssueType,description:desc,extra_hours:hours,extra_materials:matCost,hourly_rate:hourly,total_extra:totalExtra,variation_data:v})}).catch(()=>{});
+    resEl.innerHTML=`
+      <div class="ai-result"><div class="ai-result-header"><div class="ai-result-title">${esc(v.variationTitle)}</div><div class="ai-result-badge">+£${fmt(v.extraCost)}</div></div>
+      <div class="ai-result-body"><div class="card-title">Variation Notice</div><p style="font-size:14px;color:var(--body);line-height:1.6;">${esc(v.variationNotice).replace(/\n/g,'<br>')}</p><button class="btn btn-secondary btn-sm mt12" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._variationNotice).then(()=>showToast('Copied ✓'))">Copy Notice</button></div></div>
+      <div class="coach-box mt12"><h4>📱 SMS to Customer</h4><p style="font-size:14px;">${esc(v.customerMessage)}</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._customerSMS).then(()=>showToast('Copied ✓'))">Copy SMS</button></div>
+      <div class="protection-box"><h4>💡 Pro Tip</h4><p>${esc(v.tip)}</p></div>
+      <button class="btn btn-secondary mt12" onclick="closeIssueForm()">Back to Issues</button>`;
+  } catch(e){ resEl.innerHTML=`<div class="card"><p style="color:var(--red);">Error — please try again.</p><button class="btn btn-secondary mt8" onclick="buildVariation()">Retry</button></div>`; }
+}
+
+// ── SETTINGS ──
+function setVat(v){ vatRegistered=v; document.getElementById('vat-yes').classList.toggle('active',v); document.getElementById('vat-no').classList.toggle('active',!v); }
+async function saveSettings(){
+  const body={
+    trade: document.getElementById('setup-trade').textContent,
+    day_rate:+document.getElementById('setup-day-rate').value,
+    hourly_rate:+document.getElementById('setup-hourly').value,
+    markup_percent:+document.getElementById('setup-markup').value,
+    profit_target:+document.getElementById('setup-profit').value,
+    vat_registered:vatRegistered,
+    skip_clean:+document.getElementById('setup-skip-clean').value,
+    skip_mixed:+document.getElementById('setup-skip-mixed').value,
+    skip_plasterboard:+document.getElementById('setup-skip-pb').value,
+    skip_inert:+document.getElementById('setup-skip-inert').value,
+    skip_hazardous:+document.getElementById('setup-skip-haz').value
+  };
+  try {
+    const res=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
+    if(res.ok){ currentUser={...currentUser,...await res.json()}; updateSkipPrices(); showToast('Settings saved ✓'); }
+    else showToast('Error saving settings');
+  } catch(e){ showToast('Connection error'); }
+}
+
+// ── UTILS ──
+function fmt(n){ return (Math.round(+n||0)).toLocaleString('en-GB'); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let toastTimer;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500); }
+
+// ── START ──
+if(token){ initApp(); } // Will redirect to login if token invalid
+</script>
+</body>
+</html>
