@@ -149,7 +149,6 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .modal-sheet{background:var(--white);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
 .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
 .modal-title{font-size:17px;font-weight:700;color:var(--heading);margin-bottom:16px;}
-/* Auth screen */
 #auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;}
 #auth-screen.hidden{display:none;}
 .auth-box{background:var(--white);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;}
@@ -166,20 +165,14 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">Profit<span>Quote</span></div>
     <div class="auth-sub" id="auth-sub">Sign in to your account</div>
     <div class="auth-error" id="auth-error"></div>
-
     <div id="register-fields" style="display:none;">
-      <div class="form-group">
-        <label>Your name</label>
-        <input type="text" id="reg-name" placeholder="Dave Smith"/>
-      </div>
-      <div class="form-group">
-        <label>Your trade</label>
+      <div class="form-group"><label>Your name</label><input type="text" id="reg-name" placeholder="Dave Smith"/></div>
+      <div class="form-group"><label>Your trade</label>
         <select id="reg-trade">
           <option value="">Select trade</option>
           <option>Plumber</option><option>Bathroom Fitter</option><option>Kitchen Installer</option>
@@ -188,15 +181,8 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
         </select>
       </div>
     </div>
-
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="auth-email" placeholder="you@example.com"/>
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="auth-password" placeholder="••••••••"/>
-    </div>
+    <div class="form-group"><label>Email</label><input type="email" id="auth-email" placeholder="you@example.com"/></div>
+    <div class="form-group"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••"/></div>
     <button class="btn btn-primary" id="auth-btn" onclick="doAuth()">Sign In</button>
     <div class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register free</div>
   </div>
@@ -207,7 +193,6 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
     <div class="topbar-logo">Profit<span>Quote</span></div>
     <button class="topbar-user" id="user-initials" onclick="showToast('Tap Setup to manage your account')">?</button>
   </div>
-
   <div class="page">
 
     <!-- HOME -->
@@ -477,7 +462,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 <div class="toast" id="toast"></div>
 
 <script>
-const API = '';  // same origin
+const API = '';
 let token = localStorage.getItem('pq-token');
 let currentUser = null;
 let quotes = [];
@@ -551,7 +536,6 @@ async function initApp() {
   updateHomeStats();
   const d = new Date();
   const h = d.getHours();
-  const greet = h<12?'Good morning':'h<17'?'Good afternoon':'Good evening';
   document.getElementById('home-greeting').textContent = (h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
   document.getElementById('home-date').textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 }
@@ -631,10 +615,10 @@ function renderQuotesList(){
   const list = document.getElementById('quotes-list');
   const homeRecent = document.getElementById('home-recent');
   if(!quotes.length){
-    const empty = `<div class="empty-state"><div class="es-icon">💼</div><h3>No quotes yet</h3><p>Tap "New Quote" to build your first AI-powered quote.</p></div>`;
+    const empty = '<div class="empty-state"><div class="es-icon">💼</div><h3>No quotes yet</h3><p>Tap "New Quote" to build your first AI-powered quote.</p></div>';
     list.innerHTML = empty; homeRecent.innerHTML = empty; return;
   }
-  const makeItem = q => `<div class="qhi-item"><div class="qhi-left"><div class="qhi-title">${esc(q.customer_name||'Customer')} — ${esc(q.trade||'')}</div><div class="qhi-meta">${esc((q.job_description||'').substring(0,55))} · ${new Date(q.created_at).toLocaleDateString('en-GB')}</div></div><div class="qhi-right"><div class="qhi-amount">£${fmt(q.total)}</div><div class="qhi-profit">${(+q.profit_percent||0).toFixed(1)}% margin</div></div></div>`;
+  const makeItem = q => '<div class="qhi-item"><div class="qhi-left"><div class="qhi-title">'+esc(q.customer_name||'Customer')+' — '+esc(q.trade||'')+'</div><div class="qhi-meta">'+esc((q.job_description||'').substring(0,55))+' · '+new Date(q.created_at).toLocaleDateString('en-GB')+'</div></div><div class="qhi-right"><div class="qhi-amount">£'+fmt(q.total)+'</div><div class="qhi-profit">'+(+q.profit_percent||0).toFixed(1)+'% margin</div></div></div>';
   list.innerHTML = quotes.map(makeItem).join('');
   homeRecent.innerHTML = quotes.slice(0,3).map(makeItem).join('');
 }
@@ -661,7 +645,7 @@ function resetBuilder(){
   prefillRates();
 }
 function showStep(n){ for(let i=1;i<=5;i++){ const el=document.getElementById('step-'+i); if(el) el.style.display=(i===n?'block':'none'); } updateStepDots(n); }
-function updateStepDots(active){ for(let i=1;i<=5;i++){ const d=document.getElementById('dot-'+i); if(!d) continue; d.classList.remove('active','done'); if(i<active) d.classList.add('done'); else if(i===active) d.classList.add('active'); } document.getElementById('step-label').textContent=`Step ${active} of 5`; }
+function updateStepDots(active){ for(let i=1;i<=5;i++){ const d=document.getElementById('dot-'+i); if(!d) continue; d.classList.remove('active','done'); if(i<active) d.classList.add('done'); else if(i===active) d.classList.add('active'); } document.getElementById('step-label').textContent='Step '+active+' of 5'; }
 function nextStep(n){ if(n===2&&!document.getElementById('job-description').value.trim()){ showToast('Please describe the job first'); return; } if(n===4) prefillRates(); showStep(n); document.querySelector('.page').scrollTop=0; }
 function selectSpec(spec,el){ selectedSpec=spec; document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
 function selectSkip(type,el){ selectedSkip=type; const u=currentUser||{}; const rates={none:0,clean:u.skip_clean||180,mixed:u.skip_mixed||240,plasterboard:u.skip_plasterboard||320,inert:u.skip_inert||200,hazardous:u.skip_hazardous||480}; skipCost=rates[type]||0; document.querySelectorAll('.skip-type').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
@@ -681,56 +665,26 @@ async function buildQuote(){
   if(!days){ showToast('Please enter estimated days'); return; }
   showStep(5); document.getElementById('ai-loading').style.display='block'; document.getElementById('ai-output').style.display='none'; document.querySelector('.page').scrollTop=0;
   const labourCost=dayRate*days;
-  const skipStr=selectedSkip==='none'?'no skip required':`${selectedSkip} skip at £${skipCost}`;
+  const skipStr=selectedSkip==='none'?'no skip required':selectedSkip+' skip at £'+skipCost;
   const vatNote=vatRegistered?'VAT registered at 20%':'not VAT registered';
-  const prompt=`You are a UK trades profit coach. Build a detailed quote breakdown.
-JOB: ${jobDesc}
-TRADE: ${trade}
-CUSTOMER: ${customer}
-ROOM SIZE: ${roomArea}
-SPEC LEVEL: ${selectedSpec}
-SKIP: ${skipStr}
-LABOUR: £${dayRate}/day × ${days} days = £${labourCost}
-MATERIALS MARKUP: ${markup}%
-PROFIT TARGET: ${profitTarget}%
-VAT STATUS: ${vatNote}
-OTHER COSTS: ${other||'none'}
-Respond ONLY in this JSON format:
-{"lineItems":[{"label":"Labour (${days} days @ £${dayRate}/day)","amount":${labourCost}},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":${skipCost}}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}
-Rules: estimate realistic UK 2025 materials cost for spec level, apply ${markup}% markup, ${vatRegistered?'add 20% VAT':'no VAT'}, profitPercent=(revenue-costs)/revenue*100`;
+  const prompt='You are a UK trades profit coach. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day × '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules: estimate realistic UK 2025 materials cost for spec level, apply '+markup+'% markup, '+(vatRegistered?'add 20% VAT':'no VAT')+', profitPercent=(revenue-costs)/revenue*100';
   try {
-  headers:{'Content-Type':'application/json','x-api-key':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,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const q=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
     const formData={customer_name:customer,trade,job_description:jobDesc,spec_level:selectedSpec,skip_type:selectedSkip,skip_cost:skipCost,day_rate:dayRate,days,markup_percent:markup,profit_target:profitTarget,other_costs:other};
     await saveQuote(q, formData);
     renderQuoteResult(q,customer,trade);
-  } catch(e){ document.getElementById('ai-loading').style.display='none'; document.getElementById('ai-output').style.display='block'; document.getElementById('ai-output').innerHTML=`<div class="card" style="text-align:center;padding:24px;"><p style="color:var(--red);font-weight:600;">Couldn't build quote</p><p class="text-muted mt8">Check your connection and try again.</p><button class="btn btn-secondary mt12" onclick="buildQuote()">Retry</button></div>`; }
+  } catch(e){ document.getElementById('ai-loading').style.display='none'; document.getElementById('ai-output').style.display='block'; document.getElementById('ai-output').innerHTML='<div class="card" style="text-align:center;padding:24px;"><p style="color:var(--red);font-weight:600;">Couldn\'t build quote</p><p class="text-muted mt8">Check your connection and try again.</p><button class="btn btn-secondary mt12" onclick="buildQuote()">Retry</button></div>'; }
 }
 
 function renderQuoteResult(q,customer,trade){
   document.getElementById('ai-loading').style.display='none';
-  const vatRow=vatRegistered?`<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£${fmt(q.vatAmount)}</span></div>`:'';
-  const lines=(q.lineItems||[]).map(l=>`<div class="quote-line"><span class="quote-line-label">${esc(l.label)}</span><span class="quote-line-amount">£${fmt(l.amount)}</span></div>`).join('');
+  const vatRow=vatRegistered?'<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£'+fmt(q.vatAmount)+'</span></div>':'';
+  const lines=(q.lineItems||[]).map(l=>'<div class="quote-line"><span class="quote-line-label">'+esc(l.label)+'</span><span class="quote-line-amount">£'+fmt(l.amount)+'</span></div>').join('');
   window._protectionClause=q.protectionClause;
   document.getElementById('ai-output').style.display='block';
-  document.getElementById('ai-output').innerHTML=`
-    <div class="ai-result">
-      <div class="ai-result-header"><div class="ai-result-title">${esc(customer)} · ${esc(trade)}</div><div class="ai-result-badge">AI Quote</div></div>
-      <div class="ai-result-body">
-        ${lines}
-        <div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£${fmt(q.subtotal)}</span></div>
-        ${vatRow}
-        <div class="quote-total-row">
-          <div class="quote-total-label">Total Quote Price</div>
-          <div class="quote-total-amount">£${fmt(q.total)}</div>
-          <div class="quote-profit-chip">✓ ${(+q.profitPercent).toFixed(1)}% profit · £${fmt(q.profitAmount)} in your pocket</div>
-        </div>
-      </div>
-    </div>
-    <div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>${esc(q.coachTip)}</p></div>
-    <div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>${esc(q.protectionClause)}</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._protectionClause).then(()=>showToast('Copied ✓'))">Copy Clause</button></div>
-    <div style="margin-top:14px;"><button class="btn btn-primary" onclick="showToast('Quote saved ✓');setTimeout(()=>switchTab('quotes'),800)">✓ Saved — View All Quotes</button></div>`;
+  document.getElementById('ai-output').innerHTML='<div class="ai-result"><div class="ai-result-header"><div class="ai-result-title">'+esc(customer)+' · '+esc(trade)+'</div><div class="ai-result-badge">AI Quote</div></div><div class="ai-result-body">'+lines+'<div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£'+fmt(q.subtotal)+'</span></div>'+vatRow+'<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div></div></div><div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div><div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._protectionClause).then(()=>showToast(\'Copied ✓\'))">Copy Clause</button></div><div style="margin-top:14px;"><button class="btn btn-primary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ Saved — View All Quotes</button></div>';
 }
 
 // ── ISSUES ──
@@ -755,28 +709,16 @@ async function buildVariation(){
   const hourly=+document.getElementById('issue-hourly').value||(currentUser?.hourly_rate||35);
   const extraLabour=hours*hourly; const totalExtra=extraLabour+matCost;
   const resEl=document.getElementById('variation-result');
-  resEl.style.display='block'; resEl.innerHTML=`<div class="loading-ai"><div class="spinner"></div><p>Generating variation notice…</p></div>`; document.querySelector('.page').scrollTop=9999;
-  const prompt=`You are a UK trades assistant. Generate a professional variation notice.
-ISSUE TYPE: ${currentIssueType}
-DESCRIPTION: ${desc}
-EXTRA HOURS: ${hours} @ £${hourly}/hr = £${extraLabour}
-EXTRA MATERIALS: £${matCost}
-TOTAL EXTRA: £${totalExtra}
-Respond ONLY in JSON: {"variationTitle":"Short title","extraCost":${totalExtra},"variationNotice":"2-3 paragraph professional variation notice","customerMessage":"Short SMS to customer (max 2 sentences, include cost)","tip":"One practical tip"}`;
+  resEl.style.display='block'; resEl.innerHTML='<div class="loading-ai"><div class="spinner"></div><p>Generating variation notice…</p></div>'; document.querySelector('.page').scrollTop=9999;
+  const prompt='You are a UK trades assistant. Generate a professional variation notice.\nISSUE TYPE: '+currentIssueType+'\nDESCRIPTION: '+desc+'\nEXTRA HOURS: '+hours+' @ £'+hourly+'/hr = £'+extraLabour+'\nEXTRA MATERIALS: £'+matCost+'\nTOTAL EXTRA: £'+totalExtra+'\nRespond ONLY in JSON: {"variationTitle":"Short title","extraCost":'+totalExtra+',"variationNotice":"2-3 paragraph professional variation notice","customerMessage":"Short SMS to customer (max 2 sentences, include cost)","tip":"One practical tip"}';
   try {
-    headers:{'Content-Type':'application/json','x-api-key':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,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const v=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
     window._variationNotice=v.variationNotice; window._customerSMS=v.customerMessage;
-    // Save to DB
     fetch(API+'/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({issue_type:currentIssueType,description:desc,extra_hours:hours,extra_materials:matCost,hourly_rate:hourly,total_extra:totalExtra,variation_data:v})}).catch(()=>{});
-    resEl.innerHTML=`
-      <div class="ai-result"><div class="ai-result-header"><div class="ai-result-title">${esc(v.variationTitle)}</div><div class="ai-result-badge">+£${fmt(v.extraCost)}</div></div>
-      <div class="ai-result-body"><div class="card-title">Variation Notice</div><p style="font-size:14px;color:var(--body);line-height:1.6;">${esc(v.variationNotice).replace(/\n/g,'<br>')}</p><button class="btn btn-secondary btn-sm mt12" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._variationNotice).then(()=>showToast('Copied ✓'))">Copy Notice</button></div></div>
-      <div class="coach-box mt12"><h4>📱 SMS to Customer</h4><p style="font-size:14px;">${esc(v.customerMessage)}</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._customerSMS).then(()=>showToast('Copied ✓'))">Copy SMS</button></div>
-      <div class="protection-box"><h4>💡 Pro Tip</h4><p>${esc(v.tip)}</p></div>
-      <button class="btn btn-secondary mt12" onclick="closeIssueForm()">Back to Issues</button>`;
-  } catch(e){ resEl.innerHTML=`<div class="card"><p style="color:var(--red);">Error — please try again.</p><button class="btn btn-secondary mt8" onclick="buildVariation()">Retry</button></div>`; }
+    resEl.innerHTML='<div class="ai-result"><div class="ai-result-header"><div class="ai-result-title">'+esc(v.variationTitle)+'</div><div class="ai-result-badge">+£'+fmt(v.extraCost)+'</div></div><div class="ai-result-body"><div class="card-title">Variation Notice</div><p style="font-size:14px;color:var(--body);line-height:1.6;">'+esc(v.variationNotice).replace(/\n/g,'<br>')+'</p><button class="btn btn-secondary btn-sm mt12" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._variationNotice).then(()=>showToast(\'Copied ✓\'))">Copy Notice</button></div></div><div class="coach-box mt12"><h4>📱 SMS to Customer</h4><p style="font-size:14px;">'+esc(v.customerMessage)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._customerSMS).then(()=>showToast(\'Copied ✓\'))">Copy SMS</button></div><div class="protection-box"><h4>💡 Pro Tip</h4><p>'+esc(v.tip)+'</p></div><button class="btn btn-secondary mt12" onclick="closeIssueForm()">Back to Issues</button>';
+  } catch(e){ resEl.innerHTML='<div class="card"><p style="color:var(--red);">Error — please try again.</p><button class="btn btn-secondary mt8" onclick="buildVariation()">Retry</button></div>'; }
 }
 
 // ── SETTINGS ──
@@ -808,8 +750,7 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 let toastTimer;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500); }
 
-// ── START ──
-if(token){ initApp(); } // Will redirect to login if token invalid
+if(token){ initApp(); }
 </script>
 </body>
 </html>
