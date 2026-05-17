@@ -23,6 +23,24 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/quotes', require('./routes/quotes'));
 app.use('/api/issues', require('./routes/issues'));
 app.use('/api/settings', require('./routes/settings'));
+// AI proxy
+app.post('/api/ai', require('./middleware/auth'), async (req, res) => {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // Serve the app for all non-API routes
 app.get('*', (req, res) => {
