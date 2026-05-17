@@ -42,6 +42,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .btn-secondary:hover{background:#e0eaf8;}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:6px;width:auto;}
 .btn-red{background:var(--red-bg);color:var(--red);border:1px solid #f0b8b8;}
+.btn-green{background:var(--green);color:var(--white);}
 .form-group{margin-bottom:14px;}
 .form-group label{display:block;font-size:13px;font-weight:600;color:var(--heading);margin-bottom:5px;}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:7px;font-size:15px;font-family:var(--font);color:var(--heading);background:var(--blue-light);transition:border-color 0.15s;outline:none;-webkit-appearance:none;}
@@ -151,6 +152,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .pill-toggle button{flex:1;padding:7px 12px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
 .pill-toggle button.active{background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
 .dim-convert{font-size:12px;color:var(--blue);margin-top:4px;font-weight:500;min-height:18px;}
+.send-actions{display:flex;gap:10px;margin-top:14px;}
 #auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;}
 #auth-screen.hidden{display:none;}
 .auth-box{background:var(--white);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;}
@@ -165,6 +167,13 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .px16{padding-left:16px;padding-right:16px;}
 .setup-text-input{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:var(--font);color:var(--heading);background:var(--blue-light);outline:none;}
 .setup-text-input:focus{border-color:var(--blue);}
+
+/* PDF print styles */
+@media print {
+  body * { visibility: hidden; }
+  #pdf-preview, #pdf-preview * { visibility: visible; }
+  #pdf-preview { position: fixed; left: 0; top: 0; width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -287,28 +296,16 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
         <div class="form-group">
           <label>Room width</label>
           <div class="form-row">
-            <div>
-              <input type="number" id="room-w-m" placeholder="0.0" step="0.01" min="0" oninput="convertDim('w','m')"/>
-              <div class="form-hint">metres</div>
-            </div>
-            <div>
-              <input type="number" id="room-w-ft" placeholder="0.0" step="0.1" min="0" oninput="convertDim('w','ft')"/>
-              <div class="form-hint">feet</div>
-            </div>
+            <div><input type="number" id="room-w-m" placeholder="0.0" step="0.01" min="0" oninput="convertDim('w','m')"/><div class="form-hint">metres</div></div>
+            <div><input type="number" id="room-w-ft" placeholder="0.0" step="0.1" min="0" oninput="convertDim('w','ft')"/><div class="form-hint">feet</div></div>
           </div>
           <div class="dim-convert" id="w-convert"></div>
         </div>
         <div class="form-group">
           <label>Room length</label>
           <div class="form-row">
-            <div>
-              <input type="number" id="room-l-m" placeholder="0.0" step="0.01" min="0" oninput="convertDim('l','m')"/>
-              <div class="form-hint">metres</div>
-            </div>
-            <div>
-              <input type="number" id="room-l-ft" placeholder="0.0" step="0.1" min="0" oninput="convertDim('l','ft')"/>
-              <div class="form-hint">feet</div>
-            </div>
+            <div><input type="number" id="room-l-m" placeholder="0.0" step="0.01" min="0" oninput="convertDim('l','m')"/><div class="form-hint">metres</div></div>
+            <div><input type="number" id="room-l-ft" placeholder="0.0" step="0.1" min="0" oninput="convertDim('l','ft')"/><div class="form-hint">feet</div></div>
           </div>
           <div class="dim-convert" id="l-convert"></div>
         </div>
@@ -431,11 +428,10 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
     <!-- SETUP -->
     <div class="section" id="sec-setup">
       <div class="section-header"><h2>Setup</h2><p>Your rates, profile &amp; preferences</p></div>
-      <div class="profile-hero mt8" id="profile-hero">
+      <div class="profile-hero mt8">
         <div class="profile-avatar" id="setup-avatar">?</div>
         <div><div class="profile-name" id="setup-name">Loading…</div><div class="profile-trade" id="setup-trade"></div><div class="profile-plan">⭐ Solo Plan</div></div>
       </div>
-
       <div class="setup-section-label">Your Business Details</div>
       <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
         <input class="setup-text-input" id="setup-business-name" placeholder="Business name e.g. Dave Smith Plumbing"/>
@@ -443,7 +439,6 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
         <input class="setup-text-input" id="setup-contact-email" placeholder="Contact email" type="email"/>
         <input class="setup-text-input" id="setup-town" placeholder="Town / City e.g. Swansea"/>
       </div>
-
       <div class="setup-section-label">Labour Rates</div>
       <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
         <div class="rate-row"><div class="rate-label">Day rate</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-day-rate" value="250"/><span style="font-size:12px;color:var(--muted);margin-left:4px;">/day</span></div></div>
@@ -474,8 +469,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
       </div>
     </div>
 
-  </div><!-- end .page -->
-
+  </div>
   <nav class="bottom-nav">
     <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span>
@@ -504,6 +498,9 @@ let selectedSkip = 'none';
 let skipCost = 0;
 let vatRegistered = true;
 let currentIssueType = '';
+let lastQuoteData = null;
+let lastQuoteCustomer = '';
+let lastQuoteTrade = '';
 
 // ── DIMENSION CONVERSION ──
 function convertDim(dim, from) {
@@ -524,7 +521,6 @@ function convertDim(dim, from) {
     if(!isNaN(ft) && ft > 0) {
       const m = (ft * 0.3048).toFixed(2);
       mEl.value = m;
-      const totalInches = ft * 12;
       const wholeFt = Math.floor(ft);
       const inches = Math.round((ft - wholeFt) * 12);
       infoEl.textContent = ft + 'ft = ' + m + 'm (' + wholeFt + 'ft ' + inches + 'in)';
@@ -697,7 +693,7 @@ function updateHomeStats(){
 
 // ── BUILDER ──
 function resetBuilder(){
-  selectedSpec='mid'; selectedSkip='none'; skipCost=0;
+  selectedSpec='mid'; selectedSkip='none'; skipCost=0; lastQuoteData=null;
   showStep(1);
   ['job-description','customer-name','job-postcode','q-days','q-other','room-w-m','room-w-ft','room-l-m','room-l-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['w-convert','l-convert'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=''; });
@@ -732,11 +728,12 @@ async function buildQuote(){
   const labourCost=dayRate*days;
   const skipStr=selectedSkip==='none'?'no skip required':selectedSkip+' skip at £'+skipCost;
   const vatNote=vatRegistered?'VAT registered at 20%':'not VAT registered';
-  const prompt='You are a UK trades profit coach. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day × '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules: estimate realistic UK 2025 materials cost for spec level, apply '+markup+'% markup, '+(vatRegistered?'add 20% VAT':'no VAT')+', profitPercent=(revenue-costs)/revenue*100';
+  const prompt='You are a UK trades profit coach. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules: estimate realistic UK 2025 materials cost for spec level, apply '+markup+'% markup, '+(vatRegistered?'add 20% VAT':'no VAT')+', profitPercent=(revenue-costs)/revenue*100';
   try {
     const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const q=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+    lastQuoteData=q; lastQuoteCustomer=customer; lastQuoteTrade=trade;
     const formData={customer_name:customer,trade,job_description:jobDesc,spec_level:selectedSpec,skip_type:selectedSkip,skip_cost:skipCost,day_rate:dayRate,days,markup_percent:markup,profit_target:profitTarget,other_costs:other};
     await saveQuote(q, formData);
     renderQuoteResult(q,customer,trade);
@@ -758,23 +755,73 @@ function renderQuoteResult(q,customer,trade){
   document.getElementById('ai-output').innerHTML=
     '<div class="ai-result">'+
       '<div class="ai-result-header">'+
-        '<div class="ai-result-branding">'+
-          '<div class="ai-result-logo">Profit<span>Quote</span></div>'+
-          '<div class="ai-result-badge">AI Quote</div>'+
-        '</div>'+
-        (bizName ? '<div class="ai-result-builder"><div class="ai-result-builder-name">'+esc(bizName)+'</div>'+(builderLine?'<div class="ai-result-builder-details">'+esc(builderLine)+'</div>':'')+'</div>' : '')+
+        '<div class="ai-result-branding"><div class="ai-result-logo">Profit<span>Quote</span></div><div class="ai-result-badge">AI Quote</div></div>'+
+        (bizName?'<div class="ai-result-builder"><div class="ai-result-builder-name">'+esc(bizName)+'</div>'+(builderLine?'<div class="ai-result-builder-details">'+esc(builderLine)+'</div>':'')+'</div>':'')+
         '<div class="ai-result-title">'+esc(customer)+' · '+esc(trade)+'</div>'+
       '</div>'+
-      '<div class="ai-result-body">'+
-        lines+
+      '<div class="ai-result-body">'+lines+
         '<div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£'+fmt(q.subtotal)+'</span></div>'+
         vatRow+
         '<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div>'+
       '</div>'+
     '</div>'+
     '<div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div>'+
-    '<div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._protectionClause).then(()=>showToast(\'Copied ✓\'))">Copy Clause</button></div>'+
-    '<div style="margin-top:14px;"><button class="btn btn-primary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ Saved — View All Quotes</button></div>';
+    '<div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p></div>'+
+    '<div class="send-actions">'+
+      '<button class="btn btn-green" onclick="printCustomerQuote()">📄 Download Customer Quote</button>'+
+    '</div>'+
+    '<div style="margin-top:10px;"><button class="btn btn-secondary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ View All Quotes</button></div>';
+}
+
+// ── CUSTOMER PDF ──
+function printCustomerQuote(){
+  if(!lastQuoteData){ showToast('No quote to print'); return; }
+  const q = lastQuoteData;
+  const u = currentUser || {};
+  const bizName = u.business_name || u.name || '';
+  const phone = u.phone || '';
+  const email = u.contact_email || '';
+  const town = u.town || '';
+  const date = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const vatRow = vatRegistered ? '<tr><td style="padding:10px 0;color:#4A5568;border-bottom:1px solid #DDE4EF;">VAT (20%)</td><td style="padding:10px 0;font-weight:600;text-align:right;border-bottom:1px solid #DDE4EF;">£'+fmt(q.vatAmount)+'</td></tr>' : '';
+  const lineRows = (q.lineItems||[]).map(l=>'<tr><td style="padding:10px 0;color:#4A5568;border-bottom:1px solid #DDE4EF;">'+esc(l.label)+'</td><td style="padding:10px 0;font-weight:600;text-align:right;border-bottom:1px solid #DDE4EF;">£'+fmt(l.amount)+'</td></tr>').join('');
+
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Quote — '+esc(lastQuoteCustomer)+'</title>'+
+  '<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0;padding:40px;color:#4A5568;font-size:15px;line-height:1.5;}'+
+  '.header{background:#1B2B4B;color:white;padding:28px 32px;border-radius:10px;margin-bottom:28px;}'+
+  '.logo{font-size:20px;font-weight:700;letter-spacing:-0.03em;margin-bottom:12px;}'+
+  '.logo span{color:#7BAFD4;}'+
+  '.biz-name{font-size:16px;font-weight:700;}'+
+  '.biz-details{font-size:13px;color:rgba(255,255,255,0.7);margin-top:3px;}'+
+  '.customer-line{font-size:14px;color:rgba(255,255,255,0.8);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.2);}'+
+  'table{width:100%;border-collapse:collapse;margin-bottom:0;}'+
+  '.total-box{background:#1B2B4B;color:white;padding:20px 24px;border-radius:8px;margin-top:20px;}'+
+  '.total-label{font-size:13px;color:rgba(255,255,255,0.6);}'+
+  '.total-amount{font-size:32px;font-weight:700;letter-spacing:-0.04em;}'+
+  '.protection{background:#fffbeb;border:1px solid #f0d0a0;border-radius:8px;padding:16px;margin-top:20px;}'+
+  '.protection h4{font-size:13px;font-weight:700;color:#B35C00;margin-bottom:6px;}'+
+  '.protection p{font-size:13px;color:#4A5568;line-height:1.5;}'+
+  '.date{font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px;}'+
+  '@media print{body{padding:20px;}}</style></head><body>'+
+  '<div class="header">'+
+    '<div class="logo">Profit<span>Quote</span></div>'+
+    (bizName?'<div class="biz-name">'+esc(bizName)+'</div>':'')+ 
+    '<div class="biz-details">'+[phone,email,town].filter(Boolean).join(' · ')+'</div>'+
+    '<div class="date">Quote date: '+date+'</div>'+
+    '<div class="customer-line">Prepared for: <strong>'+esc(lastQuoteCustomer)+'</strong> · '+esc(lastQuoteTrade)+'</div>'+
+  '</div>'+
+  '<table>'+lineRows+
+    '<tr><td style="padding:10px 0;color:#4A5568;border-bottom:1px solid #DDE4EF;">Subtotal</td><td style="padding:10px 0;font-weight:600;text-align:right;border-bottom:1px solid #DDE4EF;">£'+fmt(q.subtotal)+'</td></tr>'+
+    vatRow+
+  '</table>'+
+  '<div class="total-box"><div class="total-label">Total Quote Price</div><div class="total-amount">£'+fmt(q.total)+'</div></div>'+
+  '<div class="protection"><h4>🛡️ Quote Terms &amp; Conditions</h4><p>'+esc(q.protectionClause)+'</p></div>'+
+  '</body></html>';
+
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload = function(){ win.print(); };
 }
 
 // ── ISSUES ──
