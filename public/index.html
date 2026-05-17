@@ -699,7 +699,7 @@ Respond ONLY in this JSON format:
 {"lineItems":[{"label":"Labour (${days} days @ £${dayRate}/day)","amount":${labourCost}},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":${skipCost}}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}
 Rules: estimate realistic UK 2025 materials cost for spec level, apply ${markup}% markup, ${vatRegistered?'add 20% VAT':'no VAT'}, profitPercent=(revenue-costs)/revenue*100`;
   try {
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+  headers:{'Content-Type':'application/json','x-api-key':'YOUR-KEY-HERE','anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const q=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
     const formData={customer_name:customer,trade,job_description:jobDesc,spec_level:selectedSpec,skip_type:selectedSkip,skip_cost:skipCost,day_rate:dayRate,days,markup_percent:markup,profit_target:profitTarget,other_costs:other};
@@ -764,7 +764,7 @@ EXTRA MATERIALS: £${matCost}
 TOTAL EXTRA: £${totalExtra}
 Respond ONLY in JSON: {"variationTitle":"Short title","extraCost":${totalExtra},"variationNotice":"2-3 paragraph professional variation notice","customerMessage":"Short SMS to customer (max 2 sentences, include cost)","tip":"One practical tip"}`;
   try {
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    headers:{'Content-Type':'application/json','x-api-key':'YOUR-KEY-HERE','anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const v=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
     window._variationNotice=v.variationNotice; window._customerSMS=v.customerMessage;
