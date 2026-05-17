@@ -728,7 +728,11 @@ async function buildQuote(){
   const labourCost=dayRate*days;
   const skipStr=selectedSkip==='none'?'no skip required':selectedSkip+' skip at £'+skipCost;
   const vatNote=vatRegistered?'VAT registered at 20%':'not VAT registered';
-  const prompt='You are a UK trades profit coach. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules: estimate realistic UK 2025 materials cost for spec level, apply '+markup+'% markup, '+(vatRegistered?'add 20% VAT':'no VAT')+', profitPercent=(revenue-costs)/revenue*100';
+  // Detect complex structural jobs
+  const complexKeywords = ['loft','dormer','velux','extension','conversion','structural','steel beam','rsj','foundations','underpinning','knock through','rear extension','side extension','double storey','single storey','garage conversion','basement'];
+  const isComplex = complexKeywords.some(kw => jobDesc.toLowerCase().includes(kw));
+
+  const prompt='You are a UK trades profit coach with expert knowledge of UK 2025 build costs. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\n\nUK 2025 COST BENCHMARKS — use these as reference:\n- Loft conversion (basic): £25,000-£35,000 materials+labour total\n- Loft conversion with dormer: £35,000-£55,000 total\n- Single storey extension: £20,000-£40,000 total\n- Double storey extension: £40,000-£80,000 total\n- Garage conversion: £10,000-£20,000 total\n- Full bathroom refit (mid): £4,000-£8,000 materials\n- Full kitchen refit (mid): £8,000-£15,000 materials\n- Roof replacement: £5,000-£12,000 materials\n- Full rewire (3-bed): £3,000-£5,000 materials\n\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"isComplexJob":false,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules: estimate REALISTIC UK 2025 materials cost for the job type and spec level — do NOT underestimate. For structural or major projects use the benchmarks above. Apply '+markup+'% markup to materials. '+(vatRegistered?'Add 20% VAT to subtotal.':'No VAT.')+' profitPercent=(revenue-costs)/revenue*100. Set isComplexJob to true if this is a structural, major or high-value project.';
   try {
     const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
@@ -736,11 +740,11 @@ async function buildQuote(){
     lastQuoteData=q; lastQuoteCustomer=customer; lastQuoteTrade=trade;
     const formData={customer_name:customer,trade,job_description:jobDesc,spec_level:selectedSpec,skip_type:selectedSkip,skip_cost:skipCost,day_rate:dayRate,days,markup_percent:markup,profit_target:profitTarget,other_costs:other};
     await saveQuote(q, formData);
-    renderQuoteResult(q,customer,trade);
+    renderQuoteResult(q,customer,trade,isComplex||q.isComplexJob);
   } catch(e){ document.getElementById('ai-loading').style.display='none'; document.getElementById('ai-output').style.display='block'; document.getElementById('ai-output').innerHTML='<div class="card" style="text-align:center;padding:24px;"><p style="color:var(--red);font-weight:600;">Couldn\'t build quote</p><p class="text-muted mt8">Check your connection and try again.</p><button class="btn btn-secondary mt12" onclick="buildQuote()">Retry</button></div>'; }
 }
 
-function renderQuoteResult(q,customer,trade){
+function renderQuoteResult(q,customer,trade,isComplex){
   document.getElementById('ai-loading').style.display='none';
   const u = currentUser || {};
   const bizName = u.business_name || u.name || '';
@@ -765,6 +769,7 @@ function renderQuoteResult(q,customer,trade){
         '<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div>'+
       '</div>'+
     '</div>'+
+    (isComplex?'<div style="background:#FFF3E0;border:2px solid #B35C00;border-radius:8px;padding:14px;margin-top:12px;"><strong style="color:#B35C00;font-size:13px;">⚠️ Complex Job Detected</strong><p style="font-size:13px;color:#4A5568;margin-top:6px;line-height:1.5;">This looks like a major structural project. Please review the materials estimate carefully — costs can vary significantly. Consider getting supplier quotes before sending this to the customer.</p></div>':'')+
     '<div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div>'+
     '<div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p></div>'+
     '<div class="send-actions">'+
