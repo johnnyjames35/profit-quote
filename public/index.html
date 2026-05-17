@@ -732,7 +732,7 @@ async function buildQuote(){
   const complexKeywords = ['loft','dormer','velux','extension','conversion','structural','steel beam','rsj','foundations','underpinning','knock through','rear extension','side extension','double storey','single storey','garage conversion','basement'];
   const isComplex = complexKeywords.some(kw => jobDesc.toLowerCase().includes(kw));
 
-  const prompt='You are a UK trades profit coach with expert knowledge of UK 2025 build costs. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\n\nUK 2025 COST BENCHMARKS — use these as reference:\n- Loft conversion (basic): £25,000-£35,000 materials+labour total\n- Loft conversion with dormer: £35,000-£55,000 total\n- Single storey extension: £20,000-£40,000 total\n- Double storey extension: £40,000-£80,000 total\n- Garage conversion: £10,000-£20,000 total\n- Full bathroom refit (mid): £4,000-£8,000 materials\n- Full kitchen refit (mid): £8,000-£15,000 materials\n- Roof replacement: £5,000-£12,000 materials\n- Full rewire (3-bed): £3,000-£5,000 materials\n\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"isComplexJob":false,"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules: estimate REALISTIC UK 2025 materials cost for the job type and spec level — do NOT underestimate. For structural or major projects use the benchmarks above. Apply '+markup+'% markup to materials. '+(vatRegistered?'Add 20% VAT to subtotal.':'No VAT.')+' profitPercent=(revenue-costs)/revenue*100. Set isComplexJob to true if this is a structural, major or high-value project.';
+  const prompt='You are a UK trades profit coach with expert knowledge of UK 2025 build costs. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\n\nUK 2025 COST BENCHMARKS — use these as reference:\n- Loft conversion (basic): £25,000-£35,000 materials+labour total\n- Loft conversion with dormer: £35,000-£55,000 total\n- Single storey extension: £20,000-£40,000 total\n- Double storey extension: £40,000-£80,000 total\n- Garage conversion: £10,000-£20,000 total\n- Full bathroom refit (mid): £4,000-£8,000 materials\n- Full kitchen refit (mid): £8,000-£15,000 materials\n- Roof replacement: £5,000-£12,000 materials\n- Full rewire (3-bed): £3,000-£5,000 materials\n\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"isComplexJob":false,"riskLevel":"low","riskLabel":"Low Risk — straightforward project","contingencyPercent":5,"contingencyAmount":0,"forgottenCosts":["Example cost 1","Example cost 2"],"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules:\n- Estimate REALISTIC UK 2025 materials cost — do NOT underestimate. Use benchmarks above for major jobs.\n- Apply '+markup+'% markup to materials.\n- '+(vatRegistered?'Add 20% VAT to subtotal.':'No VAT.')+'\n- profitPercent=(revenue-costs)/revenue*100\n- riskLevel must be "low", "medium" or "high"\n- low = simple decorating, tiling, small repairs. medium = bathroom/kitchen refit, roof repair. high = loft conversion, extension, structural work, full rewire.\n- riskLabel: short phrase e.g. "High Risk — structural variations common" or "Medium Risk — hidden issues possible"\n- contingencyPercent: 5 for low, 10 for medium, 15 for high\n- contingencyAmount: contingencyPercent/100 * subtotal (before VAT), rounded to nearest 50\n- forgottenCosts: array of 3-6 strings — costs specific to THIS job that tradespeople commonly forget e.g. scaffold hire, structural engineer, building control fees, skip permit, party wall agreement, asbestos survey, architect fees, material delivery, temporary works, protection boards. Be specific to the job type.\n- Set isComplexJob to true if riskLevel is medium or high.';
   try {
     const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
@@ -755,6 +755,21 @@ function renderQuoteResult(q,customer,trade,isComplex){
   const vatRow=vatRegistered?'<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£'+fmt(q.vatAmount)+'</span></div>':'';
   const lines=(q.lineItems||[]).map(l=>'<div class="quote-line"><span class="quote-line-label">'+esc(l.label)+'</span><span class="quote-line-amount">£'+fmt(l.amount)+'</span></div>').join('');
   window._protectionClause=q.protectionClause;
+  // Risk colour
+  const riskColour = q.riskLevel==='high'?'#C0392B':q.riskLevel==='medium'?'#B35C00':'#1A7A4A';
+  const riskBg = q.riskLevel==='high'?'#FDECEA':q.riskLevel==='medium'?'#FFF3E0':'#EBF7F0';
+  const riskEmoji = q.riskLevel==='high'?'🔴':q.riskLevel==='medium'?'🟠':'🟢';
+  const contingencyHtml = q.contingencyAmount>0 ?
+    '<div style="background:var(--blue-light);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;">'+
+      '<h4 style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;">📊 Suggested Contingency</h4>'+
+      '<p style="font-size:14px;color:var(--body);">Add <strong>'+q.contingencyPercent+'%</strong> contingency: <strong style="color:var(--navy);">+£'+fmt(q.contingencyAmount)+'</strong></p>'+
+      '<p style="font-size:12px;color:var(--muted);margin-top:4px;">Covers material price increases, hidden issues and delays.</p>'+
+    '</div>' : '';
+  const forgottenHtml = q.forgottenCosts&&q.forgottenCosts.length ?
+    '<div style="background:#F6F9FD;border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;">'+
+      '<h4 style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">⚠️ Commonly Forgotten Costs</h4>'+
+      q.forgottenCosts.map(c=>'<div style="font-size:13px;color:var(--body);padding:3px 0;">• '+esc(c)+'</div>').join('')+
+    '</div>' : '';
   document.getElementById('ai-output').style.display='block';
   document.getElementById('ai-output').innerHTML=
     '<div class="ai-result">'+
@@ -769,9 +784,15 @@ function renderQuoteResult(q,customer,trade,isComplex){
         '<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div>'+
       '</div>'+
     '</div>'+
-    (isComplex?'<div style="background:#FFF3E0;border:2px solid #B35C00;border-radius:8px;padding:14px;margin-top:12px;"><strong style="color:#B35C00;font-size:13px;">⚠️ Complex Job Detected</strong><p style="font-size:13px;color:#4A5568;margin-top:6px;line-height:1.5;">This looks like a major structural project. Please review the materials estimate carefully — costs can vary significantly. Consider getting supplier quotes before sending this to the customer.</p></div>':'')+
+    '<div style="background:'+riskBg+';border:1.5px solid '+riskColour+';border-radius:8px;padding:14px;margin-top:12px;">'+
+      '<div style="font-size:14px;font-weight:700;color:'+riskColour+';">'+riskEmoji+' '+esc(q.riskLabel||'')+'</div>'+
+    '</div>'+
+    contingencyHtml+
+    forgottenHtml+
+    (isComplex?'<div style="background:#FFF3E0;border:2px solid #B35C00;border-radius:8px;padding:14px;margin-top:12px;"><strong style="color:#B35C00;font-size:13px;">⚠️ Complex Job Detected</strong><p style="font-size:13px;color:#4A5568;margin-top:6px;line-height:1.5;">Please review the materials estimate carefully — costs can vary significantly. Consider getting supplier quotes before sending to the customer.</p></div>':'')+
     '<div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div>'+
     '<div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p></div>'+
+    '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding:8px;">Prepared by ProfitQuote AI · profitquote.co.uk</div>'+
     '<div class="send-actions">'+
       '<button class="btn btn-green" onclick="printCustomerQuote()">📄 Download Customer Quote</button>'+
     '</div>'+
