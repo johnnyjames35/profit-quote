@@ -3,185 +3,258 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>Profit Quote</title>
+<title>ProfitQuote — AI Quote Builder for Tradespeople</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --navy:#1B2B4B;--navy-mid:#2C3E5D;--blue:#4A6FA5;--blue-light:#EEF3FA;
-  --off-white:#F6F9FD;--white:#FFFFFF;--border:#DDE4EF;
-  --green:#1A7A4A;--green-bg:#EBF7F0;--amber:#B35C00;--amber-bg:#FFF3E0;
-  --red:#C0392B;--red-bg:#FDECEA;--muted:#8896A8;--body:#4A5568;--heading:#1B2B4B;
+  --navy:#0F1E35;--navy-mid:#1B2F4A;--navy-light:#243d5e;
+  --gold:#C9963A;--gold-light:#E8B96A;--gold-pale:#FDF6E9;
+  --blue:#3A6EA8;--blue-light:#EEF4FC;
+  --off-white:#F4F7FB;--white:#FFFFFF;--border:#DDE5EF;
+  --green:#1A7A4A;--green-bg:#EBF7F0;
+  --amber:#B35C00;--amber-bg:#FFF3E0;
+  --red:#C0392B;--red-bg:#FDECEA;
+  --muted:#8896A8;--body:#4A5568;--heading:#0F1E35;
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-  --radius:10px;--shadow:0 2px 12px rgba(27,43,75,0.10);--shadow-lg:0 8px 32px rgba(27,43,75,0.15);
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 2px 16px rgba(15,30,53,0.10);
+  --shadow-md:0 4px 24px rgba(15,30,53,0.14);
+  --shadow-lg:0 8px 40px rgba(15,30,53,0.18);
 }
 html,body{height:100%;font-family:var(--font);background:var(--off-white);color:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
-#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);box-shadow:0 0 40px rgba(0,0,0,0.12);}
-.topbar{background:var(--navy);padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.topbar-logo{font-weight:700;font-size:17px;color:var(--white);letter-spacing:-0.03em;}
-.topbar-logo span{color:#7BAFD4;}
-.topbar-user{width:34px;height:34px;background:rgba(255,255,255,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:13px;font-weight:600;cursor:pointer;border:none;}
+#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);box-shadow:0 0 60px rgba(0,0,0,0.15);}
+
+/* ── TOPBAR ── */
+.topbar{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);padding:16px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid rgba(201,150,58,0.3);}
+.topbar-logo{display:flex;align-items:center;gap:9px;}
+.topbar-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(201,150,58,0.4);}
+.topbar-logo-icon svg{width:18px;height:18px;fill:var(--navy);}
+.topbar-logo-text{font-weight:700;font-size:17px;color:var(--white);letter-spacing:-0.03em;}
+.topbar-logo-text span{color:var(--gold-light);}
+.topbar-user{width:36px;height:36px;background:rgba(201,150,58,0.2);border:1.5px solid rgba(201,150,58,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold-light);font-size:13px;font-weight:700;cursor:pointer;border-style:solid;}
+
+/* ── LAYOUT ── */
 .page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-.bottom-nav{background:var(--white);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding:0 0 env(safe-area-inset-bottom);}
+.bottom-nav{background:var(--white);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding:0 0 env(safe-area-inset-bottom);box-shadow:0 -4px 20px rgba(15,30,53,0.06);}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;border:none;background:none;gap:4px;}
 .nav-item svg{width:22px;height:22px;stroke-width:1.8;stroke:var(--muted);fill:none;transition:stroke 0.15s;}
-.nav-item span{font-size:10.5px;font-weight:500;color:var(--muted);transition:color 0.15s;letter-spacing:0.02em;}
-.nav-item.active svg{stroke:var(--navy);}
-.nav-item.active span{color:var(--navy);font-weight:700;}
-.section{display:none;padding:0 0 24px;}
+.nav-item span{font-size:10px;font-weight:500;color:var(--muted);transition:color 0.15s;letter-spacing:0.03em;text-transform:uppercase;}
+.nav-item.active svg{stroke:var(--gold);}
+.nav-item.active span{color:var(--gold);font-weight:700;}
+
+/* ── SECTIONS ── */
+.section{display:none;padding:0 0 32px;}
 .section.active{display:block;}
-.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:0 16px 12px;box-shadow:var(--shadow);}
-.card-title{font-size:13px;font-weight:700;color:var(--heading);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;}
-.section-header{padding:20px 16px 4px;}
-.section-header h2{font-size:22px;font-weight:700;color:var(--heading);letter-spacing:-0.03em;}
-.section-header p{font-size:14px;color:var(--muted);margin-top:3px;}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:15px;padding:13px 20px;border-radius:8px;border:none;cursor:pointer;transition:all 0.15s;width:100%;}
-.btn-primary{background:var(--navy);color:var(--white);}
-.btn-primary:hover{background:var(--navy-mid);}
-.btn-primary:disabled{background:var(--muted);cursor:not-allowed;}
-.btn-secondary{background:var(--blue-light);color:var(--navy);border:1px solid var(--border);}
-.btn-secondary:hover{background:#e0eaf8;}
-.btn-sm{padding:8px 14px;font-size:13px;border-radius:6px;width:auto;}
-.btn-red{background:var(--red-bg);color:var(--red);border:1px solid #f0b8b8;}
-.btn-green{background:var(--green);color:var(--white);}
-.form-group{margin-bottom:14px;}
-.form-group label{display:block;font-size:13px;font-weight:600;color:var(--heading);margin-bottom:5px;}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:7px;font-size:15px;font-family:var(--font);color:var(--heading);background:var(--blue-light);transition:border-color 0.15s;outline:none;-webkit-appearance:none;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(74,111,165,0.12);}
-.form-group textarea{resize:vertical;min-height:90px;line-height:1.5;}
-.form-hint{font-size:12px;color:var(--muted);margin-top:4px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.step-indicator{display:flex;align-items:center;padding:14px 16px 0;gap:6px;}
-.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.2s;}
-.step-dot.done{background:var(--green);}
-.step-dot.active{background:var(--navy);width:24px;border-radius:4px;}
-.step-label{font-size:12px;color:var(--muted);margin-left:auto;font-weight:500;}
-.spec-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.spec-btn{border:1.5px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;background:var(--white);transition:all 0.15s;}
-.spec-btn.selected{border-color:var(--navy);background:var(--blue-light);}
-.spec-btn .spec-name{font-size:13px;font-weight:700;color:var(--heading);}
-.spec-btn .spec-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-.skip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.skip-type{border:1.5px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;background:var(--white);transition:all 0.15s;}
-.skip-type.selected{border-color:var(--navy);background:var(--blue-light);}
-.skip-type .skip-name{font-size:13px;font-weight:700;color:var(--heading);}
-.skip-type .skip-price{font-size:12px;color:var(--green);font-weight:600;margin-top:2px;}
-.skip-type .skip-sub{font-size:11px;color:var(--muted);margin-top:1px;}
-.ai-result{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);margin:0 16px;box-shadow:var(--shadow-lg);}
-.ai-result-header{background:var(--navy);padding:14px 16px;border-radius:calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0;}
-.ai-result-branding{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.ai-result-logo{font-size:15px;font-weight:700;color:var(--white);letter-spacing:-0.03em;}
-.ai-result-logo span{color:#7BAFD4;}
-.ai-result-badge{font-size:11px;background:rgba(123,175,212,0.25);color:#7BAFD4;padding:3px 8px;border-radius:10px;font-weight:600;}
-.ai-result-builder{border-top:1px solid rgba(255,255,255,0.15);padding-top:10px;margin-top:4px;}
-.ai-result-builder-name{font-size:14px;font-weight:700;color:var(--white);}
-.ai-result-builder-details{font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;}
-.ai-result-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.8);margin-top:6px;}
-.ai-result-body{padding:16px;}
-.quote-line{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:10px;}
-.quote-line:last-child{border-bottom:none;}
-.quote-line-label{font-size:14px;color:var(--body);flex:1;}
-.quote-line-amount{font-size:14px;font-weight:600;color:var(--heading);white-space:nowrap;}
-.quote-total-row{background:var(--navy);margin:-16px -16px -16px;padding:16px;border-radius:0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);margin-top:12px;}
-.quote-total-label{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:2px;}
-.quote-total-amount{font-size:28px;font-weight:700;color:var(--white);letter-spacing:-0.04em;}
-.quote-profit-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(26,122,74,0.25);color:#5de0a0;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;margin-top:6px;}
-.loading-ai{padding:32px 16px;text-align:center;}
-.loading-ai .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-ai p{font-size:14px;color:var(--muted);}
-.coach-box{background:var(--blue-light);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;}
-.coach-box h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;}
-.coach-box p{font-size:13px;color:var(--body);line-height:1.5;}
-.protection-box{background:#fffbeb;border:1px solid #f0d0a0;border-radius:8px;padding:14px;margin-top:10px;}
-.protection-box h4{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px;}
-.protection-box p{font-size:13px;color:var(--body);line-height:1.5;}
-.issue-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;}
-.issue-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;background:var(--white);transition:all 0.15s;text-align:left;}
-.issue-card:hover{border-color:var(--blue);box-shadow:var(--shadow);}
-.issue-card .ic-icon{font-size:24px;margin-bottom:8px;}
-.issue-card .ic-name{font-size:13px;font-weight:700;color:var(--heading);}
-.issue-card .ic-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
-.asbestos-warning{background:#fff0f0;border:2px solid var(--red);border-radius:var(--radius);padding:16px;margin:0 16px;}
-.asbestos-warning h3{font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px;}
-.asbestos-warning p{font-size:13.5px;color:var(--body);line-height:1.5;margin-bottom:8px;}
-.asbestos-steps{counter-reset:step;list-style:none;padding:0;}
-.asbestos-steps li{font-size:13px;color:var(--body);padding:5px 0 5px 24px;position:relative;}
-.asbestos-steps li::before{content:counter(step);counter-increment:step;position:absolute;left:0;width:16px;height:16px;background:var(--red);color:white;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;top:7px;}
-.setup-section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:16px 16px 8px;}
-.rate-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--white);}
-.rate-row:last-child{border-bottom:none;}
-.rate-label{font-size:14px;color:var(--body);font-weight:500;}
-.rate-input-wrap{display:flex;align-items:center;gap:5px;}
-.rate-prefix{font-size:14px;color:var(--muted);font-weight:600;}
-.rate-input{width:80px;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;color:var(--heading);text-align:right;background:var(--blue-light);font-family:var(--font);}
-.rate-input:focus{outline:none;border-color:var(--blue);}
-.profile-hero{background:var(--blue-light);border-bottom:1px solid var(--border);padding:20px 16px;display:flex;align-items:center;gap:14px;}
-.profile-avatar{width:52px;height:52px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--white);flex-shrink:0;}
-.profile-name{font-size:17px;font-weight:700;color:var(--heading);}
-.profile-trade{font-size:13px;color:var(--muted);}
-.profile-plan{display:inline-flex;align-items:center;gap:4px;background:var(--navy);color:var(--white);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;margin-top:4px;}
-.home-hero{background:linear-gradient(135deg,var(--navy) 0%,#243a5e 100%);padding:24px 16px 28px;color:var(--white);}
-.home-hero h1{font-size:20px;font-weight:700;letter-spacing:-0.03em;margin-bottom:4px;}
-.home-hero p{font-size:14px;color:rgba(255,255,255,0.65);}
-.home-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;margin:16px 16px 14px;box-shadow:var(--shadow);}
-.stat-box{background:var(--white);padding:14px 10px;text-align:center;}
-.stat-box .stat-num{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-0.04em;line-height:1;}
-.stat-box .stat-label{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500;}
-.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.qa-btn{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 14px;display:flex;flex-direction:column;gap:7px;cursor:pointer;text-align:left;transition:all 0.15s;box-shadow:var(--shadow);}
-.qa-btn:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(74,111,165,0.12);}
-.qa-icon{width:36px;height:36px;background:var(--blue-light);border-radius:8px;display:flex;align-items:center;justify-content:center;}
-.qa-icon svg{width:18px;height:18px;stroke:var(--blue);stroke-width:2;fill:none;}
+
+/* ── HOME HERO ── */
+.home-hero{background:linear-gradient(145deg,var(--navy) 0%,var(--navy-light) 60%,#2a4a6e 100%);padding:28px 20px 36px;position:relative;overflow:hidden;}
+.home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,150,58,0.15) 0%,transparent 70%);border-radius:50%;}
+.home-hero::after{content:'';position:absolute;bottom:-20px;left:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(201,150,58,0.08) 0%,transparent 70%);border-radius:50%;}
+.home-hero h1{font-size:21px;font-weight:700;color:var(--white);letter-spacing:-0.03em;margin-bottom:4px;position:relative;}
+.home-hero p{font-size:14px;color:rgba(255,255,255,0.6);position:relative;}
+.home-hero-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(201,150,58,0.2);border:1px solid rgba(201,150,58,0.4);color:var(--gold-light);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:0.05em;}
+
+/* ── STAT CARDS ── */
+.home-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:0 16px;margin-top:-20px;position:relative;z-index:1;}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:16px 12px;text-align:center;box-shadow:var(--shadow-md);border:1px solid var(--border);}
+.stat-card .stat-num{font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-0.05em;line-height:1;}
+.stat-card .stat-label{font-size:10px;color:var(--muted);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;}
+.stat-card .stat-icon{font-size:16px;margin-bottom:6px;}
+
+/* ── SECTION LABELS ── */
+.section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:20px 16px 10px;}
+
+/* ── QUICK ACTION CARDS ── */
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;}
+.qa-btn{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;text-align:left;transition:all 0.2s;box-shadow:var(--shadow);}
+.qa-btn:hover{border-color:var(--gold);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.qa-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.qa-icon svg{width:18px;height:18px;stroke-width:2;fill:none;}
+.qa-icon-gold{background:linear-gradient(135deg,#FDF0D5,#FCEAB5);}
+.qa-icon-gold svg{stroke:var(--gold);}
+.qa-icon-red{background:#FFF0EE;}
+.qa-icon-red svg{stroke:var(--red);}
+.qa-icon-blue{background:var(--blue-light);}
+.qa-icon-blue svg{stroke:var(--blue);}
+.qa-icon-green{background:var(--green-bg);}
+.qa-icon-green svg{stroke:var(--green);}
 .qa-label{font-size:13px;font-weight:700;color:var(--heading);}
 .qa-sub{font-size:11.5px;color:var(--muted);}
-.qhi-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin:0 16px 10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:box-shadow 0.15s;}
-.qhi-item:hover{box-shadow:var(--shadow-lg);}
+
+/* ── RECENT QUOTE ITEMS ── */
+.qhi-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin:0 16px 10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);}
+.qhi-item:hover{box-shadow:var(--shadow-md);border-color:var(--gold);transform:translateY(-1px);}
 .qhi-left{flex:1;min-width:0;}
 .qhi-title{font-size:14px;font-weight:700;color:var(--heading);}
 .qhi-meta{font-size:12px;color:var(--muted);margin-top:2px;}
 .qhi-right{text-align:right;flex-shrink:0;}
-.qhi-amount{font-size:16px;font-weight:700;color:var(--navy);}
+.qhi-amount{font-size:16px;font-weight:800;color:var(--navy);}
 .qhi-profit{font-size:12px;color:var(--green);font-weight:600;}
-.empty-state{text-align:center;padding:48px 32px;}
-.empty-state .es-icon{font-size:40px;margin-bottom:12px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:15px;padding:14px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all 0.2s;width:100%;letter-spacing:-0.01em;}
+.btn-primary{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);color:var(--white);box-shadow:0 4px 14px rgba(15,30,53,0.25);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(15,30,53,0.3);}
+.btn-primary:disabled{background:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-gold{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%);color:var(--navy);box-shadow:0 4px 14px rgba(201,150,58,0.3);font-weight:700;}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,150,58,0.4);}
+.btn-secondary{background:var(--blue-light);color:var(--navy);border:1px solid var(--border);}
+.btn-secondary:hover{background:#e0eaf8;}
+.btn-green{background:linear-gradient(135deg,var(--green) 0%,#22a05f 100%);color:var(--white);box-shadow:0 4px 14px rgba(26,122,74,0.25);}
+.btn-green:hover{transform:translateY(-1px);}
+.btn-red{background:var(--red-bg);color:var(--red);border:1px solid #f0b8b8;}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:6px;width:auto;}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;font-weight:700;color:var(--heading);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);color:var(--heading);background:var(--off-white);transition:all 0.15s;outline:none;-webkit-appearance:none;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,150,58,0.12);background:var(--white);}
+.form-group textarea{resize:vertical;min-height:90px;line-height:1.5;}
+.form-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── STEP INDICATOR ── */
+.step-indicator{display:flex;align-items:center;padding:16px 16px 0;gap:6px;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all 0.2s;}
+.step-dot.done{background:var(--gold);}
+.step-dot.active{background:var(--navy);width:24px;border-radius:4px;}
+.step-label{font-size:12px;color:var(--muted);margin-left:auto;font-weight:600;}
+
+/* ── SPEC / SKIP BUTTONS ── */
+.spec-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.spec-btn{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 8px;text-align:center;cursor:pointer;background:var(--white);transition:all 0.15s;}
+.spec-btn.selected{border-color:var(--gold);background:var(--gold-pale);box-shadow:0 0 0 3px rgba(201,150,58,0.12);}
+.spec-btn .spec-name{font-size:13px;font-weight:700;color:var(--heading);}
+.spec-btn .spec-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.skip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.skip-type{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;background:var(--white);transition:all 0.15s;}
+.skip-type.selected{border-color:var(--gold);background:var(--gold-pale);}
+.skip-type .skip-name{font-size:13px;font-weight:700;color:var(--heading);}
+.skip-type .skip-price{font-size:12px;color:var(--green);font-weight:600;margin-top:2px;}
+.skip-type .skip-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+
+/* ── QUOTE RESULT ── */
+.ai-result{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin:0 16px;box-shadow:var(--shadow-lg);overflow:hidden;}
+.ai-result-header{background:linear-gradient(145deg,var(--navy) 0%,var(--navy-mid) 100%);padding:18px 18px 14px;border-bottom:2px solid rgba(201,150,58,0.5);}
+.ai-result-branding{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ai-result-logo{display:flex;align-items:center;gap:7px;}
+.ai-result-logo-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.ai-result-logo-icon svg{width:14px;height:14px;fill:var(--navy);}
+.ai-result-logo-text{font-size:14px;font-weight:700;color:var(--white);letter-spacing:-0.02em;}
+.ai-result-logo-text span{color:var(--gold-light);}
+.ai-result-badge{font-size:10px;background:rgba(201,150,58,0.2);color:var(--gold-light);padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:0.05em;border:1px solid rgba(201,150,58,0.3);}
+.ai-result-ref{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;}
+.ai-result-builder{border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;margin-top:4px;}
+.ai-result-builder-name{font-size:15px;font-weight:700;color:var(--white);}
+.ai-result-builder-details{font-size:12px;color:rgba(255,255,255,0.55);margin-top:2px;}
+.ai-result-customer{font-size:13px;color:rgba(255,255,255,0.75);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);}
+.ai-result-body{padding:18px;}
+.quote-line{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;}
+.quote-line:last-child{border-bottom:none;}
+.quote-line-label{font-size:14px;color:var(--body);flex:1;}
+.quote-line-amount{font-size:14px;font-weight:700;color:var(--heading);white-space:nowrap;}
+.quote-subtotal-row{display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--border);margin-top:4px;}
+.quote-subtotal-label{font-size:14px;font-weight:600;color:var(--heading);}
+.quote-subtotal-amount{font-size:14px;font-weight:700;color:var(--heading);}
+.quote-total-row{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);margin:-18px -18px -18px;padding:18px;margin-top:14px;border-top:2px solid rgba(201,150,58,0.4);}
+.quote-total-label{font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;}
+.quote-total-amount{font-size:32px;font-weight:800;color:var(--white);letter-spacing:-0.05em;}
+.quote-profit-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(26,122,74,0.25);color:#5de0a0;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-top:8px;}
+
+/* ── INFO BOXES ── */
+.loading-ai{padding:40px 16px;text-align:center;}
+.loading-ai .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-ai p{font-size:14px;color:var(--muted);font-weight:500;}
+.coach-box{background:linear-gradient(135deg,#EEF4FC,#F4F7FB);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--radius-sm);padding:14px;margin-top:12px;}
+.coach-box h4{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;}
+.coach-box p{font-size:13px;color:var(--body);line-height:1.6;}
+.protection-box{background:var(--gold-pale);border:1px solid rgba(201,150,58,0.3);border-left:3px solid var(--gold);border-radius:var(--radius-sm);padding:14px;margin-top:10px;}
+.protection-box h4{font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;}
+.protection-box p{font-size:13px;color:var(--body);line-height:1.5;}
+.send-actions{display:flex;gap:10px;margin-top:14px;padding:0 16px;}
+
+/* ── SETUP ── */
+.setup-section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:20px 16px 8px;}
+.rate-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--white);}
+.rate-row:last-child{border-bottom:none;}
+.rate-label{font-size:14px;color:var(--body);font-weight:500;}
+.rate-input-wrap{display:flex;align-items:center;gap:5px;}
+.rate-prefix{font-size:14px;color:var(--muted);font-weight:600;}
+.rate-input{width:82px;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-weight:700;color:var(--heading);text-align:right;background:var(--off-white);font-family:var(--font);}
+.rate-input:focus{outline:none;border-color:var(--gold);}
+.profile-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);border-bottom:2px solid rgba(201,150,58,0.3);padding:22px 18px;display:flex;align-items:center;gap:16px;}
+.profile-avatar{width:54px;height:54px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--navy);flex-shrink:0;box-shadow:0 4px 12px rgba(201,150,58,0.4);}
+.profile-name{font-size:17px;font-weight:700;color:var(--white);}
+.profile-trade{font-size:13px;color:rgba(255,255,255,0.6);}
+.profile-plan{display:inline-flex;align-items:center;gap:4px;background:rgba(201,150,58,0.2);border:1px solid rgba(201,150,58,0.4);color:var(--gold-light);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:5px;}
+.setup-text-input{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--heading);background:var(--off-white);outline:none;}
+.setup-text-input:focus{border-color:var(--gold);}
+
+/* ── ISSUES ── */
+.issue-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;}
+.issue-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;background:var(--white);transition:all 0.15s;text-align:left;box-shadow:var(--shadow);}
+.issue-card:hover{border-color:var(--gold);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.issue-card .ic-icon{font-size:26px;margin-bottom:8px;}
+.issue-card .ic-name{font-size:13px;font-weight:700;color:var(--heading);}
+.issue-card .ic-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.asbestos-warning{background:#fff0f0;border:2px solid var(--red);border-radius:var(--radius);padding:18px;margin:0 16px;}
+.asbestos-warning h3{font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px;}
+.asbestos-warning p{font-size:13.5px;color:var(--body);line-height:1.5;margin-bottom:8px;}
+.asbestos-steps{counter-reset:step;list-style:none;padding:0;}
+.asbestos-steps li{font-size:13px;color:var(--body);padding:5px 0 5px 26px;position:relative;}
+.asbestos-steps li::before{content:counter(step);counter-increment:step;position:absolute;left:0;width:18px;height:18px;background:var(--red);color:white;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;top:6px;}
+
+/* ── MISC ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:0 16px 12px;box-shadow:var(--shadow);}
+.card-title{font-size:11px;font-weight:700;color:var(--heading);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px;}
+.section-header{padding:22px 16px 6px;}
+.section-header h2{font-size:22px;font-weight:800;color:var(--heading);letter-spacing:-0.04em;}
+.section-header p{font-size:14px;color:var(--muted);margin-top:3px;}
+.empty-state{text-align:center;padding:52px 32px;}
+.empty-state .es-icon{font-size:44px;margin-bottom:14px;}
 .empty-state h3{font-size:16px;font-weight:700;color:var(--heading);margin-bottom:6px;}
 .empty-state p{font-size:14px;color:var(--muted);line-height:1.5;}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:var(--white);padding:11px 20px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:all 0.25s;z-index:999;white-space:nowrap;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:var(--white);padding:12px 22px;border-radius:24px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:all 0.25s;z-index:999;white-space:nowrap;box-shadow:var(--shadow-md);border:1px solid rgba(201,150,58,0.3);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.pill-toggle{display:flex;background:var(--blue-light);border-radius:8px;padding:3px;gap:3px;}
+.pill-toggle{display:flex;background:var(--off-white);border-radius:var(--radius-sm);padding:3px;gap:3px;border:1px solid var(--border);}
 .pill-toggle button{flex:1;padding:7px 12px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
 .pill-toggle button.active{background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
-.dim-convert{font-size:12px;color:var(--blue);margin-top:4px;font-weight:500;min-height:18px;}
-.send-actions{display:flex;gap:10px;margin-top:14px;}
-#auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;}
-#auth-screen.hidden{display:none;}
-.auth-box{background:var(--white);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;}
-.auth-logo{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-0.03em;margin-bottom:4px;}
-.auth-logo span{color:#4A6FA5;}
-.auth-sub{font-size:14px;color:var(--muted);margin-bottom:24px;}
-.auth-toggle{font-size:14px;color:var(--blue);text-align:center;margin-top:16px;cursor:pointer;font-weight:500;}
-.auth-error{background:var(--red-bg);color:var(--red);font-size:13px;padding:10px 12px;border-radius:7px;margin-bottom:12px;display:none;}
-.mt8{margin-top:8px;} .mt12{margin-top:12px;} .mt16{margin-top:16px;} .mb12{margin-bottom:12px;}
+.dim-convert{font-size:12px;color:var(--gold);margin-top:4px;font-weight:600;min-height:18px;}
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}.mt16{margin-top:16px;}.mb12{margin-bottom:12px;}
 .flex-between{display:flex;align-items:center;justify-content:space-between;}
 .text-muted{color:var(--muted);font-size:13px;}
 .px16{padding-left:16px;padding-right:16px;}
-.setup-text-input{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:var(--font);color:var(--heading);background:var(--blue-light);outline:none;}
-.setup-text-input:focus{border-color:var(--blue);}
+.divider{height:1px;background:var(--border);margin:4px 0;}
 
-/* PDF print styles */
-@media print {
-  body * { visibility: hidden; }
-  #pdf-preview, #pdf-preview * { visibility: visible; }
-  #pdf-preview { position: fixed; left: 0; top: 0; width: 100%; }
-}
+/* ── AUTH ── */
+#auth-screen{position:fixed;inset:0;background:linear-gradient(145deg,var(--navy) 0%,#0a1525 100%);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;}
+#auth-screen.hidden{display:none;}
+.auth-box{background:var(--white);border-radius:20px;padding:32px 28px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,0.4);}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.auth-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.auth-logo-icon svg{width:20px;height:20px;fill:var(--navy);}
+.auth-logo-text{font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-0.04em;}
+.auth-logo-text span{color:var(--gold);}
+.auth-tagline{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.auth-toggle{font-size:14px;color:var(--blue);text-align:center;margin-top:16px;cursor:pointer;font-weight:500;}
+.auth-error{background:var(--red-bg);color:var(--red);font-size:13px;padding:10px 12px;border-radius:7px;margin-bottom:12px;display:none;}
+.powered-by{text-align:center;margin-top:20px;font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.05em;}
 </style>
 </head>
 <body>
 
+<!-- AUTH -->
 <div id="auth-screen">
   <div class="auth-box">
-    <div class="auth-logo">Profit<span>Quote</span></div>
-    <div class="auth-sub" id="auth-sub">Sign in to your account</div>
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="auth-logo-text">Profit<span>Quote</span></div>
+    </div>
+    <div class="auth-tagline" id="auth-sub">Sign in to your account</div>
     <div class="auth-error" id="auth-error"></div>
     <div id="register-fields" style="display:none;">
       <div class="form-group"><label>Your name</label><input type="text" id="reg-name" placeholder="Dave Smith"/></div>
@@ -199,52 +272,56 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
     <button class="btn btn-primary" id="auth-btn" onclick="doAuth()">Sign In</button>
     <div class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register free</div>
   </div>
+  <div class="powered-by">POWERED BY AI · BUILT FOR UK TRADESPEOPLE</div>
 </div>
 
 <div id="app">
   <div class="topbar">
-    <div class="topbar-logo">Profit<span>Quote</span></div>
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="topbar-logo-text">Profit<span>Quote</span></div>
+    </div>
     <button class="topbar-user" id="user-initials" onclick="showToast('Tap Setup to manage your account')">?</button>
   </div>
+
   <div class="page">
 
     <!-- HOME -->
     <div class="section active" id="sec-home">
       <div class="home-hero">
+        <div class="home-hero-badge">⚡ AI-Powered</div>
         <h1 id="home-greeting">Good morning 👋</h1>
         <p id="home-date"></p>
       </div>
       <div class="home-stats">
-        <div class="stat-box"><div class="stat-num" id="stat-quotes">0</div><div class="stat-label">Quotes sent</div></div>
-        <div class="stat-box"><div class="stat-num" id="stat-value">£0</div><div class="stat-label">Total value</div></div>
-        <div class="stat-box"><div class="stat-num" id="stat-profit">0%</div><div class="stat-label">Avg margin</div></div>
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-num" id="stat-quotes">0</div><div class="stat-label">Quotes</div></div>
+        <div class="stat-card"><div class="stat-icon">💷</div><div class="stat-num" id="stat-value">£0</div><div class="stat-label">Value</div></div>
+        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-num" id="stat-profit">0%</div><div class="stat-label">Margin</div></div>
       </div>
-      <div style="padding:0 16px 4px;" class="flex-between">
-        <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Quick Actions</div>
+      <div class="section-label">Quick Actions</div>
+      <div class="quick-actions">
+        <button class="qa-btn" onclick="goToQuoteBuilder()">
+          <div class="qa-icon qa-icon-gold"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div class="qa-label">New Quote</div><div class="qa-sub">AI-powered builder</div>
+        </button>
+        <button class="qa-btn" onclick="switchTab('issues')">
+          <div class="qa-icon qa-icon-red"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="qa-label">Mid-Job Issue</div><div class="qa-sub">Log a variation</div>
+        </button>
+        <button class="qa-btn" onclick="switchTab('quotes')">
+          <div class="qa-icon qa-icon-blue"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+          <div class="qa-label">All Quotes</div><div class="qa-sub">History &amp; drafts</div>
+        </button>
+        <button class="qa-btn" onclick="switchTab('setup')">
+          <div class="qa-icon qa-icon-green"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <div class="qa-label">My Rates</div><div class="qa-sub">Labour &amp; skip prices</div>
+        </button>
       </div>
-      <div style="padding:0 16px 16px;">
-        <div class="quick-actions">
-          <button class="qa-btn" onclick="goToQuoteBuilder()">
-            <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-            <div class="qa-label">New Quote</div><div class="qa-sub">AI-powered builder</div>
-          </button>
-          <button class="qa-btn" onclick="switchTab('issues')">
-            <div class="qa-icon" style="background:#fff0f0;"><svg viewBox="0 0 24 24" style="stroke:#C0392B;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-            <div class="qa-label">Mid-Job Issue</div><div class="qa-sub">Log a variation</div>
-          </button>
-          <button class="qa-btn" onclick="switchTab('quotes')">
-            <div class="qa-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
-            <div class="qa-label">All Quotes</div><div class="qa-sub">History &amp; drafts</div>
-          </button>
-          <button class="qa-btn" onclick="switchTab('setup')">
-            <div class="qa-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-            <div class="qa-label">My Rates</div><div class="qa-sub">Labour &amp; skip prices</div>
-          </button>
-        </div>
-      </div>
-      <div style="padding:0 16px 8px;" class="flex-between">
-        <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Recent Quotes</div>
-        <button style="font-size:12px;color:var(--blue);font-weight:600;background:none;border:none;cursor:pointer;" onclick="switchTab('quotes')">See all</button>
+      <div class="flex-between" style="padding:20px 16px 10px;">
+        <div class="section-label" style="padding:0;">Recent Quotes</div>
+        <button style="font-size:12px;color:var(--gold);font-weight:600;background:none;border:none;cursor:pointer;" onclick="switchTab('quotes')">See all →</button>
       </div>
       <div id="home-recent"></div>
     </div>
@@ -254,24 +331,25 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
       <div class="section-header"><h2>Quotes</h2><p>All your saved quotes</p></div>
       <div style="padding:12px 16px;">
         <button class="btn btn-primary" onclick="goToQuoteBuilder()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Quote
         </button>
       </div>
       <div id="quotes-list"></div>
     </div>
 
-    <!-- QUOTE BUILDER -->
+    <!-- BUILDER -->
     <div class="section" id="sec-builder">
       <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 0;">
-        <button onclick="exitBuilder()" style="background:var(--blue-light);border:none;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;">← Back</button>
-        <div style="font-size:16px;font-weight:700;color:var(--heading);">New Quote</div>
+        <button onclick="exitBuilder()" style="background:var(--off-white);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;">← Back</button>
+        <div style="font-size:17px;font-weight:800;color:var(--heading);letter-spacing:-0.03em;">New Quote</div>
       </div>
       <div class="step-indicator mt8">
         <div class="step-dot active" id="dot-1"></div><div class="step-dot" id="dot-2"></div>
         <div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div><div class="step-dot" id="dot-5"></div>
         <div class="step-label" id="step-label">Step 1 of 5</div>
       </div>
+
       <div id="step-1" style="padding:16px;">
         <div class="card-title" style="margin-bottom:8px;">Describe the Job</div>
         <p class="text-muted mb12">Tell the AI what needs doing — plain English is fine.</p>
@@ -353,7 +431,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
         <div class="form-group"><label>Other costs (optional)</label><input type="text" id="q-other" placeholder="e.g. Subcontractor £300"/></div>
         <div style="display:flex;gap:10px;margin-top:4px;">
           <button class="btn btn-secondary" onclick="nextStep(3)" style="flex:0 0 80px;">← Back</button>
-          <button class="btn btn-primary" onclick="buildQuote()">
+          <button class="btn btn-gold" onclick="buildQuote()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
             Build AI Quote
           </button>
@@ -371,11 +449,11 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
       <div class="section-header"><h2>Mid-Job Issues</h2><p>Log a variation or unexpected problem</p></div>
       <div id="issues-home">
         <div style="padding:0 16px 12px;"><p class="text-muted" style="font-size:14px;line-height:1.5;">Something come up on site? Pick the issue type and the AI will generate a variation notice.</p></div>
-        <div style="padding:0 16px 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Common Issues</div>
+        <div class="section-label">Common Issues</div>
         <div class="issue-type-grid mt8">
           <button class="issue-card" onclick="selectIssue('leak')"><div class="ic-icon">💧</div><div class="ic-name">Leak Found</div><div class="ic-sub">Hidden pipe or water damage</div></button>
           <button class="issue-card" onclick="selectIssue('rotten')"><div class="ic-icon">🪵</div><div class="ic-name">Rotten Subfloor</div><div class="ic-sub">Joists, boards, substrate</div></button>
-          <button class="issue-card" onclick="selectIssue('extra-labour')"><div class="ic-icon">⏱️</div><div class="ic-name">Extra Labour</div><div class="ic-sub">Job taking longer than scoped</div></button>
+          <button class="issue-card" onclick="selectIssue('extra-labour')"><div class="ic-icon">⏱️</div><div class="ic-name">Extra Labour</div><div class="ic-sub">Job taking longer</div></button>
           <button class="issue-card" onclick="selectIssue('materials')"><div class="ic-icon">🧱</div><div class="ic-name">Extra Materials</div><div class="ic-sub">More needed than quoted</div></button>
           <button class="issue-card" onclick="selectIssue('scope')"><div class="ic-icon">📐</div><div class="ic-name">Scope Creep</div><div class="ic-sub">Customer requesting extras</div></button>
           <button class="issue-card" onclick="selectIssue('breakage')"><div class="ic-icon">💥</div><div class="ic-name">Breakage / Damage</div><div class="ic-sub">Accidental damage on site</div></button>
@@ -386,7 +464,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
       </div>
       <div id="issue-form" style="display:none;padding:16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <button onclick="closeIssueForm()" style="background:var(--blue-light);border:none;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;">← Back</button>
+          <button onclick="closeIssueForm()" style="background:var(--off-white);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;">← Back</button>
           <div style="font-size:16px;font-weight:700;color:var(--heading);" id="issue-form-title">Log Issue</div>
         </div>
         <div id="asbestos-panel" style="display:none;">
@@ -427,10 +505,13 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 
     <!-- SETUP -->
     <div class="section" id="sec-setup">
-      <div class="section-header"><h2>Setup</h2><p>Your rates, profile &amp; preferences</p></div>
-      <div class="profile-hero mt8">
+      <div class="profile-hero">
         <div class="profile-avatar" id="setup-avatar">?</div>
-        <div><div class="profile-name" id="setup-name">Loading…</div><div class="profile-trade" id="setup-trade"></div><div class="profile-plan">⭐ Solo Plan</div></div>
+        <div>
+          <div class="profile-name" id="setup-name">Loading…</div>
+          <div class="profile-trade" id="setup-trade"></div>
+          <div class="profile-plan">⭐ Solo Plan</div>
+        </div>
       </div>
       <div class="setup-section-label">Your Business Details</div>
       <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
@@ -470,6 +551,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
     </div>
 
   </div>
+
   <nav class="bottom-nav">
     <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span>
@@ -489,6 +571,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 <div class="toast" id="toast"></div>
 
 <script>
+
 const API = '';
 let token = localStorage.getItem('pq-token');
 let currentUser = null;
@@ -819,48 +902,56 @@ function renderQuoteResult(q,customer,trade,isComplex){
   const vatRow=vatRegistered?'<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£'+fmt(q.vatAmount)+'</span></div>':'';
   const lines=(q.lineItems||[]).map(l=>'<div class="quote-line"><span class="quote-line-label">'+esc(l.label)+'</span><span class="quote-line-amount">£'+fmt(l.amount)+'</span></div>').join('');
   window._protectionClause=q.protectionClause;
-  // Risk colour
   const riskColour = q.riskLevel==='high'?'#C0392B':q.riskLevel==='medium'?'#B35C00':'#1A7A4A';
   const riskBg = q.riskLevel==='high'?'#FDECEA':q.riskLevel==='medium'?'#FFF3E0':'#EBF7F0';
   const riskEmoji = q.riskLevel==='high'?'🔴':q.riskLevel==='medium'?'🟠':'🟢';
+  const refNum = 'PQ-'+Date.now().toString(36).toUpperCase().slice(-6);
+  window._lastQuoteRef = refNum;
   const contingencyHtml = q.contingencyAmount>0 ?
-    '<div style="background:var(--blue-light);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;">'+
-      '<h4 style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;">📊 Suggested Contingency</h4>'+
-      '<p style="font-size:14px;color:var(--body);">Add <strong>'+q.contingencyPercent+'%</strong> contingency: <strong style="color:var(--navy);">+£'+fmt(q.contingencyAmount)+'</strong></p>'+
+    '<div style="background:var(--blue-light);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:8px;padding:14px;margin-top:12px;">'+
+      '<h4 style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;">📊 Suggested Contingency</h4>'+
+      '<p style="font-size:14px;color:var(--body);">Add <strong>'+q.contingencyPercent+'%</strong> contingency: <strong style="color:var(--navy);font-size:16px;">+£'+fmt(q.contingencyAmount)+'</strong></p>'+
       '<p style="font-size:12px;color:var(--muted);margin-top:4px;">Covers material price increases, hidden issues and delays.</p>'+
     '</div>' : '';
   const forgottenHtml = q.forgottenCosts&&q.forgottenCosts.length ?
-    '<div style="background:#F6F9FD;border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;">'+
-      '<h4 style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">⚠️ Commonly Forgotten Costs</h4>'+
-      q.forgottenCosts.map(c=>'<div style="font-size:13px;color:var(--body);padding:3px 0;">• '+esc(c)+'</div>').join('')+
+    '<div style="background:var(--off-white);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:14px;margin-top:12px;">'+
+      '<h4 style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">⚠️ Commonly Forgotten Costs</h4>'+
+      q.forgottenCosts.map(c=>'<div style="font-size:13px;color:var(--body);padding:3px 0;border-bottom:1px solid var(--border);">• '+esc(c)+'</div>').join('')+
     '</div>' : '';
   document.getElementById('ai-output').style.display='block';
   document.getElementById('ai-output').innerHTML=
     '<div class="ai-result">'+
       '<div class="ai-result-header">'+
-        '<div class="ai-result-branding"><div class="ai-result-logo">Profit<span>Quote</span></div><div class="ai-result-badge">AI Quote</div></div>'+
+        '<div class="ai-result-branding">'+
+          '<div class="ai-result-logo">'+
+            '<div class="ai-result-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>'+
+            '<div class="ai-result-logo-text">Profit<span>Quote</span></div>'+
+          '</div>'+
+          '<div class="ai-result-badge">AI QUOTE</div>'+
+        '</div>'+
+        '<div class="ai-result-ref">Ref: '+refNum+' · '+new Date().toLocaleDateString("en-GB")+'</div>'+
         (bizName?'<div class="ai-result-builder"><div class="ai-result-builder-name">'+esc(bizName)+'</div>'+(builderLine?'<div class="ai-result-builder-details">'+esc(builderLine)+'</div>':'')+'</div>':'')+
-        '<div class="ai-result-title">'+esc(customer)+' · '+esc(trade)+'</div>'+
+        '<div class="ai-result-customer">Prepared for: <strong>'+esc(customer)+'</strong> · '+esc(trade)+'</div>'+
       '</div>'+
       '<div class="ai-result-body">'+lines+
-        '<div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£'+fmt(q.subtotal)+'</span></div>'+
-        vatRow+
+        '<div class="quote-subtotal-row"><span class="quote-subtotal-label">Subtotal</span><span class="quote-subtotal-amount">£'+fmt(q.subtotal)+'</span></div>'+
+        (vatRegistered?'<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£'+fmt(q.vatAmount)+'</span></div>':'')+
         '<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:'+riskBg+';border:1.5px solid '+riskColour+';border-radius:8px;padding:14px;margin-top:12px;">'+
+    '<div style="background:'+riskBg+';border:1.5px solid '+riskColour+';border-radius:8px;padding:14px;margin:12px 16px 0;">'+
       '<div style="font-size:14px;font-weight:700;color:'+riskColour+';">'+riskEmoji+' '+esc(q.riskLabel||'')+'</div>'+
     '</div>'+
-    contingencyHtml+
-    forgottenHtml+
-    (isComplex?'<div style="background:#FFF3E0;border:2px solid #B35C00;border-radius:8px;padding:14px;margin-top:12px;"><strong style="color:#B35C00;font-size:13px;">⚠️ Complex Job Detected</strong><p style="font-size:13px;color:#4A5568;margin-top:6px;line-height:1.5;">Please review the materials estimate carefully — costs can vary significantly. Consider getting supplier quotes before sending to the customer.</p></div>':'')+
+    '<div style="padding:0 16px;">'+contingencyHtml+forgottenHtml+
+    (isComplex?'<div style="background:#FFF3E0;border:1.5px solid #B35C00;border-left:4px solid #B35C00;border-radius:8px;padding:14px;margin-top:12px;"><strong style="color:#B35C00;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">⚠️ Complex Job Detected</strong><p style="font-size:13px;color:#4A5568;margin-top:6px;line-height:1.5;">Please review the materials estimate carefully — costs can vary significantly on structural projects. Consider getting supplier quotes before sending to the customer.</p></div>':'')+
     '<div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div>'+
     '<div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p></div>'+
-    '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding:8px;">Prepared by ProfitQuote AI · profitquote.co.uk</div>'+
-    '<div class="send-actions">'+
-      '<button class="btn btn-green" onclick="printCustomerQuote()">📄 Download Customer Quote</button>'+
+    '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;padding:8px;border-top:1px solid var(--border);">Prepared by <strong>ProfitQuote AI</strong> · profitquote.co.uk</div>'+
     '</div>'+
-    '<div style="margin-top:10px;"><button class="btn btn-secondary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ View All Quotes</button></div>';
+    '<div class="send-actions">'+
+      '<button class="btn btn-gold" onclick="printCustomerQuote()">📄 Customer Quote PDF</button>'+
+    '</div>'+
+    '<div style="padding:0 16px;margin-top:10px;"><button class="btn btn-secondary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ View All Quotes</button></div>';
 }
 
 // ── CUSTOMER PDF ──
@@ -873,41 +964,79 @@ function printCustomerQuote(){
   const email = u.contact_email || '';
   const town = u.town || '';
   const date = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const vatRow = vatRegistered ? '<tr><td style="padding:10px 0;color:#4A5568;border-bottom:1px solid #DDE4EF;">VAT (20%)</td><td style="padding:10px 0;font-weight:600;text-align:right;border-bottom:1px solid #DDE4EF;">£'+fmt(q.vatAmount)+'</td></tr>' : '';
-  const lineRows = (q.lineItems||[]).map(l=>'<tr><td style="padding:10px 0;color:#4A5568;border-bottom:1px solid #DDE4EF;">'+esc(l.label)+'</td><td style="padding:10px 0;font-weight:600;text-align:right;border-bottom:1px solid #DDE4EF;">£'+fmt(l.amount)+'</td></tr>').join('');
-
-  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Quote — '+esc(lastQuoteCustomer)+'</title>'+
-  '<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0;padding:40px;color:#4A5568;font-size:15px;line-height:1.5;}'+
-  '.header{background:#1B2B4B;color:white;padding:28px 32px;border-radius:10px;margin-bottom:28px;}'+
-  '.logo{font-size:20px;font-weight:700;letter-spacing:-0.03em;margin-bottom:12px;}'+
-  '.logo span{color:#7BAFD4;}'+
-  '.biz-name{font-size:16px;font-weight:700;}'+
-  '.biz-details{font-size:13px;color:rgba(255,255,255,0.7);margin-top:3px;}'+
-  '.customer-line{font-size:14px;color:rgba(255,255,255,0.8);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.2);}'+
-  'table{width:100%;border-collapse:collapse;margin-bottom:0;}'+
-  '.total-box{background:#1B2B4B;color:white;padding:20px 24px;border-radius:8px;margin-top:20px;}'+
-  '.total-label{font-size:13px;color:rgba(255,255,255,0.6);}'+
-  '.total-amount{font-size:32px;font-weight:700;letter-spacing:-0.04em;}'+
-  '.protection{background:#fffbeb;border:1px solid #f0d0a0;border-radius:8px;padding:16px;margin-top:20px;}'+
-  '.protection h4{font-size:13px;font-weight:700;color:#B35C00;margin-bottom:6px;}'+
-  '.protection p{font-size:13px;color:#4A5568;line-height:1.5;}'+
-  '.date{font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px;}'+
-  '@media print{body{padding:20px;}}</style></head><body>'+
-  '<div class="header">'+
-    '<div class="logo">Profit<span>Quote</span></div>'+
-    (bizName?'<div class="biz-name">'+esc(bizName)+'</div>':'')+ 
-    '<div class="biz-details">'+[phone,email,town].filter(Boolean).join(' · ')+'</div>'+
-    '<div class="date">Quote date: '+date+'</div>'+
-    '<div class="customer-line">Prepared for: <strong>'+esc(lastQuoteCustomer)+'</strong> · '+esc(lastQuoteTrade)+'</div>'+
+  const ref = window._lastQuoteRef || ('PQ-'+Date.now().toString(36).toUpperCase().slice(-6));
+  const vatRow = vatRegistered ? '<tr><td style="padding:10px 0;color:#4A5568;font-size:14px;border-bottom:1px solid #e8edf4;">VAT (20%)</td><td style="padding:10px 0;font-weight:600;text-align:right;font-size:14px;border-bottom:1px solid #e8edf4;">£'+fmt(q.vatAmount)+'</td></tr>' : '';
+  const lineRows = (q.lineItems||[]).map(l=>'<tr><td style="padding:10px 0;color:#4A5568;font-size:14px;border-bottom:1px solid #e8edf4;">'+esc(l.label)+'</td><td style="padding:10px 0;font-weight:600;text-align:right;font-size:14px;border-bottom:1px solid #e8edf4;">£'+fmt(l.amount)+'</td></tr>').join('');
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Quote '+ref+' — '+esc(lastQuoteCustomer)+'</title>'+
+  '<style>'+
+  '@import url(https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap);'+
+  'body{font-family:Inter,-apple-system,sans-serif;margin:0;padding:0;color:#4A5568;font-size:14px;line-height:1.6;background:#f4f7fb;}'+
+  '.page{max-width:680px;margin:30px auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.12);}'+
+  '.header{background:linear-gradient(145deg,#0F1E35 0%,#1B2F4A 100%);padding:32px 36px;border-bottom:3px solid #C9963A;}'+
+  '.logo-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}'+
+  '.logo{display:flex;align-items:center;gap:10px;}'+
+  '.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#C9963A,#E8B96A);border-radius:9px;display:flex;align-items:center;justify-content:center;}'+
+  '.logo-text{font-size:18px;font-weight:800;color:white;letter-spacing:-0.03em;}'+
+  '.logo-text span{color:#E8B96A;}'+
+  '.ref-badge{background:rgba(201,150,58,0.2);border:1px solid rgba(201,150,58,0.4);color:#E8B96A;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.08em;}'+
+  '.biz-block{border-top:1px solid rgba(255,255,255,0.12);padding-top:16px;}'+
+  '.biz-name{font-size:17px;font-weight:700;color:white;}'+
+  '.biz-details{font-size:12px;color:rgba(255,255,255,0.55);margin-top:3px;}'+
+  '.quote-meta{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);}'+
+  '.meta-label{font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;}'+
+  '.meta-value{font-size:14px;color:rgba(255,255,255,0.8);font-weight:600;margin-top:2px;}'+
+  '.body{padding:32px 36px;}'+
+  'table{width:100%;border-collapse:collapse;}'+
+  '.total-box{background:linear-gradient(135deg,#0F1E35,#1B2F4A);border-radius:12px;padding:24px 28px;margin-top:24px;border-top:3px solid #C9963A;}'+
+  '.total-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}'+
+  '.total-amount{font-size:36px;font-weight:800;color:white;letter-spacing:-0.05em;}'+
+  '.protection{background:#FDF6E9;border:1px solid rgba(201,150,58,0.3);border-left:4px solid #C9963A;border-radius:8px;padding:18px 20px;margin-top:24px;}'+
+  '.protection h4{font-size:11px;font-weight:700;color:#B35C00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}'+
+  '.protection p{font-size:13px;color:#4A5568;line-height:1.6;}'+
+  '.sig-section{margin-top:32px;padding-top:24px;border-top:2px solid #e8edf4;display:grid;grid-template-columns:1fr 1fr;gap:32px;}'+
+  '.sig-block .sig-label{font-size:11px;font-weight:700;color:#8896A8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}'+
+  '.sig-line{border-bottom:1.5px solid #0F1E35;height:40px;}'+
+  '.sig-name{font-size:12px;color:#8896A8;margin-top:6px;}'+
+  '.footer{background:#f4f7fb;padding:16px 36px;border-top:1px solid #e8edf4;display:flex;align-items:center;justify-content:space-between;}'+
+  '.footer-logo{font-size:12px;font-weight:700;color:#8896A8;}'+
+  '.footer-logo span{color:#C9963A;}'+
+  '.footer-note{font-size:11px;color:#8896A8;}'+
+  '@media print{body{background:white;}.page{margin:0;border-radius:0;box-shadow:none;}}</style></head><body>'+
+  '<div class="page">'+
+    '<div class="header">'+
+      '<div class="logo-row">'+
+        '<div class="logo">'+
+          '<div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#0F1E35"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>'+
+          '<div class="logo-text">Profit<span>Quote</span></div>'+
+        '</div>'+
+        '<div class="ref-badge">REF: '+ref+'</div>'+
+      '</div>'+
+      (bizName?'<div class="biz-block"><div class="biz-name">'+esc(bizName)+'</div><div class="biz-details">'+[phone,email,town].filter(Boolean).join(' · ')+'</div></div>':'')+
+      '<div class="quote-meta">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">'+
+          '<div><div class="meta-label">Quote Date</div><div class="meta-value">'+date+'</div></div>'+
+          '<div><div class="meta-label">Prepared For</div><div class="meta-value">'+esc(lastQuoteCustomer)+'</div></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="body">'+
+      '<table>'+lineRows+
+        '<tr><td style="padding:10px 0;font-weight:600;font-size:14px;border-bottom:2px solid #0F1E35;">Subtotal</td><td style="padding:10px 0;font-weight:700;text-align:right;font-size:14px;border-bottom:2px solid #0F1E35;">£'+fmt(q.subtotal)+'</td></tr>'+
+        vatRow+
+      '</table>'+
+      '<div class="total-box"><div class="total-label">Total Quote Price</div><div class="total-amount">£'+fmt(q.total)+'</div></div>'+
+      '<div class="protection"><h4>🛡️ Quote Terms &amp; Conditions</h4><p>'+esc(q.protectionClause)+'</p></div>'+
+      '<div class="sig-section">'+
+        '<div class="sig-block"><div class="sig-label">Customer Acceptance</div><div class="sig-line"></div><div class="sig-name">Signature &amp; Date</div></div>'+
+        '<div class="sig-block"><div class="sig-label">'+esc(bizName||'Contractor')+'</div><div class="sig-line"></div><div class="sig-name">Signature &amp; Date</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="footer">'+
+      '<div class="footer-logo">Profit<span>Quote</span> AI</div>'+
+      '<div class="footer-note">profitquote.co.uk · This quote is valid for 30 days</div>'+
+    '</div>'+
   '</div>'+
-  '<table>'+lineRows+
-    '<tr><td style="padding:10px 0;color:#4A5568;border-bottom:1px solid #DDE4EF;">Subtotal</td><td style="padding:10px 0;font-weight:600;text-align:right;border-bottom:1px solid #DDE4EF;">£'+fmt(q.subtotal)+'</td></tr>'+
-    vatRow+
-  '</table>'+
-  '<div class="total-box"><div class="total-label">Total Quote Price</div><div class="total-amount">£'+fmt(q.total)+'</div></div>'+
-  '<div class="protection"><h4>🛡️ Quote Terms &amp; Conditions</h4><p>'+esc(q.protectionClause)+'</p></div>'+
   '</body></html>';
-
   const win = window.open('','_blank');
   win.document.write(html);
   win.document.close();
