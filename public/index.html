@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="ProfitQuote"/>
+<meta name="theme-color" content="#0F1E35"/>
 <title>ProfitQuote — AI Quote Builder for Tradespeople</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -22,7 +26,7 @@
   --shadow-lg:0 8px 40px rgba(15,30,53,0.18);
 }
 html,body{height:100%;font-family:var(--font);background:var(--off-white);color:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
-#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);box-shadow:0 0 60px rgba(0,0,0,0.15);}
+#app{display:flex;flex-direction:column;height:100svh;max-width:480px;margin:0 auto;background:var(--white);box-shadow:0 0 60px rgba(0,0,0,0.15);}
 
 /* ── TOPBAR ── */
 .topbar{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);padding:16px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid rgba(201,150,58,0.3);}
@@ -249,9 +253,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="auth-logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
+      <div class="auth-logo-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="#0F1E35"/><path d="M14 2 L14 8 L20 8" fill="#1B2F4A"/><polyline points="9 13 11 15 15 11" stroke="#C9963A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
       <div class="auth-logo-text">Profit<span>Quote</span></div>
     </div>
     <div class="auth-tagline" id="auth-sub">Sign in to your account</div>
@@ -278,9 +280,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 <div id="app">
   <div class="topbar">
     <div class="topbar-logo">
-      <div class="topbar-logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
+      <div class="topbar-logo-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="#0F1E35" stroke="none"/><polyline points="14 2 14 8 20 8" fill="#1B2F4A" stroke="none"/><path d="M14 2 L14 8 L20 8" fill="#1B2F4A"/><polyline points="9 13 11 15 15 11" stroke="#C9963A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
       <div class="topbar-logo-text">Profit<span>Quote</span></div>
     </div>
     <button class="topbar-user" id="user-initials" onclick="showToast('Tap Setup to manage your account')">?</button>
@@ -924,7 +924,7 @@ function renderQuoteResult(q,customer,trade,isComplex){
       '<div class="ai-result-header">'+
         '<div class="ai-result-branding">'+
           '<div class="ai-result-logo">'+
-            '<div class="ai-result-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>'+
+            '<div class="ai-result-logo-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="#0F1E35"/><path d="M14 2 L14 8 L20 8" fill="#1B2F4A"/><polyline points="9 13 11 15 15 11" stroke="#C9963A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>'+
             '<div class="ai-result-logo-text">Profit<span>Quote</span></div>'+
           '</div>'+
           '<div class="ai-result-badge">AI QUOTE</div>'+
@@ -1006,7 +1006,7 @@ function printCustomerQuote(){
     '<div class="header">'+
       '<div class="logo-row">'+
         '<div class="logo">'+
-          '<div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#0F1E35"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>'+
+          '<div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="#0F1E35"/><path d="M14 2 L14 8 L20 8" fill="#1B2F4A"/><polyline points="9 13 11 15 15 11" stroke="#C9963A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>'+
           '<div class="logo-text">Profit<span>Quote</span></div>'+
         '</div>'+
         '<div class="ref-badge">REF: '+ref+'</div>'+
