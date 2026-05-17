@@ -66,9 +66,15 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .skip-type .skip-price{font-size:12px;color:var(--green);font-weight:600;margin-top:2px;}
 .skip-type .skip-sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .ai-result{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);margin:0 16px;box-shadow:var(--shadow-lg);}
-.ai-result-header{background:var(--navy);padding:14px 16px;border-radius:calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0;display:flex;align-items:center;justify-content:space-between;}
-.ai-result-title{font-size:14px;font-weight:700;color:var(--white);}
+.ai-result-header{background:var(--navy);padding:14px 16px;border-radius:calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0;}
+.ai-result-branding{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ai-result-logo{font-size:15px;font-weight:700;color:var(--white);letter-spacing:-0.03em;}
+.ai-result-logo span{color:#7BAFD4;}
 .ai-result-badge{font-size:11px;background:rgba(123,175,212,0.25);color:#7BAFD4;padding:3px 8px;border-radius:10px;font-weight:600;}
+.ai-result-builder{border-top:1px solid rgba(255,255,255,0.15);padding-top:10px;margin-top:4px;}
+.ai-result-builder-name{font-size:14px;font-weight:700;color:var(--white);}
+.ai-result-builder-details{font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;}
+.ai-result-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.8);margin-top:6px;}
 .ai-result-body{padding:16px;}
 .quote-line{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:10px;}
 .quote-line:last-child{border-bottom:none;}
@@ -144,11 +150,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .pill-toggle{display:flex;background:var(--blue-light);border-radius:8px;padding:3px;gap:3px;}
 .pill-toggle button{flex:1;padding:7px 12px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
 .pill-toggle button.active{background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
-.modal-overlay{position:fixed;inset:0;background:rgba(10,20,40,0.5);z-index:200;display:none;align-items:flex-end;justify-content:center;}
-.modal-overlay.open{display:flex;}
-.modal-sheet{background:var(--white);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
-.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
-.modal-title{font-size:17px;font-weight:700;color:var(--heading);margin-bottom:16px;}
+.dim-convert{font-size:12px;color:var(--blue);margin-top:4px;font-weight:500;min-height:18px;}
 #auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;}
 #auth-screen.hidden{display:none;}
 .auth-box{background:var(--white);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;}
@@ -161,6 +163,8 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
 .flex-between{display:flex;align-items:center;justify-content:space-between;}
 .text-muted{color:var(--muted);font-size:13px;}
 .px16{padding-left:16px;padding-right:16px;}
+.setup-text-input{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:var(--font);color:var(--heading);background:var(--blue-light);outline:none;}
+.setup-text-input:focus{border-color:var(--blue);}
 </style>
 </head>
 <body>
@@ -277,19 +281,36 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
         </div>
         <button class="btn btn-primary" onclick="nextStep(2)">Continue →</button>
       </div>
+
       <div id="step-2" style="padding:16px;display:none;">
         <div class="card-title" style="margin-bottom:8px;">Room Size &amp; Spec Level</div>
-        <div class="form-group"><label>Room width</label>
+        <div class="form-group">
+          <label>Room width</label>
           <div class="form-row">
-            <div><input type="number" id="room-w-m" placeholder="0.0" step="0.1" min="0"/><div class="form-hint">metres</div></div>
-            <div><input type="number" id="room-w-ft" placeholder="0" step="1" min="0"/><div class="form-hint">feet</div></div>
+            <div>
+              <input type="number" id="room-w-m" placeholder="0.0" step="0.01" min="0" oninput="convertDim('w','m')"/>
+              <div class="form-hint">metres</div>
+            </div>
+            <div>
+              <input type="number" id="room-w-ft" placeholder="0.0" step="0.1" min="0" oninput="convertDim('w','ft')"/>
+              <div class="form-hint">feet</div>
+            </div>
           </div>
+          <div class="dim-convert" id="w-convert"></div>
         </div>
-        <div class="form-group"><label>Room length</label>
+        <div class="form-group">
+          <label>Room length</label>
           <div class="form-row">
-            <div><input type="number" id="room-l-m" placeholder="0.0" step="0.1" min="0"/><div class="form-hint">metres</div></div>
-            <div><input type="number" id="room-l-ft" placeholder="0" step="1" min="0"/><div class="form-hint">feet</div></div>
+            <div>
+              <input type="number" id="room-l-m" placeholder="0.0" step="0.01" min="0" oninput="convertDim('l','m')"/>
+              <div class="form-hint">metres</div>
+            </div>
+            <div>
+              <input type="number" id="room-l-ft" placeholder="0.0" step="0.1" min="0" oninput="convertDim('l','ft')"/>
+              <div class="form-hint">feet</div>
+            </div>
           </div>
+          <div class="dim-convert" id="l-convert"></div>
         </div>
         <div class="form-group" style="margin-top:16px;"><label>Spec level</label>
           <div class="spec-grid" style="margin-top:6px;">
@@ -303,6 +324,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
           <button class="btn btn-primary" onclick="nextStep(3)">Continue →</button>
         </div>
       </div>
+
       <div id="step-3" style="padding:16px;display:none;">
         <div class="card-title" style="margin-bottom:4px;">Waste &amp; Skip</div>
         <p class="text-muted mb12">What waste will you be removing?</p>
@@ -319,6 +341,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
           <button class="btn btn-primary" onclick="nextStep(4)">Continue →</button>
         </div>
       </div>
+
       <div id="step-4" style="padding:16px;display:none;">
         <div class="card-title" style="margin-bottom:4px;">Labour &amp; Profit</div>
         <p class="text-muted mb12">Adjust for this specific job if needed.</p>
@@ -339,6 +362,7 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
           </button>
         </div>
       </div>
+
       <div id="step-5" style="padding:16px;display:none;">
         <div id="ai-loading" class="loading-ai"><div class="spinner"></div><p>Building your quote…</p></div>
         <div id="ai-output" style="display:none;"></div>
@@ -411,6 +435,15 @@ html,body{height:100%;font-family:var(--font);background:var(--off-white);color:
         <div class="profile-avatar" id="setup-avatar">?</div>
         <div><div class="profile-name" id="setup-name">Loading…</div><div class="profile-trade" id="setup-trade"></div><div class="profile-plan">⭐ Solo Plan</div></div>
       </div>
+
+      <div class="setup-section-label">Your Business Details</div>
+      <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+        <input class="setup-text-input" id="setup-business-name" placeholder="Business name e.g. Dave Smith Plumbing"/>
+        <input class="setup-text-input" id="setup-phone" placeholder="Phone number" type="tel"/>
+        <input class="setup-text-input" id="setup-contact-email" placeholder="Contact email" type="email"/>
+        <input class="setup-text-input" id="setup-town" placeholder="Town / City e.g. Swansea"/>
+      </div>
+
       <div class="setup-section-label">Labour Rates</div>
       <div style="background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
         <div class="rate-row"><div class="rate-label">Day rate</div><div class="rate-input-wrap"><div class="rate-prefix">£</div><input type="number" class="rate-input" id="setup-day-rate" value="250"/><span style="font-size:12px;color:var(--muted);margin-left:4px;">/day</span></div></div>
@@ -471,6 +504,33 @@ let selectedSkip = 'none';
 let skipCost = 0;
 let vatRegistered = true;
 let currentIssueType = '';
+
+// ── DIMENSION CONVERSION ──
+function convertDim(dim, from) {
+  const mEl = document.getElementById('room-'+dim+'-m');
+  const ftEl = document.getElementById('room-'+dim+'-ft');
+  const infoEl = document.getElementById(dim+'-convert');
+  if(from === 'm') {
+    const m = parseFloat(mEl.value);
+    if(!isNaN(m) && m > 0) {
+      const totalInches = m * 39.3701;
+      const ft = Math.floor(totalInches / 12);
+      const inches = Math.round(totalInches % 12);
+      ftEl.value = (m * 3.28084).toFixed(1);
+      infoEl.textContent = m + 'm = ' + ft + 'ft ' + inches + 'in';
+    } else { infoEl.textContent = ''; }
+  } else {
+    const ft = parseFloat(ftEl.value);
+    if(!isNaN(ft) && ft > 0) {
+      const m = (ft * 0.3048).toFixed(2);
+      mEl.value = m;
+      const totalInches = ft * 12;
+      const wholeFt = Math.floor(ft);
+      const inches = Math.round((ft - wholeFt) * 12);
+      infoEl.textContent = ft + 'ft = ' + m + 'm (' + wholeFt + 'ft ' + inches + 'in)';
+    } else { infoEl.textContent = ''; }
+  }
+}
 
 // ── AUTH ──
 let authMode = 'login';
@@ -555,6 +615,10 @@ function populateUserUI(){
   document.getElementById('setup-skip-pb').value = currentUser.skip_plasterboard||320;
   document.getElementById('setup-skip-inert').value = currentUser.skip_inert||200;
   document.getElementById('setup-skip-haz').value = currentUser.skip_hazardous||480;
+  document.getElementById('setup-business-name').value = currentUser.business_name||'';
+  document.getElementById('setup-phone').value = currentUser.phone||'';
+  document.getElementById('setup-contact-email').value = currentUser.contact_email||'';
+  document.getElementById('setup-town').value = currentUser.town||'';
   vatRegistered = currentUser.vat_registered !== false;
   document.getElementById('vat-yes').classList.toggle('active', vatRegistered);
   document.getElementById('vat-no').classList.toggle('active', !vatRegistered);
@@ -635,7 +699,8 @@ function updateHomeStats(){
 function resetBuilder(){
   selectedSpec='mid'; selectedSkip='none'; skipCost=0;
   showStep(1);
-  ['job-description','customer-name','job-postcode','q-days','q-other'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['job-description','customer-name','job-postcode','q-days','q-other','room-w-m','room-w-ft','room-l-m','room-l-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['w-convert','l-convert'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=''; });
   document.getElementById('ai-output').style.display='none';
   document.getElementById('ai-loading').style.display='block';
   document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('selected'));
@@ -661,7 +726,7 @@ async function buildQuote(){
   const trade=document.getElementById('trade-type').value||'General Trades';
   const wM=parseFloat(document.getElementById('room-w-m').value)||0;
   const lM=parseFloat(document.getElementById('room-l-m').value)||0;
-  const roomArea=wM&&lM?(wM*lM).toFixed(1)+' m²':'not specified';
+  const roomArea=wM&&lM?(wM*lM).toFixed(1)+' m² ('+((wM*3.28084).toFixed(1))+'ft x '+((lM*3.28084).toFixed(1))+'ft)':'not specified';
   if(!days){ showToast('Please enter estimated days'); return; }
   showStep(5); document.getElementById('ai-loading').style.display='block'; document.getElementById('ai-output').style.display='none'; document.querySelector('.page').scrollTop=0;
   const labourCost=dayRate*days;
@@ -680,11 +745,36 @@ async function buildQuote(){
 
 function renderQuoteResult(q,customer,trade){
   document.getElementById('ai-loading').style.display='none';
+  const u = currentUser || {};
+  const bizName = u.business_name || u.name || '';
+  const phone = u.phone || '';
+  const email = u.contact_email || '';
+  const town = u.town || '';
+  const builderLine = [phone, email, town].filter(Boolean).join(' · ');
   const vatRow=vatRegistered?'<div class="quote-line"><span class="quote-line-label">VAT (20%)</span><span class="quote-line-amount">£'+fmt(q.vatAmount)+'</span></div>':'';
   const lines=(q.lineItems||[]).map(l=>'<div class="quote-line"><span class="quote-line-label">'+esc(l.label)+'</span><span class="quote-line-amount">£'+fmt(l.amount)+'</span></div>').join('');
   window._protectionClause=q.protectionClause;
   document.getElementById('ai-output').style.display='block';
-  document.getElementById('ai-output').innerHTML='<div class="ai-result"><div class="ai-result-header"><div class="ai-result-title">'+esc(customer)+' · '+esc(trade)+'</div><div class="ai-result-badge">AI Quote</div></div><div class="ai-result-body">'+lines+'<div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£'+fmt(q.subtotal)+'</span></div>'+vatRow+'<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div></div></div><div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div><div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._protectionClause).then(()=>showToast(\'Copied ✓\'))">Copy Clause</button></div><div style="margin-top:14px;"><button class="btn btn-primary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ Saved — View All Quotes</button></div>';
+  document.getElementById('ai-output').innerHTML=
+    '<div class="ai-result">'+
+      '<div class="ai-result-header">'+
+        '<div class="ai-result-branding">'+
+          '<div class="ai-result-logo">Profit<span>Quote</span></div>'+
+          '<div class="ai-result-badge">AI Quote</div>'+
+        '</div>'+
+        (bizName ? '<div class="ai-result-builder"><div class="ai-result-builder-name">'+esc(bizName)+'</div>'+(builderLine?'<div class="ai-result-builder-details">'+esc(builderLine)+'</div>':'')+'</div>' : '')+
+        '<div class="ai-result-title">'+esc(customer)+' · '+esc(trade)+'</div>'+
+      '</div>'+
+      '<div class="ai-result-body">'+
+        lines+
+        '<div class="quote-line"><span class="quote-line-label">Subtotal</span><span class="quote-line-amount">£'+fmt(q.subtotal)+'</span></div>'+
+        vatRow+
+        '<div class="quote-total-row"><div class="quote-total-label">Total Quote Price</div><div class="quote-total-amount">£'+fmt(q.total)+'</div><div class="quote-profit-chip">✓ '+(+q.profitPercent).toFixed(1)+'% profit · £'+fmt(q.profitAmount)+' in your pocket</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="coach-box mt12"><h4>💡 Profit Coach</h4><p>'+esc(q.coachTip)+'</p></div>'+
+    '<div class="protection-box"><h4>🛡️ Quote Protection Clause</h4><p>'+esc(q.protectionClause)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._protectionClause).then(()=>showToast(\'Copied ✓\'))">Copy Clause</button></div>'+
+    '<div style="margin-top:14px;"><button class="btn btn-primary" onclick="showToast(\'Quote saved ✓\');setTimeout(()=>switchTab(\'quotes\'),800)">✓ Saved — View All Quotes</button></div>';
 }
 
 // ── ISSUES ──
@@ -717,7 +807,7 @@ async function buildVariation(){
     const v=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
     window._variationNotice=v.variationNotice; window._customerSMS=v.customerMessage;
     fetch(API+'/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({issue_type:currentIssueType,description:desc,extra_hours:hours,extra_materials:matCost,hourly_rate:hourly,total_extra:totalExtra,variation_data:v})}).catch(()=>{});
-    resEl.innerHTML='<div class="ai-result"><div class="ai-result-header"><div class="ai-result-title">'+esc(v.variationTitle)+'</div><div class="ai-result-badge">+£'+fmt(v.extraCost)+'</div></div><div class="ai-result-body"><div class="card-title">Variation Notice</div><p style="font-size:14px;color:var(--body);line-height:1.6;">'+esc(v.variationNotice).replace(/\n/g,'<br>')+'</p><button class="btn btn-secondary btn-sm mt12" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._variationNotice).then(()=>showToast(\'Copied ✓\'))">Copy Notice</button></div></div><div class="coach-box mt12"><h4>📱 SMS to Customer</h4><p style="font-size:14px;">'+esc(v.customerMessage)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._customerSMS).then(()=>showToast(\'Copied ✓\'))">Copy SMS</button></div><div class="protection-box"><h4>💡 Pro Tip</h4><p>'+esc(v.tip)+'</p></div><button class="btn btn-secondary mt12" onclick="closeIssueForm()">Back to Issues</button>';
+    resEl.innerHTML='<div class="ai-result"><div class="ai-result-header"><div class="ai-result-branding"><div class="ai-result-logo">Profit<span>Quote</span></div><div class="ai-result-badge">+£'+fmt(v.extraCost)+'</div></div><div class="ai-result-title">'+esc(v.variationTitle)+'</div></div><div class="ai-result-body"><div class="card-title">Variation Notice</div><p style="font-size:14px;color:var(--body);line-height:1.6;">'+esc(v.variationNotice).replace(/\n/g,'<br>')+'</p><button class="btn btn-secondary btn-sm mt12" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._variationNotice).then(()=>showToast(\'Copied ✓\'))">Copy Notice</button></div></div><div class="coach-box mt12"><h4>📱 SMS to Customer</h4><p style="font-size:14px;">'+esc(v.customerMessage)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="if(navigator.clipboard)navigator.clipboard.writeText(window._customerSMS).then(()=>showToast(\'Copied ✓\'))">Copy SMS</button></div><div class="protection-box"><h4>💡 Pro Tip</h4><p>'+esc(v.tip)+'</p></div><button class="btn btn-secondary mt12" onclick="closeIssueForm()">Back to Issues</button>';
   } catch(e){ resEl.innerHTML='<div class="card"><p style="color:var(--red);">Error — please try again.</p><button class="btn btn-secondary mt8" onclick="buildVariation()">Retry</button></div>'; }
 }
 
@@ -735,7 +825,11 @@ async function saveSettings(){
     skip_mixed:+document.getElementById('setup-skip-mixed').value,
     skip_plasterboard:+document.getElementById('setup-skip-pb').value,
     skip_inert:+document.getElementById('setup-skip-inert').value,
-    skip_hazardous:+document.getElementById('setup-skip-haz').value
+    skip_hazardous:+document.getElementById('setup-skip-haz').value,
+    business_name:document.getElementById('setup-business-name').value.trim(),
+    phone:document.getElementById('setup-phone').value.trim(),
+    contact_email:document.getElementById('setup-contact-email').value.trim(),
+    town:document.getElementById('setup-town').value.trim()
   };
   try {
     const res=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
