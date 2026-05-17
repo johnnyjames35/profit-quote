@@ -724,15 +724,79 @@ async function buildQuote(){
   const lM=parseFloat(document.getElementById('room-l-m').value)||0;
   const roomArea=wM&&lM?(wM*lM).toFixed(1)+' m² ('+((wM*3.28084).toFixed(1))+'ft x '+((lM*3.28084).toFixed(1))+'ft)':'not specified';
   if(!days){ showToast('Please enter estimated days'); return; }
-  showStep(5); document.getElementById('ai-loading').style.display='block'; document.getElementById('ai-output').style.display='none'; document.querySelector('.page').scrollTop=0;
+
+  // ── LABOUR PRE-CHECK ──
+  // Quick AI check on days before building full quote
+  showStep(5);
+  document.getElementById('ai-loading').style.display='block';
+  document.getElementById('ai-output').style.display='none';
+  document.getElementById('ai-loading').querySelector('p').textContent='Checking job details…';
+  document.querySelector('.page').scrollTop=0;
+
+  try {
+    const checkPrompt='You are a UK trades expert. A tradesperson has described this job:\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nDAYS ENTERED: '+days+'\n\nBased on the job description, is '+days+' days a realistic estimate for a UK tradesperson in 2025?\nRespond ONLY in JSON: {"daysOk":true,"suggestedDays":'+days+',"warningMessage":""}\n- If days seem reasonable: daysOk=true, suggestedDays=same as entered, warningMessage=""\n- If days seem too low: daysOk=false, suggestedDays=your realistic estimate, warningMessage="Brief explanation e.g. A kitchen extension with underfloor heating typically takes 35-45 days"\n- suggestedDays should be a single number (midpoint of range)\n- Be realistic but not overly generous — tradespeople work efficiently';
+
+    const checkResp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:checkPrompt}]})});
+    const checkData=await checkResp.json();
+    const check=JSON.parse((checkData.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+
+    if(!check.daysOk && check.suggestedDays > days){
+      // Show labour warning in the output area
+      document.getElementById('ai-loading').style.display='none';
+      document.getElementById('ai-output').style.display='block';
+      document.getElementById('ai-output').innerHTML=
+        '<div style="background:#FFF3E0;border:2px solid #B35C00;border-radius:10px;padding:20px;text-align:center;">'+
+          '<div style="font-size:24px;margin-bottom:10px;">⚠️</div>'+
+          '<div style="font-size:16px;font-weight:700;color:#B35C00;margin-bottom:8px;">Labour Check</div>'+
+          '<p style="font-size:14px;color:#4A5568;line-height:1.6;margin-bottom:14px;">'+esc(check.warningMessage)+'</p>'+
+          '<div style="background:white;border:1px solid #DDE4EF;border-radius:8px;padding:14px;margin-bottom:16px;">'+
+            '<div style="font-size:13px;color:#8896A8;margin-bottom:8px;">You entered</div>'+
+            '<div style="font-size:22px;font-weight:700;color:#1B2B4B;">'+days+' days</div>'+
+            '<div style="font-size:13px;color:#8896A8;margin-top:10px;margin-bottom:8px;">AI suggestion</div>'+
+            '<div style="font-size:22px;font-weight:700;color:#1A7A4A;">'+check.suggestedDays+' days</div>'+
+          '</div>'+
+          '<div style="display:flex;gap:10px;">'+
+            '<button class="btn btn-green" onclick="updateDaysAndBuild('+check.suggestedDays+')">✓ Use '+check.suggestedDays+' days</button>'+
+            '<button class="btn btn-secondary" onclick="proceedWithOriginalDays()">Keep '+days+' days</button>'+
+          '</div>'+
+        '</div>';
+      // Store for later use
+      window._pendingBuildDays = days;
+      window._pendingBuildDayRate = dayRate;
+      window._pendingBuildData = {dayRate,days,markup,profitTarget,other,jobDesc,customer,trade,roomArea,wM,lM};
+      return;
+    }
+  } catch(e){ /* if check fails, just proceed */ }
+
+  await runBuildQuote({dayRate,days,markup,profitTarget,other,jobDesc,customer,trade,roomArea,wM,lM});
+}
+
+function updateDaysAndBuild(newDays){
+  const d = window._pendingBuildData;
+  document.getElementById('q-days').value = newDays;
+  document.getElementById('ai-loading').style.display='block';
+  document.getElementById('ai-output').style.display='none';
+  document.getElementById('ai-loading').querySelector('p').textContent='Building your quote…';
+  runBuildQuote({...d, days:newDays});
+}
+
+function proceedWithOriginalDays(){
+  const d = window._pendingBuildData;
+  document.getElementById('ai-loading').style.display='block';
+  document.getElementById('ai-output').style.display='none';
+  document.getElementById('ai-loading').querySelector('p').textContent='Building your quote…';
+  runBuildQuote(d);
+}
+
+async function runBuildQuote({dayRate,days,markup,profitTarget,other,jobDesc,customer,trade,roomArea,wM,lM}){
   const labourCost=dayRate*days;
   const skipStr=selectedSkip==='none'?'no skip required':selectedSkip+' skip at £'+skipCost;
   const vatNote=vatRegistered?'VAT registered at 20%':'not VAT registered';
   // Detect complex structural jobs
-  const complexKeywords = ['loft','dormer','velux','extension','conversion','structural','steel beam','rsj','foundations','underpinning','knock through','rear extension','side extension','double storey','single storey','garage conversion','basement'];
+  const complexKeywords = ['loft','dormer','velux','extension','conversion','structural','steel beam','rsj','foundations','underpinning','knock through','rear extension','side extension','double storey','single storey','garage conversion','basement','kitchen extension'];
   const isComplex = complexKeywords.some(kw => jobDesc.toLowerCase().includes(kw));
 
-  const prompt='You are a UK trades profit coach with expert knowledge of UK 2025 build costs. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\n\nUK 2025 COST BENCHMARKS — use these as reference:\n- Loft conversion (basic): £25,000-£35,000 materials+labour total\n- Loft conversion with dormer: £35,000-£55,000 total\n- Single storey extension: £20,000-£40,000 total\n- Double storey extension: £40,000-£80,000 total\n- Garage conversion: £10,000-£20,000 total\n- Full bathroom refit (mid): £4,000-£8,000 materials\n- Full kitchen refit (mid): £8,000-£15,000 materials\n- Roof replacement: £5,000-£12,000 materials\n- Full rewire (3-bed): £3,000-£5,000 materials\n\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"isComplexJob":false,"riskLevel":"low","riskLabel":"Low Risk — straightforward project","contingencyPercent":5,"contingencyAmount":0,"forgottenCosts":["Example cost 1","Example cost 2"],"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules:\n- Estimate REALISTIC UK 2025 materials cost — do NOT underestimate. Use benchmarks above for major jobs.\n- Apply '+markup+'% markup to materials.\n- '+(vatRegistered?'Add 20% VAT to subtotal.':'No VAT.')+'\n- profitPercent=(revenue-costs)/revenue*100\n- riskLevel must be "low", "medium" or "high"\n- low = simple decorating, tiling, small repairs. medium = bathroom/kitchen refit, roof repair. high = loft conversion, extension, structural work, full rewire.\n- riskLabel: short phrase e.g. "High Risk — structural variations common" or "Medium Risk — hidden issues possible"\n- contingencyPercent: 5 for low, 10 for medium, 15 for high\n- contingencyAmount: contingencyPercent/100 * subtotal (before VAT), rounded to nearest 50\n- forgottenCosts: array of 3-6 strings — costs specific to THIS job that tradespeople commonly forget e.g. scaffold hire, structural engineer, building control fees, skip permit, party wall agreement, asbestos survey, architect fees, material delivery, temporary works, protection boards. Be specific to the job type.\n- Set isComplexJob to true if riskLevel is medium or high.';
+  const prompt='You are a UK trades profit coach with expert knowledge of UK 2025 build costs. Build a detailed quote breakdown.\nJOB: '+jobDesc+'\nTRADE: '+trade+'\nCUSTOMER: '+customer+'\nROOM SIZE: '+roomArea+'\nSPEC LEVEL: '+selectedSpec+'\nSKIP: '+skipStr+'\nLABOUR: £'+dayRate+'/day x '+days+' days = £'+labourCost+'\nMATERIALS MARKUP: '+markup+'%\nPROFIT TARGET: '+profitTarget+'%\nVAT STATUS: '+vatNote+'\nOTHER COSTS: '+(other||'none')+'\n\nUK 2025 COST BENCHMARKS — use these as reference:\n- Loft conversion (basic): £25,000-£35,000 materials+labour total\n- Loft conversion with dormer: £35,000-£55,000 total\n- Single storey extension: £20,000-£40,000 total\n- Double storey extension: £40,000-£80,000 total\n- Garage conversion: £10,000-£20,000 total\n- Kitchen extension with full fit-out: £35,000-£60,000 total\n- Full bathroom refit (mid): £4,000-£8,000 materials\n- Full kitchen refit (mid): £8,000-£20,000 materials\n- Kitchen with underfloor heating + electrics: add £3,000-£6,000\n- Roof replacement: £5,000-£12,000 materials\n- Full rewire (3-bed): £3,000-£5,000 materials\n- Underfloor heating (per m²): £50-£150 materials\n\nRespond ONLY in this JSON format:\n{"lineItems":[{"label":"Labour ('+days+' days @ £'+dayRate+'/day)","amount":'+labourCost+'},{"label":"Materials (estimated)","amount":0},{"label":"Skip / Waste disposal","amount":'+skipCost+'}],"subtotal":0,"vatAmount":0,"total":0,"profitAmount":0,"profitPercent":0,"isComplexJob":false,"riskLevel":"low","riskLabel":"Low Risk — straightforward project","contingencyPercent":5,"contingencyAmount":0,"forgottenCosts":["Example cost 1","Example cost 2"],"coachTip":"2-3 sentence profit coaching tip specific to this job","protectionClause":"Professional one-paragraph quote protection clause for this job type"}\nRules:\n- Estimate REALISTIC UK 2025 materials cost — do NOT underestimate. Use benchmarks above for major jobs.\n- Apply '+markup+'% markup to materials.\n- '+(vatRegistered?'Add 20% VAT to subtotal.':'No VAT.')+'\n- profitPercent=(revenue-costs)/revenue*100\n- riskLevel must be "low", "medium" or "high"\n- low = simple decorating, tiling, small repairs. medium = bathroom/kitchen refit, roof repair. high = loft conversion, extension, structural work, full rewire.\n- riskLabel: short phrase e.g. "High Risk — structural variations common" or "Medium Risk — hidden issues possible"\n- contingencyPercent: 5 for low, 10 for medium, 15 for high\n- contingencyAmount: contingencyPercent/100 * subtotal (before VAT), rounded to nearest 50\n- forgottenCosts: array of 3-6 strings — costs specific to THIS job that tradespeople commonly forget. Be specific to the job type.\n- Set isComplexJob to true if riskLevel is medium or high.';
   try {
     const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
