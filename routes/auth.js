@@ -2,6 +2,8 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
+
 router.post('/register', async (req, res) => {
   const { name, email, password, trade } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
@@ -11,7 +13,9 @@ router.post('/register', async (req, res) => {
     if (exists.rows.length) return res.status(400).json({ error: 'Email already registered' });
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (name,email,password_hash,trade) VALUES ($1,$2,$3,$4) RETURNING id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous',
+      `INSERT INTO users (name,email,password_hash,trade,trial_started_at)
+       VALUES ($1,$2,$3,$4,NOW())
+       RETURNING ${USER_FIELDS}`,
       [name, email.toLowerCase(), hash, trade || '']
     );
     const user = result.rows[0];
@@ -44,7 +48,7 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'SELECT id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous FROM users WHERE id=$1',
+      `SELECT ${USER_FIELDS} FROM users WHERE id=$1`,
       [req.user.id]
     );
     res.json(result.rows[0]);
