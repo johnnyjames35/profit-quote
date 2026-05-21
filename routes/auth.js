@@ -1,77 +1,78 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const https = require('https');
 
 const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
 
-function getMailer() {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.ionos.co.uk',
-    port: 587,
-secure: false,
-tls: { rejectUnauthorized: false },
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
+function sendBrevoEmail(to, subject, html) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      sender: { name: 'ProfitQuote', email: 'hello@profitquote.co.uk' },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html
+    });
+    const options = {
+      hostname: 'api.brevo.com',
+      path: '/v3/smtp/email',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': process.env.BREVO_API_KEY
+      }
+    };
+    const req = https.request(options, res => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => resolve(body));
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
   });
 }
 
 function sendWelcomeEmail(name, email) {
-  const mailer = getMailer();
-  return mailer.sendMail({
-    from: `"ProfitQuote" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Welcome to ProfitQuote — your 7-day free trial starts now',
-    html: `
-      <p>Hi ${name},</p>
-      <p>Welcome to ProfitQuote! Your 7-day free trial has started.</p>
-      <p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
-      <p>After your trial, you'll need:</p>
-      <ul>
-        <li>£99 one-off onboarding fee</li>
-        <li>£49/month subscription</li>
-      </ul>
-      <p>I'll be in touch before your trial ends to get you set up personally.</p>
-      <p>John James<br>ProfitQuote | Cambrian Digital</p>
-    `
-  });
+  return sendBrevoEmail(email,
+    'Welcome to ProfitQuote — your 7-day free trial starts now',
+    `<p>Hi ${name},</p>
+     <p>Welcome to ProfitQuote! Your 7-day free trial has started.</p>
+     <p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
+     <p>After your trial, you'll need:</p>
+     <ul>
+       <li>£99 one-off onboarding fee</li>
+       <li>£49/month subscription</li>
+     </ul>
+     <p>I'll be in touch before your trial ends to get you set up personally.</p>
+     <p>John James<br>ProfitQuote | Cambrian Digital</p>`
+  );
 }
 
 function sendNotifyJohnEmail(name, email) {
-  const mailer = getMailer();
-  return mailer.sendMail({
-    from: `"ProfitQuote" <${process.env.EMAIL_USER}>`,
-    to: process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk',
-    subject: `New ProfitQuote trial started — ${name}`,
-    html: `
-      <p>New user signed up for ProfitQuote:</p>
-      <p><strong>Name:</strong> ${name}<br>
-      <strong>Email:</strong> ${email}</p>
-      <p>Their 7-day trial starts today. Chase them on day 6!</p>
-    `
-  });
+  return sendBrevoEmail(
+    process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk',
+    `New ProfitQuote trial started — ${name}`,
+    `<p>New user signed up for ProfitQuote:</p>
+     <p><strong>Name:</strong> ${name}<br>
+     <strong>Email:</strong> ${email}</p>
+     <p>Their 7-day trial starts today. Chase them on day 6!</p>`
+  );
 }
 
 function sendTrialExpiryEmail(name, email) {
-  const mailer = getMailer();
-  return mailer.sendMail({
-    from: `"ProfitQuote" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Your ProfitQuote trial expires tomorrow',
-    html: `
-      <p>Hi ${name},</p>
-      <p>Your 7-day free trial expires tomorrow.</p>
-      <p>To keep using ProfitQuote you'll need to complete your onboarding:</p>
-      <p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
-      <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
-      <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
-      <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>
-      <p>Once you've paid I'll personally set you up and make sure everything is running perfectly.</p>
-      <p>John James<br>ProfitQuote | Cambrian Digital</p>
-    `
-  });
+  return sendBrevoEmail(email,
+    'Your ProfitQuote trial expires tomorrow',
+    `<p>Hi ${name},</p>
+     <p>Your 7-day free trial expires tomorrow.</p>
+     <p>To keep using ProfitQuote you'll need to complete your onboarding:</p>
+     <p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
+     <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
+     <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
+     <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>
+     <p>Once you've paid I'll personally set you up and make sure everything is running perfectly.</p>
+     <p>John James<br>ProfitQuote | Cambrian Digital</p>`
+  );
 }
 
 router.post('/register', async (req, res) => {
@@ -91,10 +92,8 @@ router.post('/register', async (req, res) => {
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // Respond immediately — fire emails in background
     res.json({ token, user });
 
-    // Background emails — don't block the response
     sendWelcomeEmail(name, email).catch(e => console.error('Welcome email error:', e.message));
     sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
 
@@ -114,7 +113,6 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: 'Invalid email or password' });
 
-    // Check if trial expires tomorrow (day 6) — send warning email in background
     if (!user.paid_at) {
       const started = new Date(user.trial_started_at);
       const now = new Date();
