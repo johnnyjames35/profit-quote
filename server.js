@@ -22,11 +22,7 @@ app.use('/api/quotes', require('./routes/quotes'));
 app.use('/api/issues', require('./routes/issues'));
 app.use('/api/settings', require('./routes/settings'));
 
-// ── Trial / payment check middleware ──
-// Called before any AI request. Checks days since trial started.
-// 0-7 days   → free trial, full access
-// 8-10 days  → grace period, access allowed but frontend will show banner
-// 11+ days   → blocked unless paid_at is set
+// Trial / payment check middleware
 async function trialCheck(req, res, next) {
   try {
     const result = await pool.query(
@@ -43,17 +39,14 @@ async function trialCheck(req, res, next) {
     const now = new Date();
     const daysSince = Math.floor((now - started) / (1000 * 60 * 60 * 24));
 
-    if (daysSince <= 10) {
-      // Within free + grace window — allow through
-      return next();
-    }
+    if (daysSince <= 10) return next();
 
     // Blocked
     return res.status(402).json({
       error: 'trial_expired',
-      message: 'Your free trial has ended. Please subscribe to continue using ProfitQuote.',
-      onboardingUrl: 'https://buy.stripe.com/5kQbIV2iT6TceDRgfic3m07',
-      subscriptionUrl: 'https://buy.stripe.com/cNi4gtaPp0uO3Zd8MQc3m08'
+      message: 'Your free trial has ended. Please complete your onboarding to continue using ProfitQuote.',
+      onboardingUrl: 'https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b',
+      subscriptionUrl: 'https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a'
     });
   } catch(e) {
     return res.status(500).json({ error: e.message });
