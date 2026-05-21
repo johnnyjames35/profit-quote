@@ -8,8 +8,8 @@ const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,markup_percen
 function getMailer() {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.ionos.co.uk',
-    port: 587,
-    secure: false,
+    port: 465,
+   secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
