@@ -17,9 +17,9 @@ function getMailer() {
   });
 }
 
-async function sendWelcomeEmail(name, email) {
+function sendWelcomeEmail(name, email) {
   const mailer = getMailer();
-  await mailer.sendMail({
+  return mailer.sendMail({
     from: `"ProfitQuote" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Welcome to ProfitQuote — your 7-day free trial starts now',
@@ -33,15 +33,14 @@ async function sendWelcomeEmail(name, email) {
         <li>£49/month subscription</li>
       </ul>
       <p>I'll be in touch before your trial ends to get you set up personally.</p>
-      <p>Any questions — just reply to this email.</p>
       <p>John James<br>ProfitQuote | Cambrian Digital</p>
     `
   });
 }
 
-async function sendNotifyJohnEmail(name, email) {
+function sendNotifyJohnEmail(name, email) {
   const mailer = getMailer();
-  await mailer.sendMail({
+  return mailer.sendMail({
     from: `"ProfitQuote" <${process.env.EMAIL_USER}>`,
     to: process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk',
     subject: `New ProfitQuote trial started — ${name}`,
@@ -54,9 +53,9 @@ async function sendNotifyJohnEmail(name, email) {
   });
 }
 
-async function sendTrialExpiryEmail(name, email) {
+function sendTrialExpiryEmail(name, email) {
   const mailer = getMailer();
-  await mailer.sendMail({
+  return mailer.sendMail({
     from: `"ProfitQuote" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Your ProfitQuote trial expires tomorrow',
@@ -91,15 +90,13 @@ router.post('/register', async (req, res) => {
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // Send emails (don't block registration if email fails)
-    try {
-      await sendWelcomeEmail(name, email);
-      await sendNotifyJohnEmail(name, email);
-    } catch(emailErr) {
-      console.error('Email error:', emailErr.message);
-    }
-
+    // Respond immediately — fire emails in background
     res.json({ token, user });
+
+    // Background emails — don't block the response
+    sendWelcomeEmail(name, email).catch(e => console.error('Welcome email error:', e.message));
+    sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
+
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -116,13 +113,13 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: 'Invalid email or password' });
 
-    // Check if trial expires tomorrow (day 6) — send warning email
+    // Check if trial expires tomorrow (day 6) — send warning email in background
     if (!user.paid_at) {
       const started = new Date(user.trial_started_at);
       const now = new Date();
       const daysSince = Math.floor((now - started) / (1000 * 60 * 60 * 24));
       if (daysSince === 6) {
-        try { await sendTrialExpiryEmail(user.name, user.email); } catch(e) {}
+        sendTrialExpiryEmail(user.name, user.email).catch(e => console.error('Expiry email error:', e.message));
       }
     }
 
