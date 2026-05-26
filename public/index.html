@@ -538,13 +538,17 @@ function copyAsbestos(){if(navigator.clipboard)navigator.clipboard.writeText('Wo
 async function buildVariation(){
   const ts=getTrialStatus(currentUser);if(ts.status==='expired'){showBlockedScreen();return;}
   const desc=document.getElementById('issue-description').value.trim();if(!desc){showToast('Please describe the issue');return;}
-  const h=+document.getElementById('issue-hours').value||0,mc=+document.getElementById('issue-materials-cost').value||0,hr=+document.getElementById('issue-hourly').value||(currentUser?.hourly_rate||35),el=h*hr,te=el+mc;
+  const h=parseFloat(document.getElementById('issue-hours').value)||0,mc=parseFloat(document.getElementById('issue-materials-cost').value)||0,hr=parseFloat(document.getElementById('issue-hourly').value)||35,el=Math.round(h*hr*100)/100,te=Math.round((el+mc)*100)/100;
   const re=document.getElementById('variation-result');re.style.display='block';re.innerHTML='<div class="loading-ai"><div class="spinner"></div><p>Generating…</p></div>';document.querySelector('.page').scrollTop=9999;
-  const p='UK variation notice.\nISSUE:'+currentIssueType+'\nDESC:'+desc+'\nHOURS:'+h+'@£'+hr+'=£'+el+'\nMATERIALS:£'+mc+'\nTOTAL:£'+te+'\nJSON: {"variationTitle":"t","extraCost":'+te+',"variationNotice":"n","customerMessage":"s","tip":"t"}';
+  const p='You are a UK trades assistant. Generate a variation notice as JSON only. No extra text, no markdown, just the raw JSON object.\n\nIssue type: '+currentIssueType+'\nDescription: '+desc+'\nExtra hours: '+h+' at '+hr+' per hour = '+el+'\nExtra materials cost: '+mc+'\nTotal extra cost: '+te+'\n\nRespond with only this JSON structure (fill in the values):\n{"variationTitle":"short title","extraCost":'+te+',"variationNotice":"formal notice text","customerMessage":"short SMS text","tip":"pro tip for tradesperson"}';
   try{
     const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:p}]})});
     if(r.status===402){showBlockedScreen();return;}
-    const data=await r.json(),v=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+    const data=await r.json();
+    const rawText=(data.content?.[0]?.text||'');
+    const jsonMatch=rawText.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error('No JSON found in response');
+    const v=JSON.parse(jsonMatch[0]);
     window._vn=v.variationNotice;window._vs=v.customerMessage;
     fetch(API+'/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({issue_type:currentIssueType,description:desc,extra_hours:h,extra_materials:mc,hourly_rate:hr,total_extra:te,variation_data:v})}).catch(()=>{});
     re.innerHTML='<div class="ai-result"><div class="ai-result-header"><div class="ai-result-branding"><div class="ai-result-logo">Profit<span>Quote</span></div><div class="ai-result-badge">+£'+fmt(v.extraCost)+'</div></div></div><div class="ai-result-body"><div class="card-title">Variation Notice</div><p style="font-size:14px;color:var(--body);line-height:1.6;">'+esc(v.variationNotice).replace(/\n/g,'<br>')+'</p><button class="btn btn-secondary btn-sm mt12" onclick="navigator.clipboard&&navigator.clipboard.writeText(window._vn).then(()=>showToast(\'Copied ✓\'))">Copy Notice</button></div></div><div class="coach-box mt12"><h4>📱 SMS to Customer</h4><p style="font-size:14px;">'+esc(v.customerMessage)+'</p><button class="btn btn-secondary btn-sm mt8" onclick="navigator.clipboard&&navigator.clipboard.writeText(window._vs).then(()=>showToast(\'Copied ✓\'))">Copy SMS</button></div><div class="protection-box"><h4>💡 Pro Tip</h4><p>'+esc(v.tip)+'</p></div><button class="btn btn-secondary mt12" onclick="closeIssueForm()">Back to Issues</button>';
