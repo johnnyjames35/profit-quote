@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
 const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.JWT_SECRET + '_admin';
 
-// Middleware — verify admin token
 function requireAdmin(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -17,7 +16,6 @@ function requireAdmin(req, res, next) {
   }
 }
 
-// POST /api/admin/login
 router.post('/login', (req, res) => {
   const { password } = req.body;
   if (!password || password !== ADMIN_PASSWORD) {
@@ -27,7 +25,6 @@ router.post('/login', (req, res) => {
   res.json({ token });
 });
 
-// GET /api/admin/users
 router.get('/users', requireAdmin, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
@@ -37,7 +34,6 @@ router.get('/users', requireAdmin, async (req, res) => {
         u.name,
         u.email,
         u.trade,
-        u.account_status,
         u.created_at,
         COUNT(q.id)::int AS quote_count
       FROM users u
