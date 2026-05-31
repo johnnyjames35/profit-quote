@@ -12,7 +12,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 app.locals.pool = pool;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
