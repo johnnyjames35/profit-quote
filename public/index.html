@@ -1762,7 +1762,7 @@ async function submitRegister() {
       return;
     }
     localStorage.setItem('pq_token', data.token);
-    window.location.href = '/dashboard';
+    window.location.href = 'https://profit-quote-production.up.railway.app/dashboard';
   } catch(e) {
     errBox.textContent = 'Connection error. Please try again.';
     errBox.style.display = 'block';
