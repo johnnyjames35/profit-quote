@@ -72,7 +72,9 @@ app.post('/api/ai', require('./middleware/auth'), trialCheck, async (req, res) =
     res.status(500).json({ error: e.message });
   }
 });
-
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 // Serve app for all non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
