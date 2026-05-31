@@ -1099,7 +1099,7 @@ footer {
     <div class="nav-logo-icon">£</div>
     <span class="nav-logo-text">Profit<span>Quote</span></span>
   </a>
-  <a href="https://profitquote.co.uk/register" class="nav-cta">Start Free Trial</a>
+  <a href="#" onclick="openRegister();return false;" class="nav-cta">Start Free Trial</a>
 </nav>
 
 <!-- HERO -->
@@ -1108,7 +1108,7 @@ footer {
   <h1>Quote Smarter.<br><span>Protect Every Job.</span></h1>
   <p class="hero-sub">ProfitQuote helps UK tradespeople build accurate quotes, protect profit margins, and handle job changes professionally.</p>
   <div class="hero-buttons">
-    <a href="https://profitquote.co.uk/register" class="btn-primary">Try Free for 7 Days →</a>
+    <a href="#" onclick="openRegister();return false;" class="btn-primary">Try Free for 7 Days →</a>
     <a href="#pricing" class="btn-secondary">See Pricing</a>
   </div>
   <p class="hero-note">No credit card needed for trial &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp; Works on any device</p>
@@ -1605,6 +1605,48 @@ footer {
   </div>
 </footer>
 
+  <!-- REGISTER MODAL -->
+<div class="modal-overlay" id="modal-register">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" onclick="closeRegister()">✕</button>
+    <div class="modal-title">Start Your Free Trial</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:20px;">No credit card needed · 7 days free · Cancel anytime</p>
+    <div id="register-error" style="display:none;background:#FDECEA;border:1px solid #f5c6c6;color:var(--red);padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Your Name</label>
+        <input id="reg-name" type="text" placeholder="e.g. Dave Morris" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Email Address</label>
+        <input id="reg-email" type="email" placeholder="e.g. dave@morrisplumbing.co.uk" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Password</label>
+        <input id="reg-password" type="password" placeholder="Choose a password" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Your Trade</label>
+        <select id="reg-trade" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;background:white;">
+          <option value="">Select your trade...</option>
+          <option>Plumber</option>
+          <option>Electrician</option>
+          <option>Builder</option>
+          <option>Roofer</option>
+          <option>Bathroom Fitter</option>
+          <option>Kitchen Fitter</option>
+          <option>Decorator</option>
+          <option>Landscaper</option>
+          <option>Carpenter</option>
+          <option>Window Fitter</option>
+          <option>HVAC Engineer</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <button id="reg-btn" onclick="submitRegister()" style="background:var(--cyan);color:var(--navy);font-weight:800;font-size:1rem;padding:14px;border:none;border-radius:10px;cursor:pointer;margin-top:4px;">Start Free Trial →</button>
+    </div>
+  </div>
+</div>
 <!-- PRIVACY MODAL -->
 <div class="modal-overlay" id="modal-privacy">
   <div class="modal-box">
@@ -1677,6 +1719,57 @@ footer {
 </div>
 
 <script>
+  function openRegister() {
+  document.getElementById('modal-register').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRegister() {
+  document.getElementById('modal-register').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function submitRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value.trim();
+  const trade = document.getElementById('reg-trade').value;
+  const errBox = document.getElementById('register-error');
+  const btn = document.getElementById('reg-btn');
+
+  errBox.style.display = 'none';
+  if (!name || !email || !password) {
+    errBox.textContent = 'Please fill in your name, email and password.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Creating your account...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, trade })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errBox.textContent = data.error || 'Something went wrong. Please try again.';
+      errBox.style.display = 'block';
+      btn.textContent = 'Start Free Trial →';
+      btn.disabled = false;
+      return;
+    }
+    localStorage.setItem('pq_token', data.token);
+    window.location.href = '/dashboard';
+  } catch(e) {
+    errBox.textContent = 'Connection error. Please try again.';
+    errBox.style.display = 'block';
+    btn.textContent = 'Start Free Trial →';
+    btn.disabled = false;
+  }
+}
 function toggleFaq(btn) {
   const answer = btn.nextElementSibling;
   const isOpen = answer.classList.contains('open');
