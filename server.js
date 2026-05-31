@@ -21,6 +21,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/quotes', require('./routes/quotes'));
 app.use('/api/issues', require('./routes/issues'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Trial / payment check middleware
 async function trialCheck(req, res, next) {
