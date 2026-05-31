@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProfitQuote — Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --navy: #0B1628;
+  --navy2: #111f35;
+  --navy3: #1a2d47;
+  --cyan: #00c2e0;
+  --cyan-dim: rgba(0,194,224,0.12);
+  --cyan-border: rgba(0,194,224,0.25);
+  --white: #f0f4f8;
+  --muted: #6a7f96;
+  --border: rgba(255,255,255,0.07);
+  --green: #00d97e;
+  --green-dim: rgba(0,217,126,0.12);
+  --amber: #f6c90e;
+  --amber-dim: rgba(246,201,14,0.12);
+  --red: #ff4757;
+  --red-dim: rgba(255,71,87,0.12);
+  --font: 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+}
+
+/* ── LOGIN ── */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--navy);
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(0,194,224,0.06) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 20%, rgba(0,194,224,0.04) 0%, transparent 50%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+
+.login-logo-icon {
+  width: 38px; height: 38px;
+  background: var(--cyan);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 800; color: var(--navy);
+  font-family: var(--mono);
+}
+
+.login-logo-text {
+  font-size: 1.2rem; font-weight: 700; color: var(--white);
+}
+.login-logo-text span { color: var(--cyan); }
+.login-logo-badge {
+  font-size: 0.65rem; font-family: var(--mono);
+  color: var(--muted); border: 1px solid rgba(255,255,255,0.1);
+  padding: 2px 7px; border-radius: 4px; margin-left: 4px;
+}
+
+.login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+.login-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 28px; }
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block; font-size: 0.72rem; font-family: var(--mono);
+  color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%; padding: 11px 14px;
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--white); font-size: 0.95rem;
+  font-family: var(--font); outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus { border-color: var(--cyan-border); }
+
+#login-err {
+  display: none; background: var(--red-dim); border: 1px solid rgba(255,71,87,0.3);
+  color: var(--red); padding: 10px 14px; border-radius: 8px;
+  font-size: 0.85rem; margin-bottom: 16px;
+}
+
+.btn-login {
+  width: 100%; padding: 13px; background: var(--cyan); color: var(--navy);
+  font-weight: 700; font-size: 0.95rem; border: none; border-radius: 8px;
+  cursor: pointer; font-family: var(--font);
+  transition: opacity 0.2s;
+}
+.btn-login:hover { opacity: 0.88; }
+.btn-login:disabled { opacity: 0.5; cursor: default; }
+
+/* ── SHELL ── */
+#app-screen { display: none; }
+
+.topbar {
+  background: var(--navy2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+
+.topbar-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.topbar-logo-icon {
+  width: 30px; height: 30px; background: var(--cyan);
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--navy); font-family: var(--mono);
+}
+
+.topbar-logo-text { font-size: 1rem; font-weight: 700; color: var(--white); }
+.topbar-logo-text span { color: var(--cyan); }
+.topbar-badge {
+  font-size: 0.62rem; font-family: var(--mono);
+  background: var(--cyan-dim); border: 1px solid var(--cyan-border);
+  color: var(--cyan); padding: 2px 8px; border-radius: 4px;
+}
+
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-time { font-size: 0.78rem; font-family: var(--mono); color: var(--muted); }
+
+.btn-logout {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  font-family: var(--font); transition: all 0.2s;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* ── MAIN ── */
+.main { padding: 32px 28px; max-width: 1100px; margin: 0 auto; }
+
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px 22px;
+}
+.stat-label {
+  font-size: 0.7rem; font-family: var(--mono); color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+}
+.stat-val {
+  font-size: 2rem; font-weight: 700; font-family: var(--mono);
+  line-height: 1;
+}
+.stat-val.cyan { color: var(--cyan); }
+.stat-val.green { color: var(--green); }
+.stat-val.amber { color: var(--amber); }
+.stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+/* Table card */
+.table-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+
+.table-header {
+  padding: 18px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-title { font-size: 0.95rem; font-weight: 600; }
+.table-count {
+  font-size: 0.75rem; font-family: var(--mono);
+  color: var(--cyan); background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border); padding: 3px 10px; border-radius: 20px;
+}
+
+.refresh-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  font-family: var(--font); transition: all 0.2s;
+}
+.refresh-btn:hover { border-color: var(--cyan-border); color: var(--cyan); }
+
+.table-wrap { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  padding: 12px 18px; text-align: left;
+  font-size: 0.68rem; font-family: var(--mono);
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+tbody td {
+  padding: 14px 18px; font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.td-name { font-weight: 600; color: var(--white); }
+.td-email { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+.td-date { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; font-family: var(--mono);
+}
+.badge-trial { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(246,201,14,0.25); }
+.badge-active { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,217,126,0.25); }
+.badge-expired { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.25); }
+
+.td-quotes { font-family: var(--mono); font-size: 0.85rem; color: var(--cyan); }
+
+.empty-row td {
+  text-align: center; padding: 48px; color: var(--muted);
+  font-size: 0.875rem;
+}
+
+#loading-row td { text-align: center; padding: 48px; color: var(--muted); font-size: 0.875rem; }
+
+@media (max-width: 768px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .main { padding: 20px 16px; }
+  .topbar { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">£</div>
+      <div>
+        <span class="login-logo-text">Profit<span>Quote</span></span>
+        <span class="login-logo-badge">ADMIN</span>
+      </div>
+    </div>
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">Sign in with your admin credentials to view signups.</div>
+    <div id="login-err"></div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="admin-password" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">£</div>
+      <span class="topbar-logo-text">Profit<span>Quote</span></span>
+      <span class="topbar-badge">ADMIN</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-time" id="live-time"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Signups</div>
+        <div class="stat-val cyan" id="stat-total">—</div>
+        <div class="stat-sub">All registered users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">On Trial</div>
+        <div class="stat-val amber" id="stat-trial">—</div>
+        <div class="stat-sub">Within 7-day trial</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Paying</div>
+        <div class="stat-val green" id="stat-paying">—</div>
+        <div class="stat-sub">Active subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-val cyan" id="stat-week">—</div>
+        <div class="stat-sub">New signups (7 days)</div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="table-title">Registered Users</span>
+          <span class="table-count" id="user-count">0</span>
+        </div>
+        <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Trade</th>
+              <th>Status</th>
+              <th>Quotes</th>
+              <th>Signed Up</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr id="loading-row"><td colspan="7">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'https://profit-quote-production.up.railway.app';
+let adminToken = sessionStorage.getItem('pq_admin_token');
+
+// Live clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('live-time').textContent =
+    now.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) +
+    ' · ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Init
+if (adminToken) showApp();
+
+async function doLogin() {
+  const pw = document.getElementById('admin-password').value.trim();
+  const err = document.getElementById('login-err');
+  const btn = document.getElementById('login-btn');
+  err.style.display = 'none';
+  if (!pw) return;
+
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(API + '/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      err.textContent = data.error || 'Incorrect password.';
+      err.style.display = 'block';
+      btn.textContent = 'Sign In →';
+      btn.disabled = false;
+      return;
+    }
+    adminToken = data.token;
+    sessionStorage.setItem('pq_admin_token', adminToken);
+    showApp();
+  } catch(e) {
+    err.textContent = 'Connection error. Check the app is running.';
+    err.style.display = 'block';
+    btn.textContent = 'Sign In →';
+    btn.disabled = false;
+  }
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  loadUsers();
+}
+
+function doLogout() {
+  sessionStorage.removeItem('pq_admin_token');
+  adminToken = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('admin-password').value = '';
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch(API + '/api/admin/users', {
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    renderUsers(data.users || []);
+    renderStats(data.users || []);
+  } catch(e) {
+    document.getElementById('users-tbody').innerHTML =
+      '<tr class="empty-row"><td colspan="7">Could not load users — check connection.</td></tr>';
+  }
+}
+
+function renderStats(users) {
+  const now = new Date();
+  const weekAgo = new Date(now - 7 * 86400000);
+
+  const trial = users.filter(u => {
+    const created = new Date(u.created_at);
+    const daysSince = (now - created) / 86400000;
+    return daysSince <= 7 && u.account_status !== 'active';
+  }).length;
+
+  const paying = users.filter(u => u.account_status === 'active').length;
+  const thisWeek = users.filter(u => new Date(u.created_at) >= weekAgo).length;
+
+  document.getElementById('stat-total').textContent = users.length;
+  document.getElementById('stat-trial').textContent = trial;
+  document.getElementById('stat-paying').textContent = paying;
+  document.getElementById('stat-week').textContent = thisWeek;
+  document.getElementById('user-count').textContent = users.length;
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No users yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map((u, i) => {
+    const created = new Date(u.created_at);
+    const daysSince = (new Date() - created) / 86400000;
+    let statusBadge;
+    if (u.account_status === 'active') {
+      statusBadge = '<span class="badge badge-active">Active</span>';
+    } else if (daysSince <= 7) {
+      statusBadge = '<span class="badge badge-trial">Trial</span>';
+    } else {
+      statusBadge = '<span class="badge badge-expired">Expired</span>';
+    }
+    const dateStr = created.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    return `<tr>
+      <td class="td-date">${i + 1}</td>
+      <td class="td-name">${esc(u.name)}</td>
+      <td class="td-email">${esc(u.email)}</td>
+      <td>${esc(u.trade || '—')}</td>
+      <td>${statusBadge}</td>
+      <td class="td-quotes">${u.quote_count || 0}</td>
+      <td class="td-date">${dateStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+
+</body>
+</html>
