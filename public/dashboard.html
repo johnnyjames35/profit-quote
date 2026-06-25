@@ -848,46 +848,34 @@ async function generateQuote(){
   document.getElementById('quote-builder-details').textContent=builderDetails;
   document.getElementById('room-summary').textContent=roomSummary;
 
-  // AI warning check
-  try{
-    const aiRes=await fetch(API+'/api/ai',{
-      method:'POST',
-      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:300,
-        messages:[{role:'user',content:`You are a strict UK building trade expert protecting tradespeople from underquoting. Carefully read this job description and estimate the MINIMUM realistic number of working days needed to complete ALL the work described. Use these benchmarks: dormer/loft extension structural work = 15-25 days alone; full bathroom with tiling and underfloor heating = 8-12 days; full electrics rewire = 5-8 days; plastering and skimming = 3-5 days; laminate flooring 15sqm = 1-2 days. Add all tasks together for your estimate. Job: "${desc}". Days quoted by tradesperson: ${days}. If their quoted days are more than 25% below your estimated minimum, flag it with a specific warning. Reply ONLY in valid JSON, no other text: {"estimated_days":NUMBER,"flagged":true,"message":"clear warning listing which tasks will take longer and your total estimated days"} or {"estimated_days":NUMBER,"flagged":false}`}]
-      })
-    });
-    if(aiRes.ok){
-      const aiData=await aiRes.json();
-      const txt=aiData.content?.[0]?.text||'';
-      const clean=txt.replace(/```json|```/g,'').trim();
-      try{
-        const parsed=JSON.parse(clean);
-        if(parsed.flagged&&parsed.message){
-          const estDays=parsed.estimated_days?(' AI estimates this job needs approximately '+parsed.estimated_days+' days.'):'';
-          document.getElementById('ai-warning-text').textContent=parsed.message+estDays;
-          document.getElementById('ai-warning-box').style.display='block';
-        }
-      }catch(e){
-        if(days<=10&&desc.length>50){
-          document.getElementById('ai-warning-text').textContent='This job sounds complex — double-check that '+days+' days is enough to complete all the work profitably. Underquoting is the #1 reason tradespeople lose money.';
-          document.getElementById('ai-warning-box').style.display='block';
-        }
-      }
-    } else {
-      // AI call failed - fallback
-      if(days<=10&&desc.length>50){
-        document.getElementById('ai-warning-text').textContent='This job sounds complex — are you sure '+days+' days is enough? Underquoting costs you money.';
-        document.getElementById('ai-warning-box').style.display='block';
-      }
+  // KEYWORD SCORING — reliable warning system
+  const jobLower = desc.toLowerCase();
+  const tasks = [
+    { keywords:['dormer','loft conversion','loft extension','loft room'], days:20, label:'dormer/loft conversion' },
+    { keywords:['extension','rear extension','side extension'], days:15, label:'extension' },
+    { keywords:['ensuite','en suite','bathroom','wetroom','wet room'], days:8, label:'bathroom/ensuite' },
+    { keywords:['underfloor heating','ufh'], days:3, label:'underfloor heating' },
+    { keywords:['rewire','full electrics','new electrics','electrical'], days:5, label:'full electrics' },
+    { keywords:['plasterboard','plaster board','plastering','skimming','skim'], days:3, label:'plastering/skimming' },
+    { keywords:['kitchen','kitchen cupboard','kitchen units'], days:5, label:'kitchen' },
+    { keywords:['tiling','tiled','tiles'], days:2, label:'tiling' },
+    { keywords:['bifold','bi-fold','bi fold'], days:2, label:'bifold doors' },
+    { keywords:['new ceiling','ceiling','downlight','downlighter'], days:2, label:'ceiling/downlights' },
+    { keywords:['flooring','laminate','vinyl','carpet'], days:1, label:'flooring' },
+    { keywords:['roofing','roof','felt','tiles'], days:4, label:'roofing' },
+  ];
+  let minDays = 0;
+  let detectedTasks = [];
+  tasks.forEach(task => {
+    if(task.keywords.some(kw => jobLower.includes(kw))){
+      minDays += task.days;
+      detectedTasks.push(task.label+' (min '+task.days+' days)');
     }
-  }catch(e){
-    if(days<=10&&desc.length>50){
-      document.getElementById('ai-warning-text').textContent='This job sounds complex — are you sure '+days+' days is enough? Underquoting costs you money.';
-      document.getElementById('ai-warning-box').style.display='block';
-    }
+  });
+  if(minDays > 0 && days < minDays * 0.75){
+    const taskList = detectedTasks.join(', ');
+    document.getElementById('ai-warning-text').textContent='Based on the work described, this job needs a minimum of '+minDays+' days. You have quoted '+days+' days which may not be enough. Tasks detected: '+taskList+'. Underquoting is the #1 reason tradespeople lose money.';
+    document.getElementById('ai-warning-box').style.display='block';
   }
 
   document.getElementById('ai-loading').style.display='none';
