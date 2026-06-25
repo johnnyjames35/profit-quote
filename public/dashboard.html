@@ -421,6 +421,47 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group"><label class="field-label">Materials Cost (£)</label><input class="field-input" id="q-materials" type="number" placeholder="e.g. 800"></div>
           <div class="field-group"><label class="field-label">Markup % on Materials</label><input class="field-input" id="q-markup" type="number" placeholder="e.g. 20"></div>
         </div>
+        <div class="card">
+          <div class="card-title">Skip / Waste Disposal</div>
+          <div class="field-group">
+            <label class="field-label">Does this job require a skip?</label>
+            <div class="risk-row">
+              <button class="risk-btn" id="skip-no" onclick="setSkip(false)" style="flex:1;">No Skip Needed</button>
+              <button class="risk-btn active-low" id="skip-yes" onclick="setSkip(true)" style="flex:1;">Yes — Add Skip</button>
+            </div>
+          </div>
+          <div id="skip-fields" style="display:none;">
+            <div class="field-group">
+              <label class="field-label">Skip Size</label>
+              <select class="field-input" id="q-skip-size" onchange="updateSkipCost()">
+                <option value="mini">Mini Skip (2-3 yards) — est. £75-£175</option>
+                <option value="midi">Midi Skip (4-5 yards) — est. £140-£320</option>
+                <option value="large" selected>Large Skip (6-8 yards) — est. £350+</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Skip Cost (£)</label>
+              <input class="field-input" id="q-skip-cost" type="number" placeholder="e.g. 350" value="350">
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Scaffolding</div>
+          <div class="field-group">
+            <label class="field-label">Does this job require scaffolding?</label>
+            <div class="risk-row">
+              <button class="risk-btn active-low" id="scaffold-no" onclick="setScaffold(false)" style="flex:1;">No Scaffolding</button>
+              <button class="risk-btn" id="scaffold-yes" onclick="setScaffold(true)" style="flex:1;">Yes — Add Scaffolding</button>
+            </div>
+          </div>
+          <div id="scaffold-fields" style="display:none;">
+            <div class="field-group">
+              <label class="field-label">Scaffolding Cost (£)</label>
+              <input class="field-input" id="q-scaffold-cost" type="number" placeholder="e.g. 1000" value="1000">
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Typical cost: £800-£1,200 for a 2-storey semi. £20-£40 per m² for larger jobs.</p>
+            </div>
+          </div>
+        </div>
         <button class="btn-next" onclick="nextStep(5)">Next →</button>
         <button class="btn-prev" onclick="nextStep(3)">← Back</button>
       </div>
@@ -461,6 +502,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
             <div class="breakdown">
               <div class="breakdown-row"><span>Labour</span><span id="result-labour">£0</span></div>
               <div class="breakdown-row"><span>Materials (inc. markup)</span><span id="result-materials">£0</span></div>
+              <div class="breakdown-row" id="result-skip-row" style="display:none;"><span>Skip / Waste Disposal</span><span id="result-skip">£0</span></div>
+              <div class="breakdown-row" id="result-scaffold-row" style="display:none;"><span>Scaffolding</span><span id="result-scaffold">£0</span></div>
               <div class="breakdown-row"><span>Contingency</span><span id="result-contingency">£0</span></div>
               <div class="breakdown-row total"><span>Total Quote</span><span id="result-total">£0</span></div>
             </div>
@@ -554,6 +597,28 @@ let currentUser = null;
 let quotes = [];
 let selectedRisk = 'low';
 let currentQuoteData = null;
+let needsSkip = true;
+let needsScaffold = false;
+
+function setSkip(val){
+  needsSkip = val;
+  document.getElementById('skip-yes').className = val ? 'risk-btn active-low' : 'risk-btn';
+  document.getElementById('skip-no').className = val ? 'risk-btn' : 'risk-btn active-low';
+  document.getElementById('skip-fields').style.display = val ? 'block' : 'none';
+}
+
+function setScaffold(val){
+  needsScaffold = val;
+  document.getElementById('scaffold-yes').className = val ? 'risk-btn active-low' : 'risk-btn';
+  document.getElementById('scaffold-no').className = val ? 'risk-btn' : 'risk-btn active-low';
+  document.getElementById('scaffold-fields').style.display = val ? 'block' : 'none';
+}
+
+function updateSkipCost(){
+  const size = document.getElementById('q-skip-size').value;
+  const costs = { mini: 125, midi: 230, large: 350 };
+  document.getElementById('q-skip-cost').value = costs[size];
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const urlToken = urlParams.get('token');
@@ -765,6 +830,8 @@ function nextStep(n){
 
 function resetBuilder(){
   ['q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  needsSkip=true; needsScaffold=false;
+  setSkip(true); setScaffold(false);
   ['length-m-conv','length-ft-conv','width-m-conv','width-ft-conv','height-m-conv','height-ft-conv'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=''; });
   document.getElementById('room-area').textContent='';
   document.getElementById('q-day-rate').value=currentUser?.day_rate||200;
@@ -791,12 +858,15 @@ async function generateQuote(){
   const contingency=parseFloat(document.getElementById('q-contingency').value)||10;
   const profitTarget=parseFloat(document.getElementById('q-profit-target').value)||30;
 
+  const skipCost = needsSkip ? (parseFloat(document.getElementById('q-skip-cost').value)||0) : 0;
+  const scaffoldCost = needsScaffold ? (parseFloat(document.getElementById('q-scaffold-cost').value)||0) : 0;
   const labour=days*dayRate;
   const mats=materials*(1+(markup/100));
-  const subtotal=labour+mats;
+  const extras=skipCost+scaffoldCost;
+  const subtotal=labour+mats+extras;
   const contingencyAmt=subtotal*(contingency/100);
   const total=subtotal+contingencyAmt;
-  const profit=total-(labour+materials);
+  const profit=total-(labour+materials+extras);
   const profitPct=total>0?Math.round((profit/total)*100):0;
 
   // Room summary
@@ -822,20 +892,21 @@ async function generateQuote(){
   if(bizPhone) builderDetails+=(builderDetails?' · ':'')+bizPhone;
   if(bizEmail) builderDetails+=(builderDetails?' · ':'')+bizEmail;
 
+  const skipSize = needsSkip ? (document.getElementById('q-skip-size')?.value||'') : '';
   currentQuoteData={
     job_description:desc,
     customer_name:document.getElementById('q-customer').value,
     customer_email:document.getElementById('q-email').value,
     trade:currentUser?.trade||'',
     spec_level:null,
-    skip_type:null,
-    skip_cost:null,
+    skip_type:skipSize||null,
+    skip_cost:skipCost||null,
     day_rate:dayRate,
     days:days,
     markup_percent:markup,
     profit_target:profitTarget,
-    other_costs:null,
-    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails},
+    other_costs:scaffoldCost>0?'Scaffolding: £'+scaffoldCost:null,
+    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,skipCost,scaffoldCost},
     total:total,
     profit_percent:profitPct
   };
@@ -847,34 +918,77 @@ async function generateQuote(){
   document.getElementById('result-profit-badge').textContent='+£'+Math.round(profit).toLocaleString('en-GB')+' profit ('+profitPct+'%)';
   document.getElementById('quote-builder-details').textContent=builderDetails;
   document.getElementById('room-summary').textContent=roomSummary;
+  if(needsSkip && skipCost>0){
+    document.getElementById('result-skip-row').style.display='flex';
+    document.getElementById('result-skip').textContent='£'+skipCost.toLocaleString('en-GB',{minimumFractionDigits:2});
+  } else { document.getElementById('result-skip-row').style.display='none'; }
+  if(needsScaffold && scaffoldCost>0){
+    document.getElementById('result-scaffold-row').style.display='flex';
+    document.getElementById('result-scaffold').textContent='£'+scaffoldCost.toLocaleString('en-GB',{minimumFractionDigits:2});
+  } else { document.getElementById('result-scaffold-row').style.display='none'; }
 
   // KEYWORD SCORING — reliable warning system
+  // Uses groups: only the highest-scoring match within each group is counted
   const jobLower = desc.toLowerCase();
-  const tasks = [
-    { keywords:['dormer','loft conversion','loft extension','loft room'], days:20, label:'dormer/loft conversion' },
-    { keywords:['extension','rear extension','side extension'], days:15, label:'extension' },
-    { keywords:['ensuite','en suite','bathroom','wetroom','wet room'], days:8, label:'bathroom/ensuite' },
-    { keywords:['underfloor heating','ufh'], days:3, label:'underfloor heating' },
-    { keywords:['rewire','full electrics','new electrics','electrical'], days:5, label:'full electrics' },
-    { keywords:['plasterboard','plaster board','plastering','skimming','skim'], days:3, label:'plastering/skimming' },
-    { keywords:['kitchen','kitchen cupboard','kitchen units'], days:5, label:'kitchen' },
-    { keywords:['tiling','tiled','tiles'], days:2, label:'tiling' },
-    { keywords:['bifold','bi-fold','bi fold'], days:2, label:'bifold doors' },
-    { keywords:['new ceiling','ceiling','downlight','downlighter'], days:2, label:'ceiling/downlights' },
-    { keywords:['flooring','laminate','vinyl','carpet'], days:1, label:'flooring' },
-    { keywords:['roofing','roof','felt','tiles'], days:4, label:'roofing' },
+  const taskGroups = [
+    // Group 1: Major structure — pick highest match only
+    { group:'structure', tasks:[
+      { keywords:['dormer','loft conversion','loft extension','loft room'], days:25, label:'dormer/loft conversion' },
+      { keywords:['rear extension','side extension','house extension'], days:20, label:'extension' },
+    ]},
+    // Group 2: Bathroom/kitchen — pick highest match only
+    { group:'wet', tasks:[
+      { keywords:['ensuite','en suite','wetroom','wet room'], days:8, label:'ensuite/wetroom' },
+      { keywords:['bathroom','new bathroom'], days:7, label:'bathroom' },
+      { keywords:['kitchen refurb','full kitchen','kitchen cupboard','kitchen units'], days:6, label:'kitchen' },
+    ]},
+    // Group 3: Heating
+    { group:'heating', tasks:[
+      { keywords:['underfloor heating','ufh'], days:3, label:'underfloor heating' },
+    ]},
+    // Group 4: Electrics
+    { group:'electrics', tasks:[
+      { keywords:['rewire','full electrics','new electrics'], days:6, label:'full rewire' },
+      { keywords:['electrical','electrics','sockets','downlight','downlighter'], days:2, label:'electrics' },
+    ]},
+    // Group 5: Plaster/finish
+    { group:'plaster', tasks:[
+      { keywords:['plasterboard','plaster board','plastering','skimming','skim'], days:3, label:'plastering/skimming' },
+    ]},
+    // Group 6: Tiling
+    { group:'tiling', tasks:[
+      { keywords:['tiling','tiled','tiles'], days:2, label:'tiling' },
+    ]},
+    // Group 7: Doors/windows
+    { group:'doors', tasks:[
+      { keywords:['bifold','bi-fold','bi fold'], days:2, label:'bifold doors' },
+    ]},
+    // Group 8: Flooring
+    { group:'flooring', tasks:[
+      { keywords:['flooring','laminate','vinyl','carpet'], days:1, label:'flooring' },
+    ]},
+    // Group 9: Ceiling
+    { group:'ceiling', tasks:[
+      { keywords:['new ceiling','ceiling'], days:2, label:'new ceiling' },
+    ]},
   ];
   let minDays = 0;
   let detectedTasks = [];
-  tasks.forEach(task => {
-    if(task.keywords.some(kw => jobLower.includes(kw))){
-      minDays += task.days;
-      detectedTasks.push(task.label+' (min '+task.days+' days)');
+  taskGroups.forEach(group => {
+    let bestMatch = null;
+    group.tasks.forEach(task => {
+      if(task.keywords.some(kw => jobLower.includes(kw))){
+        if(!bestMatch || task.days > bestMatch.days) bestMatch = task;
+      }
+    });
+    if(bestMatch){
+      minDays += bestMatch.days;
+      detectedTasks.push(bestMatch.label+' (min '+bestMatch.days+' days)');
     }
   });
   if(minDays > 0 && days < minDays * 0.75){
     const taskList = detectedTasks.join(', ');
-    document.getElementById('ai-warning-text').textContent='Based on the work described, this job needs a minimum of '+minDays+' days. You have quoted '+days+' days which may not be enough. Tasks detected: '+taskList+'. Underquoting is the #1 reason tradespeople lose money.';
+    document.getElementById('ai-warning-text').textContent='⚠️ This job contains complex tasks — please double-check your day estimate covers ALL the work before submitting this quote. Tasks detected: '+taskList+'. Underquoting is the #1 reason tradespeople lose money.';
     document.getElementById('ai-warning-box').style.display='block';
   }
 
