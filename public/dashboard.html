@@ -852,7 +852,7 @@ async function generateQuote(){
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:200,
-        messages:[{role:'user',content:`You are a UK building trade expert. Review this quote and flag if the days quoted seem seriously too low for the job described. Job: "${desc}". Days: ${days}. Be strict. Reply ONLY in JSON with no other text: {"flagged":true,"message":"brief warning"} or {"flagged":false}`}]
+        messages:[{role:'user',content:`You are a strict UK building trade expert reviewing a tradesperson's quote. Your job is to protect them from underquoting. Job description: "${desc}". Days quoted: ${days}. Based on the complexity of work described, is ${days} days realistic? For context: fitting 10 kitchen cupboards alone takes 2-3 days, underfloor heating 1-2 days, bifold doors 1 day each, ceiling and downlights 1-2 days. If the total days seem too low for ALL the work described, flag it. Reply ONLY in valid JSON, no other text: {"flagged":true,"message":"specific warning about which tasks will take longer"} or {"flagged":false}`}]
       })
     });
     if(aiRes.ok){
@@ -867,14 +867,20 @@ async function generateQuote(){
         }
       }catch(e){
         // client-side fallback
-        if(days<=7&&desc.length>50){
+        if(days<=10&&desc.length>50){
           document.getElementById('ai-warning-text').textContent='This job sounds complex — are you sure '+days+' days is enough? Underquoting costs you money.';
           document.getElementById('ai-warning-box').style.display='block';
         }
       }
+    } else {
+      // AI call failed - fallback
+      if(days<=10&&desc.length>50){
+        document.getElementById('ai-warning-text').textContent='This job sounds complex — are you sure '+days+' days is enough? Underquoting costs you money.';
+        document.getElementById('ai-warning-box').style.display='block';
+      }
     }
   }catch(e){
-    if(days<=7&&desc.length>50){
+    if(days<=10&&desc.length>50){
       document.getElementById('ai-warning-text').textContent='This job sounds complex — are you sure '+days+' days is enough? Underquoting costs you money.';
       document.getElementById('ai-warning-box').style.display='block';
     }
