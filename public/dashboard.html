@@ -864,11 +864,14 @@ async function generateQuote(){
         if(parsed.flagged&&parsed.message){
           document.getElementById('ai-warning-text').textContent=parsed.message;
           document.getElementById('ai-warning-box').style.display='block';
+        } else if(days<=10&&desc.length>50){
+          // AI said OK but job sounds complex and days are low — warn anyway
+          document.getElementById('ai-warning-text').textContent='This job sounds complex — double-check that '+days+' days is enough to complete all the work profitably. Underquoting is the #1 reason tradespeople lose money.';
+          document.getElementById('ai-warning-box').style.display='block';
         }
       }catch(e){
-        // client-side fallback
         if(days<=10&&desc.length>50){
-          document.getElementById('ai-warning-text').textContent='This job sounds complex — are you sure '+days+' days is enough? Underquoting costs you money.';
+          document.getElementById('ai-warning-text').textContent='This job sounds complex — double-check that '+days+' days is enough to complete all the work profitably. Underquoting is the #1 reason tradespeople lose money.';
           document.getElementById('ai-warning-box').style.display='block';
         }
       }
