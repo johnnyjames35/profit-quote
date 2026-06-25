@@ -791,13 +791,17 @@ async function generateQuote(){
     job_description:desc,
     customer_name:document.getElementById('q-customer').value,
     trade:currentUser?.trade||'',
-    days,
+    spec_level:null,
+    skip_type:null,
+    skip_cost:null,
     day_rate:dayRate,
+    days:days,
     markup_percent:markup,
     profit_target:profitTarget,
+    other_costs:null,
+    quote_data:{labour,materials,mats,contingencyAmt,total,profit,markup,contingency,risk:selectedRisk},
     total:total,
-    profit_percent:Math.round((profit/total)*100),
-    quote_data:{labour,materials,mats,contingencyAmt,total,profit,markup,contingency,risk:selectedRisk}
+    profit_percent:Math.round((profit/total)*100)
   };
   document.getElementById('result-labour').textContent='£'+labour.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-materials').textContent='£'+mats.toLocaleString('en-GB',{minimumFractionDigits:2});
