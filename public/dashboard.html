@@ -341,7 +341,11 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div id="step-1">
         <div class="card">
           <div class="card-title">Job Details</div>
-          <div class="field-group"><label class="field-label">Job Description</label><textarea class="field-input" id="q-desc" placeholder="e.g. Full bathroom refurb, strip and re-tile, new suite and underfloor heating"></textarea></div>
+          <div class="field-group">
+            <label class="field-label">Job Description</label>
+            <p style="font-size:0.78rem;color:var(--amber);font-weight:600;margin-bottom:8px;line-height:1.5;">⚠️ Please describe the job in as much detail as possible — include every task, material and scope of work. The more detail you give, the more accurately the AI can protect you from underquoting.</p>
+            <textarea class="field-input" id="q-desc" rows="5" placeholder="e.g. Full kitchen refurb — 10 cupboards, 5m worktop, quartzite splashback, underfloor heating, 4 bifold double glazed doors, new ceiling and 12 downlighters"></textarea>
+          </div>
           <div class="field-group"><label class="field-label">Customer Name</label><input class="field-input" id="q-customer" placeholder="e.g. Mr & Mrs Smith"></div>
           <div class="field-group"><label class="field-label">Customer Email (for sending quote)</label><input class="field-input" id="q-email" type="email" placeholder="e.g. smith@email.co.uk"></div>
           <div class="field-group"><label class="field-label">Postcode</label><input class="field-input" id="q-postcode" placeholder="e.g. SA1 1AB"></div>
@@ -851,8 +855,8 @@ async function generateQuote(){
       headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:200,
-        messages:[{role:'user',content:`You are a strict UK building trade expert reviewing a tradesperson's quote. Your job is to protect them from underquoting. Job description: "${desc}". Days quoted: ${days}. Based on the complexity of work described, is ${days} days realistic? For context: fitting 10 kitchen cupboards alone takes 2-3 days, underfloor heating 1-2 days, bifold doors 1 day each, ceiling and downlights 1-2 days. If the total days seem too low for ALL the work described, flag it. Reply ONLY in valid JSON, no other text: {"flagged":true,"message":"specific warning about which tasks will take longer"} or {"flagged":false}`}]
+        max_tokens:300,
+        messages:[{role:'user',content:`You are a UK building trade expert. A tradesperson has described a job and quoted a number of days. Estimate how many days the job should realistically take based purely on the work described, then compare it to what they quoted. If their days are significantly lower than your estimate (more than 20% under), flag it. Job: "${desc}". Days quoted: ${days}. Reply ONLY in valid JSON, no other text: {"estimated_days":NUMBER,"flagged":true,"message":"warning mentioning which tasks they underestimated and your estimated days"} or {"estimated_days":NUMBER,"flagged":false}`}]
       })
     });
     if(aiRes.ok){
@@ -862,11 +866,8 @@ async function generateQuote(){
       try{
         const parsed=JSON.parse(clean);
         if(parsed.flagged&&parsed.message){
-          document.getElementById('ai-warning-text').textContent=parsed.message;
-          document.getElementById('ai-warning-box').style.display='block';
-        } else if(days<=10&&desc.length>50){
-          // AI said OK but job sounds complex and days are low — warn anyway
-          document.getElementById('ai-warning-text').textContent='This job sounds complex — double-check that '+days+' days is enough to complete all the work profitably. Underquoting is the #1 reason tradespeople lose money.';
+          const estDays=parsed.estimated_days?(' AI estimates this job needs approximately '+parsed.estimated_days+' days.'):'';
+          document.getElementById('ai-warning-text').textContent=parsed.message+estDays;
           document.getElementById('ai-warning-box').style.display='block';
         }
       }catch(e){
