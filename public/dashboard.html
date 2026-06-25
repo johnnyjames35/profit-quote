@@ -787,7 +787,18 @@ async function generateQuote(){
   const contingencyAmt=subtotal*(contingency/100);
   const total=subtotal+contingencyAmt;
   const profit=total-(labour+materials);
-  currentQuoteData={job_description:desc,customer_name:document.getElementById('q-customer').value,postcode:document.getElementById('q-postcode').value,days,day_rate:dayRate,materials,markup_percent:markup,contingency_percent:contingency,risk_level:selectedRisk,labour_cost:labour,materials_cost:mats,contingency_cost:contingencyAmt,total:total,profit_amount:profit};
+  currentQuoteData={
+    job_description:desc,
+    customer_name:document.getElementById('q-customer').value,
+    trade:currentUser?.trade||'',
+    days,
+    day_rate:dayRate,
+    markup_percent:markup,
+    profit_target:profitTarget,
+    total:total,
+    profit_percent:Math.round((profit/total)*100),
+    quote_data:{labour,materials,mats,contingencyAmt,total,profit,markup,contingency,risk:selectedRisk}
+  };
   document.getElementById('result-labour').textContent='£'+labour.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-materials').textContent='£'+mats.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-contingency').textContent='£'+contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2});
@@ -799,9 +810,27 @@ async function generateQuote(){
       const aiData=await aiRes.json();
       const txt=aiData.content?.[0]?.text||'';
       const clean=txt.replace(/```json|```/g,'').trim();
-      try{ const parsed=JSON.parse(clean); if(parsed.flagged&&parsed.message){ document.getElementById('ai-warning-text').textContent=parsed.message; document.getElementById('ai-warning-box').style.display='block'; } }catch(e){}
+      try{
+        const parsed=JSON.parse(clean);
+        if(parsed.flagged&&parsed.message){
+          document.getElementById('ai-warning-text').textContent=parsed.message;
+          document.getElementById('ai-warning-box').style.display='block';
+        }
+      }catch(e){
+        // fallback: if AI response fails to parse, do a basic client-side check
+        if(days<=7 && desc.length>40){
+          document.getElementById('ai-warning-text').textContent='This job description sounds complex — double-check that '+days+' days is enough to complete it profitably.';
+          document.getElementById('ai-warning-box').style.display='block';
+        }
+      }
     }
-  }catch(e){}
+  }catch(e){
+    // fallback if AI call fails entirely
+    if(days<=7 && desc.length>40){
+      document.getElementById('ai-warning-text').textContent='This job description sounds complex — double-check that '+days+' days is enough to complete it profitably.';
+      document.getElementById('ai-warning-box').style.display='block';
+    }
+  }
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-output').style.display='block';
 }
