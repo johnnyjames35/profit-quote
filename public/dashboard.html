@@ -4,166 +4,294 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#0F1E35"/>
+<meta name="theme-color" content="#0a0a0a"/>
 <title>ProfitQuote</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --navy:#0F1E35;--navy-mid:#1B2F4A;--navy-light:#243d5e;
-  --cyan:#00c2e0;--cyan-dim:rgba(0,194,224,0.12);--cyan-border:rgba(0,194,224,0.25);
-  --off-white:#F4F7FB;--white:#FFFFFF;--border:#DDE5EF;
-  --green:#1A7A4A;--green-bg:#EBF7F0;
-  --amber:#B35C00;--amber-bg:#FFF3E0;
-  --red:#C0392B;--red-bg:#FDECEA;
-  --muted:#8896A8;--body:#4A5568;--heading:#0F1E35;
+  --black:#0a0a0a;
+  --dark:#111111;
+  --card:#1a1a1a;
+  --card-border:#2a2a2a;
+  --amber:#F5A623;
+  --amber-deep:#d4881a;
+  --amber-glow:rgba(245,166,35,0.12);
+  --amber-border:rgba(245,166,35,0.25);
+  --white:#ffffff;
+  --off-white:#f0f0f0;
+  --muted:#888888;
+  --body:#cccccc;
+  --green:#22c55e;
+  --green-bg:rgba(34,197,94,0.1);
+  --red:#ef4444;
+  --red-bg:rgba(239,68,68,0.1);
+  --amber-warn:#f59e0b;
+  --amber-warn-bg:rgba(245,158,11,0.1);
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-  --radius:12px;--radius-sm:8px;
+  --radius:14px;
+  --radius-sm:10px;
 }
+
 html,body{height:100%;overflow:hidden;}
-body{font-family:var(--font);background:var(--off-white);color:var(--body);}
+body{font-family:var(--font);background:var(--black);color:var(--body);}
 
 /* ── LOGIN ── */
 #login-screen{
   display:flex;align-items:center;justify-content:center;
   min-height:100vh;padding:20px;
-  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);
+  background:var(--black);
 }
 .login-card{width:100%;max-width:380px;}
-.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;}
-.login-logo-icon{width:40px;height:40px;background:var(--cyan);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;color:var(--navy);}
-.login-logo-text{font-size:1.3rem;font-weight:800;color:#fff;}
-.login-logo-text span{color:var(--cyan);}
-.login-title{font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:6px;}
-.login-sub{font-size:0.85rem;color:rgba(255,255,255,0.55);margin-bottom:28px;}
-.login-err{display:none;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);color:#ff6b6b;padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:36px;}
+.login-logo-icon{
+  width:42px;height:42px;
+  background:var(--amber);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;color:var(--black);
+}
+.login-logo-text{font-size:1.4rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.login-logo-text span{color:var(--amber);}
+.login-title{font-size:1.6rem;font-weight:800;color:var(--white);margin-bottom:6px;letter-spacing:-0.03em;}
+.login-sub{font-size:0.85rem;color:var(--muted);margin-bottom:28px;}
+.login-err{display:none;background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;}
 .lfield{margin-bottom:14px;}
-.lfield label{display:block;font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
-.lfield input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.95rem;font-family:var(--font);outline:none;transition:border-color 0.2s;}
-.lfield input:focus{border-color:var(--cyan);}
-.lfield input::placeholder{color:rgba(255,255,255,0.3);}
-.btn-login{width:100%;padding:13px;background:var(--cyan);color:var(--navy);font-weight:800;font-size:1rem;border:none;border-radius:9px;cursor:pointer;font-family:var(--font);margin-top:6px;transition:opacity 0.2s;}
+.lfield label{display:block;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.lfield input{width:100%;padding:12px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:9px;color:var(--white);font-size:0.95rem;font-family:var(--font);outline:none;transition:border-color 0.2s;}
+.lfield input:focus{border-color:var(--amber);}
+.lfield input::placeholder{color:#444;}
+.btn-login{width:100%;padding:14px;background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:6px;transition:opacity 0.2s;letter-spacing:-0.01em;}
 .btn-login:hover{opacity:0.88;}
 .btn-login:disabled{opacity:0.5;cursor:default;}
-.login-switch{text-align:center;margin-top:16px;font-size:0.85rem;color:rgba(255,255,255,0.45);}
-.login-switch a{color:var(--cyan);cursor:pointer;text-decoration:none;}
+.login-switch{text-align:center;margin-top:16px;font-size:0.85rem;color:var(--muted);}
+.login-switch a{color:var(--amber);cursor:pointer;text-decoration:none;font-weight:600;}
 
 /* ── REGISTER ── */
-#register-screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);}
+#register-screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:var(--black);}
 
 /* ── APP SHELL ── */
 #app-screen{display:none;height:100vh;flex-direction:column;}
-.topbar{background:var(--navy);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.topbar-logo{display:flex;align-items:center;gap:8px;}
-.topbar-logo-icon{width:28px;height:28px;background:var(--cyan);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--navy);}
-.topbar-logo-text{font-size:1rem;font-weight:800;color:#fff;}
-.topbar-logo-text span{color:var(--cyan);}
-.topbar-right{display:flex;align-items:center;gap:10px;}
-.user-avatar{width:30px;height:30px;background:var(--cyan-dim);border:1px solid var(--cyan-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--cyan);}
-.btn-signout{background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);font-size:0.75rem;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:var(--font);}
-.btn-signout:hover{border-color:rgba(255,255,255,0.3);color:#fff;}
 
-.bottom-nav{background:var(--white);border-top:1px solid var(--border);display:flex;flex-shrink:0;}
-.nav-btn{flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:0.65rem;font-weight:600;color:var(--muted);font-family:var(--font);transition:color 0.2s;}
-.nav-btn .nav-icon{font-size:1.2rem;}
-.nav-btn.active{color:var(--cyan);}
+.topbar{
+  background:var(--dark);
+  border-bottom:1px solid var(--card-border);
+  padding:0 16px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.topbar-logo{display:flex;align-items:center;gap:8px;}
+.topbar-logo-icon{width:30px;height:30px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--black);}
+.topbar-logo-text{font-size:1.05rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.topbar-logo-text span{color:var(--amber);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.user-avatar{width:32px;height:32px;background:var(--amber-glow);border:1px solid var(--amber-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:var(--amber);}
+.btn-signout{background:none;border:1px solid #2a2a2a;color:var(--muted);font-size:0.75rem;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:var(--font);transition:all 0.2s;}
+.btn-signout:hover{border-color:#444;color:var(--white);}
+
+.bottom-nav{background:var(--dark);border-top:1px solid var(--card-border);display:flex;flex-shrink:0;}
+.nav-btn{flex:1;padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:0.62rem;font-weight:700;color:var(--muted);font-family:var(--font);transition:color 0.2s;text-transform:uppercase;letter-spacing:0.5px;}
+.nav-btn .nav-icon{font-size:1.15rem;}
+.nav-btn.active{color:var(--amber);}
 
 .page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .section{display:none;padding:16px;}
 .section.active{display:block;}
 
-/* ── CARDS ── */
-.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
-.card-title{font-size:0.95rem;font-weight:700;color:var(--heading);margin-bottom:12px;}
-
 /* ── HOME ── */
-.greeting{font-size:1.3rem;font-weight:800;color:var(--heading);margin-bottom:4px;}
-.greeting-date{font-size:0.82rem;color:var(--muted);margin-bottom:20px;}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;}
-.stat-label{font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
-.stat-val{font-size:1.6rem;font-weight:800;color:var(--heading);}
-.stat-val.cyan{color:var(--cyan);}
-.quick-btn{display:flex;align-items:center;gap:10px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);padding:14px 16px;width:100%;cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:600;margin-bottom:10px;transition:opacity 0.2s;}
-.quick-btn:hover{opacity:0.88;}
-.quick-btn .qb-icon{font-size:1.2rem;}
+.home-hero{
+  background:linear-gradient(135deg, #1a1200 0%, #111 60%);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-bottom:14px;
+  position:relative;
+  overflow:hidden;
+}
+.home-hero::before{
+  content:'';
+  position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;
+  background:radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+.greeting{font-size:1.25rem;font-weight:800;color:var(--white);margin-bottom:3px;letter-spacing:-0.02em;}
+.greeting-date{font-size:0.8rem;color:var(--muted);margin-bottom:14px;}
+.trial-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--amber-glow);border:1px solid var(--amber-border);
+  color:var(--amber);font-size:0.75rem;font-weight:700;
+  padding:5px 12px;border-radius:20px;
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius-sm);
+  padding:16px 14px;
+  position:relative;
+  overflow:hidden;
+}
+.stat-card::after{
+  content:'';
+  position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--amber);
+  opacity:0.4;
+}
+.stat-label{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat-val{font-size:1.8rem;font-weight:900;color:var(--white);letter-spacing:-0.04em;line-height:1;}
+.stat-sub{font-size:0.7rem;color:var(--muted);margin-top:4px;}
+
+/* Quick action buttons */
+.action-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.action-btn{
+  display:flex;align-items:center;gap:14px;
+  border:none;border-radius:var(--radius-sm);
+  padding:16px;width:100%;cursor:pointer;
+  font-family:var(--font);
+  text-align:left;
+  transition:transform 0.15s, opacity 0.15s;
+  position:relative;
+  overflow:hidden;
+}
+.action-btn:hover{transform:translateY(-1px);opacity:0.92;}
+.action-btn:active{transform:translateY(0);}
+.action-btn.primary{background:var(--amber);color:var(--black);}
+.action-btn.secondary{background:var(--card);color:var(--white);border:1px solid var(--card-border);}
+.action-btn.tertiary{background:var(--card);color:var(--amber);border:1px solid var(--amber-border);}
+.action-icon{
+  width:40px;height:40px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.action-btn.primary .action-icon{background:rgba(0,0,0,0.15);}
+.action-btn.secondary .action-icon{background:rgba(255,255,255,0.06);}
+.action-btn.tertiary .action-icon{background:var(--amber-glow);}
+.action-text{flex:1;}
+.action-title{font-size:0.95rem;font-weight:800;letter-spacing:-0.01em;margin-bottom:2px;}
+.action-btn.primary .action-title{color:var(--black);}
+.action-sub{font-size:0.75rem;opacity:0.65;}
+.action-btn.primary .action-sub{color:var(--black);}
+.action-arrow{font-size:1rem;opacity:0.5;}
+
+/* Getting started card */
+.started-card{
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+}
+.started-title{font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.started-step{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid var(--card-border);
+}
+.started-step:last-child{border-bottom:none;}
+.step-num{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;font-weight:800;flex-shrink:0;
+}
+.step-num.done{background:var(--green-bg);color:var(--green);}
+.step-num.active{background:var(--amber-glow);color:var(--amber);border:1px solid var(--amber-border);}
+.step-num.pending{background:#1f1f1f;color:var(--muted);}
+.step-label{font-size:0.85rem;font-weight:600;color:var(--white);}
+.step-sub{font-size:0.75rem;color:var(--muted);}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card-title{font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:12px;}
 
 /* ── QUOTES LIST ── */
-.quote-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;}
-.quote-ref{font-size:0.72rem;font-family:monospace;color:var(--muted);margin-bottom:4px;}
-.quote-job{font-size:0.9rem;font-weight:600;color:var(--heading);margin-bottom:6px;}
+.quote-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;}
+.quote-ref{font-size:0.7rem;font-family:monospace;color:var(--muted);margin-bottom:4px;}
+.quote-job{font-size:0.9rem;font-weight:700;color:var(--white);margin-bottom:8px;}
 .quote-meta{display:flex;justify-content:space-between;align-items:center;}
-.quote-amount{font-size:1.1rem;font-weight:800;color:var(--green);}
+.quote-amount{font-size:1.1rem;font-weight:800;color:var(--amber);}
 .quote-date{font-size:0.75rem;color:var(--muted);}
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:0.875rem;}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-state-icon{font-size:2.5rem;margin-bottom:12px;opacity:0.4;}
+.empty-state-title{font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:6px;}
+.empty-state p{font-size:0.82rem;line-height:1.5;}
 
 /* ── QUOTE BUILDER ── */
 .builder-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
-.btn-back{background:none;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--font);font-size:0.85rem;}
-.builder-title{font-size:1.1rem;font-weight:800;color:var(--heading);}
+.btn-back{background:none;border:1px solid var(--card-border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--font);font-size:0.85rem;}
+.builder-title{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
 .step-dots{display:flex;gap:6px;margin-bottom:20px;}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--border);}
-.dot.active{background:var(--cyan);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--card-border);}
+.dot.active{background:var(--amber);}
 .dot.done{background:var(--green);}
 .field-group{margin-bottom:16px;}
 .field-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;}
-.field-input{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);font-family:var(--font);outline:none;background:var(--white);}
-.field-input:focus{border-color:var(--cyan);}
+.field-input{width:100%;padding:12px 14px;border:1px solid var(--card-border);border-radius:9px;font-size:0.95rem;color:var(--white);font-family:var(--font);outline:none;background:#1a1a1a;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--amber);}
+.field-input::placeholder{color:#444;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .risk-row{display:flex;gap:8px;margin-top:4px;}
-.risk-btn{flex:1;padding:9px 4px;border:1px solid var(--border);border-radius:6px;background:var(--white);font-size:0.75rem;font-weight:600;cursor:pointer;text-align:center;font-family:var(--font);color:var(--muted);transition:all 0.2s;}
+.risk-btn{flex:1;padding:10px 4px;border:1px solid var(--card-border);border-radius:8px;background:#1a1a1a;font-size:0.78rem;font-weight:700;cursor:pointer;text-align:center;font-family:var(--font);color:var(--muted);transition:all 0.2s;}
 .risk-btn.active-low{background:var(--green-bg);border-color:var(--green);color:var(--green);}
-.risk-btn.active-med{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+.risk-btn.active-med{background:var(--amber-warn-bg);border-color:var(--amber-warn);color:var(--amber-warn);}
 .risk-btn.active-high{background:var(--red-bg);border-color:var(--red);color:var(--red);}
-.btn-next{width:100%;padding:13px;background:var(--cyan);color:var(--navy);font-weight:800;font-size:1rem;border:none;border-radius:9px;cursor:pointer;font-family:var(--font);margin-top:8px;}
-.btn-prev{width:100%;padding:11px;background:none;border:1px solid var(--border);color:var(--muted);font-size:0.9rem;border-radius:9px;cursor:pointer;font-family:var(--font);margin-top:8px;}
+.btn-next{width:100%;padding:14px;background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:8px;letter-spacing:-0.01em;}
+.btn-prev{width:100%;padding:12px;background:none;border:1px solid var(--card-border);color:var(--muted);font-size:0.9rem;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:8px;}
 
 /* AI output */
-.ai-box{background:var(--navy);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
-.ai-warning{background:rgba(246,201,14,0.15);border:1px solid rgba(246,201,14,0.3);border-radius:8px;padding:12px;margin-bottom:12px;}
-.ai-warning-title{font-size:0.8rem;font-weight:700;color:#c9963a;margin-bottom:4px;}
+.ai-box{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.ai-warning{background:var(--amber-warn-bg);border:1px solid rgba(245,158,11,0.3);border-radius:9px;padding:12px;margin-bottom:12px;}
+.ai-warning-title{font-size:0.8rem;font-weight:700;color:var(--amber-warn);margin-bottom:4px;}
 .ai-warning-text{font-size:0.8rem;color:var(--body);}
-.profit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.profit-label{font-size:1rem;font-weight:800;color:#fff;}
-.profit-badge{background:#b8860b;color:#fff;font-size:0.8rem;font-weight:700;padding:4px 12px;border-radius:20px;}
-.breakdown{background:rgba(255,255,255,0.06);border-radius:8px;padding:12px;}
-.breakdown-row{display:flex;justify-content:space-between;font-size:0.82rem;color:rgba(255,255,255,0.7);padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);}
-.breakdown-row:last-child{border-bottom:none;font-weight:700;color:#fff;}
-.breakdown-row.total{color:var(--cyan);}
-.ai-actions{display:flex;gap:8px;margin-top:12px;}
-.btn-action{flex:1;padding:10px;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;font-family:var(--font);border:none;}
+.profit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.profit-label{font-size:1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.profit-badge{background:var(--amber);color:var(--black);font-size:0.82rem;font-weight:800;padding:5px 14px;border-radius:20px;}
+.breakdown{background:#111;border:1px solid var(--card-border);border-radius:9px;padding:12px;}
+.breakdown-row{display:flex;justify-content:space-between;font-size:0.85rem;color:var(--muted);padding:7px 0;border-bottom:1px solid var(--card-border);}
+.breakdown-row:last-child{border-bottom:none;font-weight:800;color:var(--white);}
+.breakdown-row.total{color:var(--amber);}
+.ai-actions{display:flex;gap:8px;margin-top:14px;}
+.btn-action{flex:1;padding:12px;border-radius:9px;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:var(--font);border:none;letter-spacing:-0.01em;}
 .btn-save{background:var(--green);color:#fff;}
-.btn-new{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)!important;}
-.ai-loading{text-align:center;padding:24px;color:rgba(255,255,255,0.6);font-size:0.875rem;}
+.btn-new{background:#222;color:var(--white);border:1px solid var(--card-border)!important;}
+.ai-loading{text-align:center;padding:28px;color:var(--muted);font-size:0.875rem;}
 
-/* ── ISSUES ── */
+/* ── VARIATIONS ── */
 .issue-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.issue-type-btn{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 12px;cursor:pointer;text-align:center;font-family:var(--font);transition:border-color 0.2s;}
-.issue-type-btn:hover{border-color:var(--cyan);}
+.issue-type-btn{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px 12px;cursor:pointer;text-align:center;font-family:var(--font);transition:border-color 0.2s;}
+.issue-type-btn:hover{border-color:var(--amber);}
 .issue-type-icon{font-size:1.5rem;margin-bottom:6px;}
-.issue-type-label{font-size:0.82rem;font-weight:600;color:var(--heading);}
-.variation-result{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
-.var-doc-title{font-size:0.9rem;font-weight:800;color:var(--heading);text-align:center;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;}
+.issue-type-label{font-size:0.82rem;font-weight:600;color:var(--white);}
+.variation-result{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;}
+.var-doc-title{font-size:0.9rem;font-weight:800;color:var(--white);text-align:center;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
 .var-line{font-size:0.85rem;color:var(--body);margin-bottom:6px;}
-.var-total{font-weight:800;color:var(--heading);font-size:0.95rem;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
-.btn-copy{width:100%;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:var(--font);margin-top:12px;}
+.var-total{font-weight:800;color:var(--amber);font-size:0.95rem;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);}
+.btn-copy{width:100%;padding:12px;background:var(--amber);color:var(--black);border:none;border-radius:9px;cursor:pointer;font-weight:800;font-family:var(--font);margin-top:12px;}
 
 /* ── SETUP ── */
-.setup-avatar{width:60px;height:60px;background:var(--navy);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;margin:0 auto 8px;}
-.setup-name{font-size:1.1rem;font-weight:700;color:var(--heading);text-align:center;}
-.setup-trade{font-size:0.85rem;color:var(--muted);text-align:center;margin-bottom:20px;}
+.setup-avatar{width:64px;height:64px;background:var(--amber-glow);border:2px solid var(--amber-border);color:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;margin:0 auto 8px;}
+.setup-name{font-size:1.1rem;font-weight:800;color:var(--white);text-align:center;letter-spacing:-0.02em;}
+.setup-trade{font-size:0.85rem;color:var(--amber);text-align:center;margin-bottom:20px;font-weight:600;}
 .setup-field{margin-bottom:14px;}
 .setup-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;}
-.setup-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);font-family:var(--font);outline:none;}
-.setup-input:focus{border-color:var(--cyan);}
-.btn-save-setup{width:100%;padding:13px;background:var(--cyan);color:var(--navy);font-weight:800;font-size:1rem;border:none;border-radius:9px;cursor:pointer;font-family:var(--font);margin-top:8px;}
+.setup-input{width:100%;padding:11px 14px;border:1px solid var(--card-border);border-radius:9px;font-size:0.95rem;color:var(--white);background:#1a1a1a;font-family:var(--font);outline:none;}
+.setup-input:focus{border-color:var(--amber);}
+.btn-save-setup{width:100%;padding:14px;background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:8px;}
+
+/* ── SELECT STYLING ── */
+select.field-input, select.setup-input{color:var(--white);background:#1a1a1a;}
+select.field-input option, select.setup-input option{background:#1a1a1a;color:var(--white);}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--heading);color:#fff;padding:10px 20px;border-radius:20px;font-size:0.85rem;font-weight:600;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none;white-space:nowrap;}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--amber);color:var(--black);padding:10px 20px;border-radius:20px;font-size:0.85rem;font-weight:800;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* trial banner */
-.trial-banner{background:var(--amber-bg);border-bottom:1px solid rgba(179,92,0,0.2);padding:8px 16px;font-size:0.8rem;color:var(--amber);text-align:center;font-weight:600;flex-shrink:0;}
+.trial-banner{background:var(--amber-glow);border-bottom:1px solid var(--amber-border);padding:8px 16px;font-size:0.8rem;color:var(--amber);text-align:center;font-weight:700;flex-shrink:0;display:none;}
 .trial-banner a{color:var(--amber);font-weight:800;}
+
+/* section headings */
+.section-heading{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
 </style>
 </head>
 <body>
@@ -181,12 +309,12 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
     <div class="lfield"><label>Email</label><input type="email" id="login-email" placeholder="your@email.co.uk" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="lfield"><label>Password</label><input type="password" id="login-password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
-    <div class="login-switch">Don't have an account? <a onclick="showRegister()">Start free trial</a></div>
+    <div class="login-switch">No account? <a onclick="showRegister()">Start free trial</a></div>
   </div>
 </div>
 
 <!-- REGISTER -->
-<div id="register-screen" style="display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#0F1E35 0%,#1B2F4A 100%);">
+<div id="register-screen" style="display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:#0a0a0a;">
   <div class="login-card">
     <div class="login-logo">
       <div class="login-logo-icon">£</div>
@@ -199,7 +327,7 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
     <div class="lfield"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.co.uk"></div>
     <div class="lfield"><label>Password</label><input type="password" id="reg-password" placeholder="Choose a password"></div>
     <div class="lfield"><label>Your Trade</label>
-      <select id="reg-trade" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);font-family:var(--font);outline:none;background:white;">
+      <select id="reg-trade" style="width:100%;padding:12px 14px;border:1px solid #2a2a2a;border-radius:9px;font-size:0.95rem;color:#fff;font-family:var(--font);outline:none;background:#1a1a1a;">
         <option value="">Select your trade...</option>
         <option>Plumber</option><option>Electrician</option><option>Builder</option>
         <option>Roofer</option><option>Bathroom Fitter</option><option>Kitchen Fitter</option>
@@ -213,7 +341,7 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
 </div>
 
 <!-- APP -->
-<div id="app-screen" style="display:none;height:100vh;flex-direction:column;flex:1;">
+<div id="app-screen" style="display:none;height:100vh;flex-direction:column;">
   <div class="topbar">
     <div class="topbar-logo">
       <div class="topbar-logo-icon">£</div>
@@ -225,29 +353,97 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
     </div>
   </div>
 
-  <div id="trial-banner" class="trial-banner" style="display:none;"></div>
+  <div id="trial-banner" class="trial-banner"></div>
 
   <div class="page">
+
     <!-- HOME -->
     <div class="section active" id="sec-home">
-      <div class="greeting" id="home-greeting">Good morning 👋</div>
-      <div class="greeting-date" id="home-date"></div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total Quotes</div><div class="stat-val cyan" id="stat-quotes">0</div></div>
-        <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-val" id="stat-month">0</div></div>
+      <div class="home-hero">
+        <div class="greeting" id="home-greeting">Good morning 👋</div>
+        <div class="greeting-date" id="home-date"></div>
+        <div class="trial-pill">🔓 7-Day Free Trial Active</div>
       </div>
-      <button class="quick-btn" onclick="switchTab('builder')"><span class="qb-icon">📋</span> New Quote</button>
-      <button class="quick-btn" onclick="switchTab('issues')" style="background:var(--navy-mid);"><span class="qb-icon">⚠️</span> Variation Notice</button>
-      <button class="quick-btn" onclick="switchTab('quotes')" style="background:rgba(0,194,224,0.15);color:var(--cyan);border:1px solid var(--cyan-border);"><span class="qb-icon">📁</span> View My Quotes</button>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Quotes</div>
+          <div class="stat-val" id="stat-quotes">0</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">This Month</div>
+          <div class="stat-val" id="stat-month">0</div>
+          <div class="stat-sub">Quotes built</div>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="action-btn primary" onclick="switchTab('builder')">
+          <div class="action-icon">📋</div>
+          <div class="action-text">
+            <div class="action-title">Build a New Quote</div>
+            <div class="action-sub">AI-powered profit protection</div>
+          </div>
+          <div class="action-arrow">→</div>
+        </button>
+        <button class="action-btn secondary" onclick="switchTab('issues')">
+          <div class="action-icon">⚠️</div>
+          <div class="action-text">
+            <div class="action-title" style="color:var(--white);">Variation Notice</div>
+            <div class="action-sub">Job scope changed? Protect yourself</div>
+          </div>
+          <div class="action-arrow">→</div>
+        </button>
+        <button class="action-btn tertiary" onclick="switchTab('quotes')">
+          <div class="action-icon">📁</div>
+          <div class="action-text">
+            <div class="action-title">My Quotes</div>
+            <div class="action-sub">View and manage your quotes</div>
+          </div>
+          <div class="action-arrow">→</div>
+        </button>
+      </div>
+
+      <div class="started-card" id="getting-started">
+        <div class="started-title">Get started</div>
+        <div class="started-step">
+          <div class="step-num done" id="step-account">✓</div>
+          <div>
+            <div class="step-label">Account created</div>
+            <div class="step-sub">You're in. 7-day free trial started.</div>
+          </div>
+        </div>
+        <div class="started-step">
+          <div class="step-num active" id="step-rates">2</div>
+          <div>
+            <div class="step-label">Set your day rate</div>
+            <div class="step-sub">Tell us your rates for smarter quotes</div>
+          </div>
+        </div>
+        <div class="started-step">
+          <div class="step-num pending" id="step-quote">3</div>
+          <div>
+            <div class="step-label">Build your first quote</div>
+            <div class="step-sub">Takes under 2 minutes</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- QUOTES LIST -->
     <div class="section" id="sec-quotes">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h2 style="font-size:1.1rem;font-weight:800;color:var(--heading);">My Quotes</h2>
-        <button onclick="switchTab('builder')" style="background:var(--cyan);color:var(--navy);border:none;padding:8px 16px;border-radius:7px;font-weight:700;cursor:pointer;font-size:0.85rem;">+ New</button>
+        <h2 class="section-heading">My Quotes</h2>
+        <button onclick="switchTab('builder')" style="background:var(--amber);color:var(--black);border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;font-size:0.85rem;font-family:var(--font);">+ New</button>
       </div>
-      <div id="quotes-list"><div class="empty-state">No quotes yet. Tap New to build your first quote.</div></div>
+      <div id="quotes-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-title">No quotes yet</div>
+          <p>Tap New to build your first profit-protected quote.</p>
+        </div>
+      </div>
     </div>
 
     <!-- QUOTE BUILDER -->
@@ -264,7 +460,6 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
         <div class="dot" id="dot-5"></div>
       </div>
 
-      <!-- Step 1 -->
       <div id="step-1">
         <div class="card">
           <div class="card-title">Describe the job</div>
@@ -275,7 +470,6 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
         <button class="btn-next" onclick="nextStep(2)">Next →</button>
       </div>
 
-      <!-- Step 2 -->
       <div id="step-2" style="display:none;">
         <div class="card">
           <div class="card-title">Labour</div>
@@ -286,7 +480,6 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
         <button class="btn-prev" onclick="nextStep(1)">← Back</button>
       </div>
 
-      <!-- Step 3 -->
       <div id="step-3" style="display:none;">
         <div class="card">
           <div class="card-title">Materials & Markup</div>
@@ -297,7 +490,6 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
         <button class="btn-prev" onclick="nextStep(2)">← Back</button>
       </div>
 
-      <!-- Step 4 -->
       <div id="step-4" style="display:none;">
         <div class="card">
           <div class="card-title">Risk & Contingency</div>
@@ -316,7 +508,6 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
         <button class="btn-prev" onclick="nextStep(3)">← Back</button>
       </div>
 
-      <!-- Step 5: AI Result -->
       <div id="step-5" style="display:none;">
         <div id="ai-loading" class="ai-box"><div class="ai-loading">🤖 AI is reviewing your quote...</div></div>
         <div id="ai-output" style="display:none;">
@@ -326,7 +517,7 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
           </div>
           <div class="ai-box">
             <div class="profit-header">
-              <span class="profit-label">Profit<span style="color:var(--cyan)">Quote</span></span>
+              <span class="profit-label">Profit<span style="color:var(--amber)">Quote</span></span>
               <span class="profit-badge" id="result-profit-badge">+£0</span>
             </div>
             <div class="breakdown">
@@ -345,11 +536,11 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
       </div>
     </div>
 
-    <!-- ISSUES -->
+    <!-- VARIATIONS -->
     <div class="section" id="sec-issues">
-      <h2 style="font-size:1.1rem;font-weight:800;color:var(--heading);margin-bottom:16px;">Variation Notice</h2>
+      <h2 class="section-heading" style="margin-bottom:6px;">Variation Notice</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Job scope changed? Generate a professional variation notice instantly.</p>
       <div id="issues-home">
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">Job scope changed? Generate a professional variation notice to protect your profit.</p>
         <div class="card">
           <div class="field-group"><label class="field-label">Original Job / Project</label><input class="field-input" id="issue-project" placeholder="e.g. Bathroom refurb — Mr Smith"></div>
           <div class="field-group"><label class="field-label">What Changed / Extra Work</label><textarea class="field-input" id="issue-desc" rows="3" placeholder="e.g. Water damage found under floor — requires replacement boards and extra labour"></textarea></div>
@@ -391,11 +582,12 @@ body{font-family:var(--font);background:var(--off-white);color:var(--body);}
       </div>
       <div class="card" style="margin-top:0;">
         <div class="card-title">Subscription</div>
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Manage your ProfitQuote subscription via Stripe.</p>
-        <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a" style="display:block;text-align:center;background:var(--cyan);color:var(--navy);font-weight:800;padding:12px;border-radius:9px;text-decoration:none;font-size:0.9rem;">Start £49/month Subscription →</a>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Upgrade to keep quoting after your trial ends.</p>
+        <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;letter-spacing:-0.01em;">Start £49/month Subscription →</a>
       </div>
     </div>
-  </div>
+
+  </div><!-- end page -->
 
   <nav class="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span>Home</button>
@@ -415,7 +607,6 @@ let currentUser = null;
 let quotes = [];
 let selectedRisk = 'low';
 
-// Check for token in URL (from landing page redirect)
 const urlParams = new URLSearchParams(window.location.search);
 const urlToken = urlParams.get('token');
 if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; window.history.replaceState({}, '', '/dashboard'); }
@@ -427,7 +618,6 @@ function showLogin(){
   document.getElementById('register-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'none';
 }
-
 function showRegister(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('register-screen').style.display = 'flex';
@@ -446,9 +636,7 @@ async function doLogin(){
     const res = await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
     const data = await res.json();
     if(!res.ok){ err.textContent=data.error||'Login failed.'; err.style.display='block'; btn.textContent='Sign In →'; btn.disabled=false; return; }
-    token = data.token;
-    localStorage.setItem('pq_token', token);
-    initApp();
+    token = data.token; localStorage.setItem('pq_token', token); initApp();
   }catch(e){ err.textContent='Connection error.'; err.style.display='block'; btn.textContent='Sign In →'; btn.disabled=false; }
 }
 
@@ -466,9 +654,7 @@ async function doRegister(){
     const res = await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade})});
     const data = await res.json();
     if(!res.ok){ err.textContent=data.error||'Registration failed.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; return; }
-    token = data.token;
-    localStorage.setItem('pq_token', token);
-    initApp();
+    token = data.token; localStorage.setItem('pq_token', token); initApp();
   }catch(e){ err.textContent='Connection error.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; }
 }
 
@@ -487,8 +673,7 @@ async function initApp(){
 
 function doLogout(){
   localStorage.removeItem('pq_token');
-  token=null; currentUser=null;
-  showLogin();
+  token=null; currentUser=null; showLogin();
 }
 
 function populateUserUI(){
@@ -531,7 +716,10 @@ async function loadQuotes(){
 
 function renderQuotes(){
   const el=document.getElementById('quotes-list');
-  if(!quotes.length){ el.innerHTML='<div class="empty-state">No quotes yet. Tap New Quote to get started.</div>'; return; }
+  if(!quotes.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes yet</div><p>Tap New to build your first profit-protected quote.</p></div>';
+    return;
+  }
   el.innerHTML=quotes.map(q=>`
     <div class="quote-card">
       <div class="quote-ref">${q.ref||'QUO-'+q.id}</div>
@@ -544,9 +732,15 @@ function updateHomeStats(){
   document.getElementById('stat-quotes').textContent=quotes.length;
   const now=new Date(); const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
   document.getElementById('stat-month').textContent=quotes.filter(q=>new Date(q.created_at)>=monthStart).length;
+  if(quotes.length>0){
+    const s=document.getElementById('getting-started');
+    if(s){
+      document.getElementById('step-quote').className='step-num done';
+      document.getElementById('step-quote').textContent='✓';
+    }
+  }
 }
 
-// QUOTE BUILDER
 function setRisk(r){
   selectedRisk=r;
   ['low','med','high'].forEach(x=>{ const b=document.getElementById('risk-'+x); b.className='risk-btn'; });
@@ -568,8 +762,7 @@ function resetBuilder(){
   document.getElementById('q-markup').value=currentUser?.markup_percent||20;
   document.getElementById('q-profit-target').value=currentUser?.profit_target||30;
   document.getElementById('q-contingency').value=10;
-  selectedRisk='low';
-  setRisk('low');
+  selectedRisk='low'; setRisk('low');
   nextStep(1);
   document.getElementById('ai-output').style.display='none';
   document.getElementById('ai-loading').style.display='block';
@@ -581,7 +774,6 @@ let currentQuoteData = null;
 async function generateQuote(){
   document.getElementById('ai-loading').style.display='block';
   document.getElementById('ai-output').style.display='none';
-
   const desc=document.getElementById('q-desc').value;
   const days=parseFloat(document.getElementById('q-days').value)||1;
   const dayRate=parseFloat(document.getElementById('q-day-rate').value)||250;
@@ -589,53 +781,27 @@ async function generateQuote(){
   const markup=parseFloat(document.getElementById('q-markup').value)||20;
   const contingency=parseFloat(document.getElementById('q-contingency').value)||10;
   const profitTarget=parseFloat(document.getElementById('q-profit-target').value)||30;
-
   const labour=days*dayRate;
   const mats=materials*(1+markup/100);
   const subtotal=labour+mats;
   const contingencyAmt=subtotal*(contingency/100);
   const total=subtotal+contingencyAmt;
   const profit=total-(labour+materials);
-
-  currentQuoteData={
-    job_description:desc,
-    customer_name:document.getElementById('q-customer').value,
-    postcode:document.getElementById('q-postcode').value,
-    days,day_rate:dayRate,materials,markup_percent:markup,
-    contingency_percent:contingency,risk_level:selectedRisk,
-    labour_cost:labour,materials_cost:mats,contingency_cost:contingencyAmt,
-    total_price:total,profit_amount:profit
-  };
-
+  currentQuoteData={job_description:desc,customer_name:document.getElementById('q-customer').value,postcode:document.getElementById('q-postcode').value,days,day_rate:dayRate,materials,markup_percent:markup,contingency_percent:contingency,risk_level:selectedRisk,labour_cost:labour,materials_cost:mats,contingency_cost:contingencyAmt,total_price:total,profit_amount:profit};
   document.getElementById('result-labour').textContent='£'+labour.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-materials').textContent='£'+mats.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-contingency').textContent='£'+contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-total').textContent='£'+total.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-profit-badge').textContent='+£'+Math.round(profit).toLocaleString('en-GB');
-
-  // AI check via backend proxy
   try{
-    const aiRes=await fetch(API+'/api/ai',{
-      method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:300,
-        messages:[{role:'user',content:`UK tradesperson quote check. Job: "${desc}". Days quoted: ${days}. Is this enough time? Reply in JSON only: {"flagged":true/false,"message":"one sentence if flagged"}`}]
-      })
-    });
+    const aiRes=await fetch(API+'/api/ai',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:`UK tradesperson quote check. Job: "${desc}". Days quoted: ${days}. Is this enough time? Reply in JSON only: {"flagged":true/false,"message":"one sentence if flagged"}`}]})});
     if(aiRes.ok){
       const aiData=await aiRes.json();
       const txt=aiData.content?.[0]?.text||'';
       const clean=txt.replace(/```json|```/g,'').trim();
-      try{
-        const parsed=JSON.parse(clean);
-        if(parsed.flagged&&parsed.message){
-          document.getElementById('ai-warning-text').textContent=parsed.message;
-          document.getElementById('ai-warning-box').style.display='block';
-        }
-      }catch(e){}
+      try{ const parsed=JSON.parse(clean); if(parsed.flagged&&parsed.message){ document.getElementById('ai-warning-text').textContent=parsed.message; document.getElementById('ai-warning-box').style.display='block'; } }catch(e){}
     }
   }catch(e){}
-
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-output').style.display='block';
 }
@@ -649,7 +815,6 @@ async function saveQuote(){
   }catch(e){ showToast('Connection error'); }
 }
 
-// ISSUES
 function generateVariation(){
   const project=document.getElementById('issue-project').value.trim();
   const desc=document.getElementById('issue-desc').value.trim();
@@ -678,15 +843,14 @@ function resetIssues(){
 
 function copyVariation(){
   const el=document.getElementById('variation-result');
-  const text=el.innerText;
-  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard ✓')).catch(()=>showToast('Select and copy manually'));
+  navigator.clipboard.writeText(el.innerText).then(()=>showToast('Copied to clipboard ✓')).catch(()=>showToast('Select and copy manually'));
 }
 
 async function saveSettings(){
   const body={day_rate:parseFloat(document.getElementById('setup-day-rate').value)||250,hourly_rate:parseFloat(document.getElementById('setup-hourly').value)||35,markup_percent:parseFloat(document.getElementById('setup-markup').value)||20,profit_target:parseFloat(document.getElementById('setup-profit').value)||30};
   try{
     const res=await fetch(API+'/api/settings',{method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(res.ok){ currentUser={...currentUser,...body}; showToast('Settings saved ✓'); }
+    if(res.ok){ currentUser={...currentUser,...body}; showToast('Settings saved ✓'); document.getElementById('step-rates').className='step-num done'; document.getElementById('step-rates').textContent='✓'; }
     else showToast('Error saving settings');
   }catch(e){ showToast('Connection error'); }
 }
