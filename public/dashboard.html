@@ -856,7 +856,7 @@ async function generateQuote(){
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:300,
-        messages:[{role:'user',content:`You are a UK building trade expert. A tradesperson has described a job and quoted a number of days. Estimate how many days the job should realistically take based purely on the work described, then compare it to what they quoted. If their days are significantly lower than your estimate (more than 20% under), flag it. Job: "${desc}". Days quoted: ${days}. Reply ONLY in valid JSON, no other text: {"estimated_days":NUMBER,"flagged":true,"message":"warning mentioning which tasks they underestimated and your estimated days"} or {"estimated_days":NUMBER,"flagged":false}`}]
+        messages:[{role:'user',content:`You are a strict UK building trade expert protecting tradespeople from underquoting. Carefully read this job description and estimate the MINIMUM realistic number of working days needed to complete ALL the work described. Use these benchmarks: dormer/loft extension structural work = 15-25 days alone; full bathroom with tiling and underfloor heating = 8-12 days; full electrics rewire = 5-8 days; plastering and skimming = 3-5 days; laminate flooring 15sqm = 1-2 days. Add all tasks together for your estimate. Job: "${desc}". Days quoted by tradesperson: ${days}. If their quoted days are more than 25% below your estimated minimum, flag it with a specific warning. Reply ONLY in valid JSON, no other text: {"estimated_days":NUMBER,"flagged":true,"message":"clear warning listing which tasks will take longer and your total estimated days"} or {"estimated_days":NUMBER,"flagged":false}`}]
       })
     });
     if(aiRes.ok){
