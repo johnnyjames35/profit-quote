@@ -83,9 +83,11 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .home-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,166,35,0.3),transparent);}
 .hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
 .hero-left{flex:1;min-width:0;}
-.hero-right{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.15);border-radius:12px;padding:14px 12px;min-width:90px;text-align:center;gap:6px;}
-.hero-stars{font-size:1.1rem;letter-spacing:1px;line-height:1;}
-.hero-right-label{font-size:0.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:4px;}
+.hero-right{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.15);border-radius:12px;padding:14px 12px;min-width:90px;text-align:center;gap:4px;}
+.hero-shield{font-size:1.6rem;line-height:1;margin-bottom:2px;}
+.hero-score{font-size:1.3rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;line-height:1;}
+.hero-score span{font-size:0.75rem;font-weight:600;color:var(--muted);}
+.hero-right-label{font-size:0.58rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:4px;}
 .hero-right-status{font-size:0.72rem;font-weight:700;color:var(--amber);line-height:1.3;margin-top:2px;}
 .greeting{font-size:1.05rem;font-weight:600;color:var(--muted);margin-bottom:14px;letter-spacing:0;}
 .hero-profit-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;}
@@ -119,6 +121,13 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .coach-tips li{font-size:0.83rem;color:var(--body);padding:4px 0;display:flex;align-items:flex-start;gap:6px;}
 .coach-tips li::before{content:'•';color:var(--green);font-weight:900;flex-shrink:0;}
 .coach-empty{font-size:0.83rem;color:var(--muted);font-style:italic;}
+
+/* PROFIT FLASH ANIMATION */
+.hero-profit-flash{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;background:linear-gradient(160deg,#001a00 0%,#0a0a0a 100%);border-radius:var(--radius);padding:0 20px;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.hero-profit-flash.show{opacity:1;}
+.flash-plus{font-size:1rem;font-weight:700;color:var(--green);margin-bottom:4px;}
+.flash-amount{font-size:2.8rem;font-weight:900;color:var(--green);letter-spacing:-0.04em;line-height:1;}
+.flash-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:6px;}
 
 /* RECENT QUOTES ON HOME */
 .recent-quotes-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
@@ -366,7 +375,12 @@ textarea.field-input{resize:vertical;min-height:80px;}
     <div class="section active" id="sec-home">
 
       <!-- HERO -->
-      <div class="home-hero">
+      <div class="home-hero" style="position:relative;">
+        <div class="hero-profit-flash" id="hero-flash">
+          <div class="flash-plus">Profit Protected</div>
+          <div class="flash-amount" id="flash-amount">+£0</div>
+          <div class="flash-label">Saved to your total</div>
+        </div>
         <div class="greeting" id="home-greeting">Good morning 👋</div>
         <div class="hero-inner">
           <div class="hero-left">
@@ -389,12 +403,13 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
           </div>
           <div class="hero-right">
-            <div class="hero-stars" id="hero-stars">⭐⭐⭐⭐⭐</div>
+            <div class="hero-shield">🛡</div>
+            <div class="hero-score" id="hero-score">—<span>/100</span></div>
             <div class="hero-right-label">Quote Health</div>
             <div class="hero-right-status" id="hero-health-status">—</div>
           </div>
         </div>
-        <div class="trial-pill">🔓 7-Day Free Trial Active</div>
+        <div class="trial-pill" id="trial-pill">🔓 7-Day Free Trial Active</div>
       </div>
 
       <!-- 4 KPI CARDS -->
@@ -914,6 +929,17 @@ function populateUserUI(){
   document.getElementById('q-profit-target').value=currentUser.profit_target||30;
   const h=new Date().getHours();
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
+  // Trial pill — days remaining
+  const pillEl=document.getElementById('trial-pill');
+  if(pillEl&&currentUser.trial_started_at&&!currentUser.paid_at){
+    const started=new Date(currentUser.trial_started_at);
+    const msLeft=(started.getTime()+(7*24*60*60*1000))-Date.now();
+    const daysLeft=Math.max(0,Math.ceil(msLeft/(24*60*60*1000)));
+    const dayNum=Math.min(7,7-daysLeft+1);
+    if(daysLeft<=0){ pillEl.textContent='⚠️ Trial Ended'; }
+    else if(daysLeft===1){ pillEl.textContent='🔓 Last Day of Trial'; }
+    else { pillEl.textContent='🔓 Day '+dayNum+' of 7 — '+daysLeft+' Days Remaining'; }
+  }
 }
 
 function switchTab(tab){
@@ -1119,27 +1145,29 @@ function updateHomeStats(){
   document.getElementById('hero-conversion').textContent=conversion!==null?conversion+'%':'—';
   document.getElementById('hero-margin').textContent=avgMargin!==null?avgMargin+'%':'—';
 
-  // Stars and health status (based on avg margin)
-  const starsEl=document.getElementById('hero-stars');
+  // Score and health status (based on avg margin mapped to 0-100)
+  const scoreEl=document.getElementById('hero-score');
   const statusEl=document.getElementById('hero-health-status');
   if(avgMargin===null){
-    starsEl.textContent='☆☆☆☆☆';
-    statusEl.textContent='No quotes yet';
-  } else if(avgMargin>=35){
-    starsEl.textContent='⭐⭐⭐⭐⭐';
-    statusEl.textContent='Excellent';
-  } else if(avgMargin>=28){
-    starsEl.textContent='⭐⭐⭐⭐☆';
-    statusEl.textContent='Strong';
-  } else if(avgMargin>=20){
-    starsEl.textContent='⭐⭐⭐☆☆';
-    statusEl.textContent='Healthy';
-  } else if(avgMargin>=12){
-    starsEl.textContent='⭐⭐☆☆☆';
-    statusEl.textContent='Review margins';
+    if(scoreEl) scoreEl.innerHTML='—<span>/100</span>';
+    if(statusEl) statusEl.textContent='No quotes yet';
   } else {
-    starsEl.textContent='⭐☆☆☆☆';
-    statusEl.textContent='At risk';
+    // Map margin % to score: 35%+ = 95, 28% = 85, 20% = 72, 12% = 55, below 12% = 35
+    let score;
+    if(avgMargin>=35) score=90+Math.min(10,Math.round((avgMargin-35)/2));
+    else if(avgMargin>=28) score=80+Math.round(((avgMargin-28)/7)*10);
+    else if(avgMargin>=20) score=65+Math.round(((avgMargin-20)/8)*15);
+    else if(avgMargin>=12) score=45+Math.round(((avgMargin-12)/8)*20);
+    else score=Math.max(10,Math.round((avgMargin/12)*45));
+    score=Math.min(100,Math.max(0,score));
+    if(scoreEl) scoreEl.innerHTML=score+'<span>/100</span>';
+    if(statusEl){
+      if(score>=90) statusEl.textContent='Excellent';
+      else if(score>=80) statusEl.textContent='Strong';
+      else if(score>=65) statusEl.textContent='Healthy';
+      else if(score>=45) statusEl.textContent='Review margins';
+      else statusEl.textContent='At risk';
+    }
   }
 
   // 4 KPI cards
@@ -1477,6 +1505,15 @@ async function generateQuote(){
   document.getElementById('ai-output').style.display='block';
 }
 
+function flashProfitHero(profitAmt){
+  const flash=document.getElementById('hero-flash');
+  const amt=document.getElementById('flash-amount');
+  if(!flash||!amt) return;
+  amt.textContent='+£'+Math.round(profitAmt).toLocaleString('en-GB');
+  flash.classList.add('show');
+  setTimeout(()=>flash.classList.remove('show'),2000);
+}
+
 async function saveQuote(){
   if(!currentQuoteData) return;
   try{
@@ -1498,6 +1535,10 @@ async function saveQuote(){
     }
     if(res.ok){
       showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
+      // Flash profit on hero for new quotes only
+      if(!editingQuoteId && currentQuoteData?.quote_data?.profit){
+        flashProfitHero(currentQuoteData.quote_data.profit);
+      }
       editingQuoteId=null;
       document.getElementById('step-first-quote').className='step-num done';
       document.getElementById('step-first-quote').textContent='✓';
