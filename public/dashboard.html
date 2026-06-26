@@ -1790,68 +1790,95 @@ function emailQuote(){
   const bizName=currentUser?.business_name||currentUser?.name||'Your Tradesperson';
   const bizPhone=currentUser?.phone||'';
   const bizEmail=currentUser?.contact_email||'';
-  const bizTown=currentUser?.town||'';
   const total=currentQuoteData.total||0;
   const desc=currentQuoteData.job_description||'';
   const qd=currentQuoteData.quote_data||{};
 
-  // Split job description into bullet points
-  // Split on: comma, semicolon, " and ", newline — then clean up
+  // Detect job type for personalised opening
+  const descLower=desc.toLowerCase();
+  let jobType='your project';
+  if(descLower.includes('bathroom')||descLower.includes('bath')||descLower.includes('shower')) jobType='your bathroom refurbishment';
+  else if(descLower.includes('kitchen')) jobType='your kitchen refurbishment';
+  else if(descLower.includes('roof')) jobType='your roofing project';
+  else if(descLower.includes('extension')||descLower.includes('build')) jobType='your extension project';
+  else if(descLower.includes('electrics')||descLower.includes('rewire')) jobType='your electrical works';
+  else if(descLower.includes('plaster')||descLower.includes('skim')) jobType='your plastering works';
+  else if(descLower.includes('decorat')||descLower.includes('paint')) jobType='your decorating project';
+  else if(descLower.includes('floor')||descLower.includes('laminate')) jobType='your flooring project';
+  else if(descLower.includes('loft')||descLower.includes('dormer')) jobType='your loft conversion';
+
+  // Split description into bullet points
   const rawItems=desc.split(/,|;|\n| and /i).map(s=>s.trim()).filter(s=>s.length>4);
-  const bulletLines=rawItems.map(s=>'• '+s.charAt(0).toUpperCase()+s.slice(1)).join('\n');
+  const bulletLines=rawItems.map(s=>'  • '+s.charAt(0).toUpperCase()+s.slice(1)).join('\n');
 
-  // Build breakdown lines
-  const labourLine=qd.labour>0?`Labour: £${qd.labour.toLocaleString('en-GB',{minimumFractionDigits:2})}`:'';
-  const matsLine=qd.mats>0?`Materials (inc. markup): £${qd.mats.toLocaleString('en-GB',{minimumFractionDigits:2})}`:'';
-  const skipLine=qd.skipCost>0?`Skip / Waste Disposal: £${qd.skipCost.toLocaleString('en-GB',{minimumFractionDigits:2})}`:'';
-  const scaffoldLine=qd.scaffoldCost>0?`Scaffolding: £${qd.scaffoldCost.toLocaleString('en-GB',{minimumFractionDigits:2})}`:'';
-  const contingencyLine=qd.contingencyAmt>0?`Contingency: £${qd.contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2})}`:'';
+  // What's included checklist
+  const includes=[];
+  includes.push('✔  Labour');
+  includes.push('✔  Materials');
+  if(qd.skipCost>0) includes.push('✔  Skip & Waste Disposal');
+  if(qd.scaffoldCost>0) includes.push('✔  Scaffolding');
+  includes.push('✔  Contingency');
 
-  // Contact line
-  let contactLine='';
-  if(bizPhone) contactLine+='Tel: '+bizPhone;
-  if(bizEmail) contactLine+=(contactLine?' | ':'')+bizEmail;
-  if(bizTown) contactLine+=(contactLine?' | ':'')+bizTown;
+  // Price breakdown with dot leaders
+  const pad=(label,val)=>{
+    const valStr='£'+Math.round(val).toLocaleString('en-GB');
+    const dots='.'.repeat(Math.max(2,28-label.length-valStr.length));
+    return `${label} ${dots} ${valStr}`;
+  };
+  const breakdownLines=[];
+  if(qd.labour>0) breakdownLines.push(pad('Labour',qd.labour));
+  if(qd.mats>0) breakdownLines.push(pad('Materials',qd.mats));
+  if(qd.skipCost>0) breakdownLines.push(pad('Skip & Waste',qd.skipCost));
+  if(qd.scaffoldCost>0) breakdownLines.push(pad('Scaffolding',qd.scaffoldCost));
+  if(qd.contingencyAmt>0) breakdownLines.push(pad('Contingency',qd.contingencyAmt));
+
+  // Signature block
+  const sigLines=[];
+  sigLines.push(bizName);
+  if(bizPhone) sigLines.push('📞 '+bizPhone);
+  if(bizEmail) sigLines.push('✉  '+bizEmail);
 
   const subject=`Your Quotation from ${bizName}`;
 
   const body=`Dear ${customerName},
 
-Thank you for inviting me to provide a quotation for your project.
+Thank you for inviting me to provide a quotation for ${jobType}.
 
-Please find a summary of your quotation below.
+I've carefully reviewed the requirements discussed and prepared the quotation below.
 
-──────────────────────────
-📋 PROJECT
-──────────────────────────
+─────────────────────────────
+📋 Project Summary
+─────────────────────────────
 
 ${bulletLines}
 
-──────────────────────────
-💷 TOTAL QUOTATION
-──────────────────────────
+─────────────────────────────
+💷 Your Quotation
+─────────────────────────────
 
 £${total.toLocaleString('en-GB',{minimumFractionDigits:2})}
 
-Breakdown:
-${[labourLine,matsLine,skipLine,scaffoldLine,contingencyLine].filter(Boolean).join('\n')}
+Included
+${includes.join('\n')}
 
-This quotation has been carefully prepared to include labour, materials, contingency and the agreed scope of works.
+Price Breakdown
+${breakdownLines.join('\n')}
 
-✅ Labour included
-✅ Materials included
-✅ Contingency included
+─────────────────────────────
 
-──────────────────────────
+This quotation has been prepared to include the agreed scope of work and all identified materials and labour requirements.
 
-If you have any questions regarding this quotation, please don't hesitate to get in touch.
+To accept this quotation, simply reply to this email or contact me using the details below.
+
+If you have any questions, please don't hesitate to get in touch.
 
 I look forward to working with you.
 
 Kind regards,
-${bizName}${contactLine?'\n'+contactLine:''}
 
-────────────────
+${sigLines.join('\n')}
+
+────────────────────────────
 Generated with ProfitQuote — Profit Protection Software for Tradespeople
 profitquote.co.uk`;
 
