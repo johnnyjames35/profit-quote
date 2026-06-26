@@ -1250,14 +1250,20 @@ function editQuote(id){
   const qd=q.quote_data||{};
   document.getElementById('q-desc').value=q.job_description||'';
   document.getElementById('q-customer').value=q.customer_name||'';
-  document.getElementById('q-email').value='';
-  document.getElementById('q-postcode').value='';
+  document.getElementById('q-email').value=q.customer_email||'';
+  document.getElementById('q-postcode').value=qd.postcode||'';
   document.getElementById('q-days').value=q.days||1;
   document.getElementById('q-day-rate').value=q.day_rate||currentUser?.day_rate||200;
   document.getElementById('q-materials').value=qd.materials||0;
   document.getElementById('q-markup').value=q.markup_percent||currentUser?.markup_percent||20;
   document.getElementById('q-profit-target').value=q.profit_target||currentUser?.profit_target||30;
-  document.getElementById('q-contingency').value=10;
+  document.getElementById('q-contingency').value=qd.contingency||10;
+
+  // Restore room dimensions
+  if(qd.lenM){ document.getElementById('q-length-m').value=qd.lenM; convertRoom('m','length'); }
+  if(qd.widM){ document.getElementById('q-width-m').value=qd.widM; convertRoom('m','width'); }
+  if(qd.lenFt&&!qd.lenM){ document.getElementById('q-length-ft').value=qd.lenFt; convertRoom('ft','length'); }
+  if(qd.widFt&&!qd.widM){ document.getElementById('q-width-ft').value=qd.widFt; convertRoom('ft','width'); }
 
   // Skip
   const hasSkip=!!(q.skip_cost&&q.skip_cost>0);
@@ -1279,15 +1285,6 @@ function editQuote(id){
   // Risk
   selectedRisk=qd.risk||'low';
   setRisk(selectedRisk);
-
-  // Clear room fields
-  ['q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  ['length-m-conv','length-ft-conv','width-m-conv','width-ft-conv','height-m-conv','height-ft-conv'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.textContent='';
-  });
-  document.getElementById('room-area').textContent='';
 
   // Update builder header
   document.getElementById('builder-title').textContent='Edit Quote';
@@ -1648,7 +1645,7 @@ async function generateQuote(){
     markup_percent:markup,
     profit_target:profitTarget,
     other_costs:scaffoldCost>0?'Scaffolding: £'+scaffoldCost:null,
-    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,skipCost,scaffoldCost},
+    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,skipCost,scaffoldCost,lenM,widM,lenFt,widFt,contingency,postcode:document.getElementById('q-postcode').value},
     total:total,
     profit_percent:profitPct
   };
