@@ -21,7 +21,7 @@
   --muted:#888888;
   --body:#cccccc;
   --green:#22c55e;
-  --green-bg:rgba(34,197,94,0.1);
+  --green-bg:rgba(34,197,94,0.18);
   --red:#ef4444;
   --red-bg:rgba(239,68,68,0.15);
   --amber-warn:#f59e0b;
@@ -81,9 +81,15 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .home-hero{background:linear-gradient(160deg,#1c1400 0%,#0f0f0f 55%,#0a0a0a 100%);border:1px solid rgba(245,166,35,0.2);border-radius:var(--radius);padding:24px 20px 20px;margin-bottom:14px;position:relative;overflow:hidden;}
 .home-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.12) 0%,transparent 65%);pointer-events:none;}
 .home-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,166,35,0.3),transparent);}
+.hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.hero-left{flex:1;min-width:0;}
+.hero-right{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.15);border-radius:12px;padding:14px 12px;min-width:90px;text-align:center;gap:6px;}
+.hero-stars{font-size:1.1rem;letter-spacing:1px;line-height:1;}
+.hero-right-label{font-size:0.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:4px;}
+.hero-right-status{font-size:0.72rem;font-weight:700;color:var(--amber);line-height:1.3;margin-top:2px;}
 .greeting{font-size:1.05rem;font-weight:600;color:var(--muted);margin-bottom:14px;letter-spacing:0;}
 .hero-profit-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;}
-.hero-profit-amount{font-size:3rem;font-weight:900;color:var(--amber);letter-spacing:-0.04em;line-height:1;margin-bottom:4px;}
+.hero-profit-amount{font-size:2.8rem;font-weight:900;color:var(--amber);letter-spacing:-0.04em;line-height:1;margin-bottom:4px;}
 .hero-profit-month{font-size:0.82rem;color:var(--green);font-weight:700;margin-bottom:16px;}
 .hero-stats-row{display:flex;gap:20px;padding-top:14px;border-top:1px solid rgba(245,166,35,0.12);}
 .hero-stat{display:flex;flex-direction:column;gap:2px;}
@@ -362,21 +368,30 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <!-- HERO -->
       <div class="home-hero">
         <div class="greeting" id="home-greeting">Good morning 👋</div>
-        <div class="hero-profit-label">Profit Protected This Year</div>
-        <div class="hero-profit-amount" id="hero-profit-year">£0</div>
-        <div class="hero-profit-month" id="hero-profit-month"></div>
-        <div class="hero-stats-row">
-          <div class="hero-stat">
-            <div class="hero-stat-val" id="hero-won">0</div>
-            <div class="hero-stat-label">Quotes Won</div>
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-profit-label">Profit Protected This Year</div>
+            <div class="hero-profit-amount" id="hero-profit-year">£0</div>
+            <div class="hero-profit-month" id="hero-profit-month"></div>
+            <div class="hero-stats-row">
+              <div class="hero-stat">
+                <div class="hero-stat-val" id="hero-won">0</div>
+                <div class="hero-stat-label">Quotes Won</div>
+              </div>
+              <div class="hero-stat">
+                <div class="hero-stat-val" id="hero-conversion">—</div>
+                <div class="hero-stat-label">Conversion</div>
+              </div>
+              <div class="hero-stat">
+                <div class="hero-stat-val" id="hero-margin">—</div>
+                <div class="hero-stat-label">Avg Margin</div>
+              </div>
+            </div>
           </div>
-          <div class="hero-stat">
-            <div class="hero-stat-val" id="hero-conversion">—</div>
-            <div class="hero-stat-label">Conversion</div>
-          </div>
-          <div class="hero-stat">
-            <div class="hero-stat-val" id="hero-margin">—</div>
-            <div class="hero-stat-label">Avg Margin</div>
+          <div class="hero-right">
+            <div class="hero-stars" id="hero-stars">⭐⭐⭐⭐⭐</div>
+            <div class="hero-right-label">Quote Health</div>
+            <div class="hero-right-status" id="hero-health-status">—</div>
           </div>
         </div>
         <div class="trial-pill">🔓 7-Day Free Trial Active</div>
@@ -403,10 +418,10 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="stat-sub">Per quote</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">🛡</div>
-          <div class="stat-label">Quote Health</div>
+          <div class="stat-icon">📈</div>
+          <div class="stat-label">Average Margin</div>
           <div class="stat-val green" id="stat-health">—</div>
-          <div class="stat-sub">Avg margin</div>
+          <div class="stat-sub" id="stat-health-verdict">No quotes yet</div>
         </div>
       </div>
 
@@ -1104,11 +1119,43 @@ function updateHomeStats(){
   document.getElementById('hero-conversion').textContent=conversion!==null?conversion+'%':'—';
   document.getElementById('hero-margin').textContent=avgMargin!==null?avgMargin+'%':'—';
 
+  // Stars and health status (based on avg margin)
+  const starsEl=document.getElementById('hero-stars');
+  const statusEl=document.getElementById('hero-health-status');
+  if(avgMargin===null){
+    starsEl.textContent='☆☆☆☆☆';
+    statusEl.textContent='No quotes yet';
+  } else if(avgMargin>=35){
+    starsEl.textContent='⭐⭐⭐⭐⭐';
+    statusEl.textContent='Excellent';
+  } else if(avgMargin>=28){
+    starsEl.textContent='⭐⭐⭐⭐☆';
+    statusEl.textContent='Strong';
+  } else if(avgMargin>=20){
+    starsEl.textContent='⭐⭐⭐☆☆';
+    statusEl.textContent='Healthy';
+  } else if(avgMargin>=12){
+    starsEl.textContent='⭐⭐☆☆☆';
+    statusEl.textContent='Review margins';
+  } else {
+    starsEl.textContent='⭐☆☆☆☆';
+    statusEl.textContent='At risk';
+  }
+
   // 4 KPI cards
   document.getElementById('stat-quotes').textContent=quotes.length;
   document.getElementById('stat-won').textContent=wonQuotes.length;
   document.getElementById('stat-avg').textContent=quotes.length>0?'£'+Math.round(avgVal).toLocaleString('en-GB'):'—';
   document.getElementById('stat-health').textContent=avgMargin!==null?avgMargin+'%':'—';
+  const verdictEl=document.getElementById('stat-health-verdict');
+  if(verdictEl){
+    if(avgMargin===null) verdictEl.textContent='No quotes yet';
+    else if(avgMargin>=35) verdictEl.textContent='Excellent';
+    else if(avgMargin>=28) verdictEl.textContent='Strong';
+    else if(avgMargin>=20) verdictEl.textContent='Healthy';
+    else if(avgMargin>=12) verdictEl.textContent='Review margins';
+    else verdictEl.textContent='At risk';
+  }
 
   // Onboarding — hide once rates set AND first quote saved
   const ratesSet=!!(currentUser?.day_rate&&currentUser.day_rate>0&&currentUser?.business_name);
@@ -1160,43 +1207,38 @@ function renderProfitCoach(){
   }
   const latest=quotes[0];
   const job=(latest.job_description||'').toLowerCase();
-  const trade=(latest.trade||currentUser?.trade||'').toLowerCase();
+  const trade=(currentUser?.trade||latest.trade||'Tradespeople');
 
-  // Pick relevant tips based on job description keywords
-  const allTips=[
-    {kw:['bathroom','bath','shower','wet room','ensuite'],tips:['Silicone and sealant (often forgotten)','Waste pipe connections and fittings','Tile adhesive and grout quantities','Ventilation fan if required','Water pressure test time']},
-    {kw:['kitchen','cupboard','worktop','units'],tips:['Skirting and filler panels','Plumbing connections for dishwasher/sink','Electrical socket repositioning','Waste disposal and old unit removal','Silicone and finishing materials']},
-    {kw:['roof','roofing','flat roof','tiles','slates'],tips:['Felt and batten quantities','Lead flashing and soakers','Ridge and hip tiles','Scaffolding erection and strike time','Skip for old materials']},
-    {kw:['electrics','rewire','sockets','lighting','downlight'],tips:['Cable containment and trunking','Testing and certification time','Making good after chasing','Consumer unit upgrade if needed','Parking near site']},
-    {kw:['plaster','skim','boarding','dot and dab'],tips:['Primer/PVA before skimming','Drying time between coats','Beading and corner trim','Rubbish removal and skip','Dust sheets and protection']},
-    {kw:['extension','build','blockwork','foundations'],tips:['Groundworks contingency (always allow extra)','Building control fees and inspections','Structural engineer sign-off','Brick and block waste factor (10%)','Temporary weather protection']},
-    {kw:['decoration','paint','decorating','wallpaper'],tips:['Filling and prep time (always underestimated)','Primer coats on new plaster','Masking tape and dust sheets','Travel to and from trade counter','Waste disposal for old wallpaper']},
-    {kw:['flooring','laminate','vinyl','carpet','tiles'],tips:['Underlay and adhesive','Door trimming after fitting','Floor levelling compound if needed','Transition strips between rooms','Old floor removal and disposal']},
+  const allGroups=[
+    {kw:['bathroom','bath','shower','wet room','ensuite'],label:'bathroom refurbishment',tips:['Silicone and sealant','Waste pipe connections and fittings','Tile adhesive and grout','Ventilation fan','Water pressure test time'],costLow:120,costHigh:280},
+    {kw:['kitchen','cupboard','worktop','units'],label:'kitchen refurbishment',tips:['Skirting and filler panels','Waste disposal and old unit removal','Plumbing connections for dishwasher/sink','Silicone and finishing materials','Collection time to merchant'],costLow:180,costHigh:350},
+    {kw:['roof','roofing','flat roof','slates'],label:'roofing job',tips:['Felt and batten quantities','Lead flashing and soakers','Ridge and hip tiles','Scaffolding erection and strike time','Skip for old materials'],costLow:200,costHigh:480},
+    {kw:['electrics','rewire','sockets','lighting','downlight'],label:'electrical job',tips:['Cable containment and trunking','Testing and certification time','Making good after chasing walls','Consumer unit upgrade if needed','Parking near site'],costLow:90,costHigh:220},
+    {kw:['plaster','skim','boarding','dot and dab'],label:'plastering job',tips:['Primer/PVA before skimming','Beading and corner trim','Drying time between coats','Skip or rubbish removal','Dust sheets and protection'],costLow:60,costHigh:150},
+    {kw:['extension','build','blockwork','foundations'],label:'extension or build',tips:['Groundworks contingency','Building control fees and inspections','Structural engineer sign-off','Brick and block waste (allow 10%)','Temporary weather protection'],costLow:400,costHigh:900},
+    {kw:['decoration','paint','decorating','wallpaper'],label:'decorating job',tips:['Filling and prep time','Primer coats on new plaster','Masking tape and dust sheets','Travel to and from trade counter','Waste disposal for old wallpaper'],costLow:60,costHigh:160},
+    {kw:['flooring','laminate','vinyl','carpet'],label:'flooring job',tips:['Underlay and adhesive','Door trimming after fitting','Floor levelling compound','Transition strips between rooms','Old floor removal and disposal'],costLow:80,costHigh:200},
+    {kw:['dormer','loft conversion','loft extension'],label:'loft conversion',tips:['Structural beam costs','Building control fees','Party wall notices if needed','Scaffolding erection and strike','Plasterboard and finishing quantities'],costLow:500,costHigh:1200},
   ];
 
-  let matchedTips=[];
-  let matchedLabel='';
-  for(const group of allTips){
-    if(group.kw.some(k=>job.includes(k))){
-      matchedTips=group.tips;
-      matchedLabel=group.kw[0].charAt(0).toUpperCase()+group.kw[0].slice(1)+' job';
-      break;
-    }
+  let matched=null;
+  for(const g of allGroups){
+    if(g.kw.some(k=>job.includes(k))){ matched=g; break; }
+  }
+  if(!matched){
+    matched={label:'recent job',tips:['Fuel and travel costs to site','Parking charges','Consumables (tape, fixings, silicone)','Tool wear and replacement','Collection trips to the merchant'],costLow:80,costHigh:200};
   }
 
-  // Fallback generic tips by trade
-  if(!matchedTips.length){
-    matchedTips=['Fuel and travel costs to site','Parking charges','Consumables (tape, fixings, silicone)','Tool wear and replacement','Time for collection trips to the merchant'];
-    matchedLabel='General profit protection';
-  }
-
-  const jobSnippet=(latest.job_description||'').substring(0,60)+((latest.job_description||'').length>60?'…':'');
+  const jobSnippet=(latest.job_description||'').substring(0,55)+((latest.job_description||'').length>55?'…':'');
   el.innerHTML=`
-    <div class="coach-job">Latest: "${jobSnippet}"</div>
-    <div class="coach-body">On jobs like this, tradespeople most often forget:</div>
+    <div class="coach-job">Your last quote was a ${matched.label}.</div>
+    <div class="coach-body">${trade} often forget:</div>
     <ul class="coach-tips">
-      ${matchedTips.map(t=>`<li>${t}</li>`).join('')}
-    </ul>`;
+      ${matched.tips.map(t=>`<li>${t}</li>`).join('')}
+    </ul>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(34,197,94,0.15);font-size:0.8rem;font-weight:700;color:var(--amber);">
+      Estimated forgotten costs: £${matched.costLow}–£${matched.costHigh}
+    </div>`;
 }
 
 // ROOM CONVERSION
