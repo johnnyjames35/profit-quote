@@ -294,12 +294,42 @@ textarea.field-input{resize:vertical;min-height:80px;}
 .btn-email{background:var(--amber);color:var(--black);}
 .btn-new{background:#1a56db;color:var(--white);border:none!important;font-weight:800;}
 
-/* VARIATIONS */
-.variation-result{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;}
-.var-doc-title{font-size:0.9rem;font-weight:800;color:var(--white);text-align:center;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
-.var-line{font-size:0.85rem;color:var(--body);margin-bottom:6px;}
-.var-total{font-weight:800;color:var(--amber);font-size:0.95rem;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);}
-.btn-copy{width:100%;padding:12px;background:var(--amber);color:var(--black);border:none;border-radius:9px;cursor:pointer;font-weight:800;font-family:var(--font);margin-top:12px;}
+/* VARIATIONS — premium rebuild */
+.var-hero{background:linear-gradient(160deg,#1a0d00 0%,#0f0f0f 55%,#0a0a0a 100%);border:1px solid rgba(245,166,35,0.2);border-radius:var(--radius);padding:22px 20px 18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.var-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:160px;height:160px;background:radial-gradient(circle,rgba(245,166,35,0.1) 0%,transparent 65%);pointer-events:none;}
+.var-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,166,35,0.3),transparent);}
+.var-hero-icon{font-size:1.6rem;margin-bottom:10px;display:block;}
+.var-hero-title{font-size:1.3rem;font-weight:900;color:var(--white);letter-spacing:-0.03em;margin-bottom:6px;}
+.var-hero-sub{font-size:0.85rem;color:var(--muted);line-height:1.6;}
+.var-step-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:18px 16px;margin-bottom:12px;}
+.var-step-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.var-step-icon{width:36px;height:36px;border-radius:9px;background:var(--amber-glow);border:1px solid var(--amber-border);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.var-step-title{font-size:0.95rem;font-weight:800;color:var(--white);letter-spacing:-0.01em;}
+/* AI coach card for variation */
+.var-ai-card{background:linear-gradient(135deg,#0d1a0d 0%,#1a1a1a 100%);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+.var-ai-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.var-ai-icon{width:32px;height:32px;background:var(--green-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.var-ai-title{font-size:0.78rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:0.8px;}
+.var-ai-body{font-size:0.85rem;color:var(--body);line-height:1.6;font-style:italic;}
+.var-ai-loading{font-size:0.83rem;color:var(--muted);font-style:italic;}
+/* premium output document */
+.var-output-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;}
+.var-output-header{border-bottom:2px solid var(--amber);padding-bottom:14px;margin-bottom:16px;}
+.var-output-logo{font-size:1.1rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;}
+.var-output-logo span{color:var(--amber);}
+.var-output-badge{display:inline-block;background:var(--amber);color:var(--black);font-size:0.78rem;font-weight:800;padding:4px 14px;border-radius:20px;margin-top:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.var-output-biz{font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;}
+.var-section-label{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;margin-top:14px;}
+.var-section-value{font-size:0.88rem;color:var(--white);font-weight:600;line-height:1.5;}
+.var-breakdown{background:#111;border:1px solid var(--card-border);border-radius:9px;padding:12px;margin-top:14px;}
+.var-breakdown-row{display:flex;justify-content:space-between;font-size:0.85rem;color:var(--muted);padding:7px 0;border-bottom:1px solid var(--card-border);}
+.var-breakdown-row:last-child{border-bottom:none;font-weight:800;color:var(--amber);font-size:0.95rem;}
+.var-sig-section{margin-top:18px;padding-top:16px;border-top:1px solid var(--card-border);}
+.var-sig-line{font-size:0.82rem;color:var(--muted);margin-bottom:10px;}
+.var-sig-line span{display:inline-block;width:180px;border-bottom:1px solid #333;margin-left:8px;}
+.var-output-actions{display:flex;gap:8px;margin-top:14px;}
+.btn-copy{flex:1;padding:12px;background:var(--amber);color:var(--black);border:none;border-radius:9px;cursor:pointer;font-weight:800;font-family:var(--font);}
+.btn-var-new{flex:1;padding:12px;background:none;border:1px solid var(--card-border);color:var(--muted);border-radius:9px;cursor:pointer;font-weight:700;font-family:var(--font);font-size:0.9rem;}
 
 /* SETUP */
 .setup-avatar{width:64px;height:64px;background:var(--amber-glow);border:2px solid var(--amber-border);color:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;margin:0 auto 8px;}
@@ -776,32 +806,122 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
     <!-- VARIATIONS -->
     <div class="section" id="sec-issues">
-      <h2 class="section-heading" style="margin-bottom:6px;">Variation Notice</h2>
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Job scope changed? Generate a professional variation notice instantly.</p>
+
+      <!-- form screen -->
       <div id="issues-home">
-        <div class="card">
-          <div class="field-group"><label class="field-label">Original Job / Project</label><input class="field-input" id="issue-project" placeholder="e.g. Bathroom refurb — Mr Smith"></div>
-          <div class="field-group"><label class="field-label">What Changed / Extra Work</label><textarea class="field-input" id="issue-desc" rows="3" placeholder="e.g. Water damage found under floor — requires replacement boards and extra labour"></textarea></div>
-          <div class="field-group"><label class="field-label">Extra Hours</label><input class="field-input" id="issue-hours" type="number" placeholder="e.g. 4"></div>
+
+        <!-- Hero -->
+        <div class="var-hero">
+          <span class="var-hero-icon">🛡</span>
+          <div class="var-hero-title">Protect Your Profit</div>
+          <div class="var-hero-sub">When a customer asks for extra work, don't rely on a verbal agreement. Generate a professional variation notice in under 60 seconds — protect your time, materials and profit.</div>
+        </div>
+
+        <!-- Step 1: Original Project -->
+        <div class="var-step-card">
+          <div class="var-step-header">
+            <div class="var-step-icon">📋</div>
+            <div class="var-step-title">Original Project</div>
+          </div>
+          <div class="field-group"><label class="field-label">Customer Name</label><input class="field-input" id="issue-customer" placeholder="e.g. Mr & Mrs Smith"></div>
+          <div class="field-group"><label class="field-label">Original Job Description</label><input class="field-input" id="issue-project" placeholder="e.g. Full bathroom refurbishment"></div>
+          <div class="field-group"><label class="field-label">Original Quote Reference (optional)</label><input class="field-input" id="issue-ref" placeholder="e.g. QUO-2401"></div>
+        </div>
+
+        <!-- Step 2: Additional Work -->
+        <div class="var-step-card">
+          <div class="var-step-header">
+            <div class="var-step-icon">🔨</div>
+            <div class="var-step-title">Additional Work</div>
+          </div>
+          <div class="field-group"><label class="field-label">What changed / extra work required</label><textarea class="field-input" id="issue-desc" rows="3" placeholder="e.g. Water damage found under floor — requires replacement boards and additional waterproofing"></textarea></div>
+          <div class="field-group"><label class="field-label">Why did this change occur?</label><textarea class="field-input" id="issue-reason" rows="2" placeholder="e.g. Hidden damage not visible during original survey"></textarea></div>
+        </div>
+
+        <!-- Step 3: Extra Labour -->
+        <div class="var-step-card">
+          <div class="var-step-header">
+            <div class="var-step-icon">⏱</div>
+            <div class="var-step-title">Extra Labour</div>
+          </div>
+          <div class="field-group"><label class="field-label">Extra Hours</label><input class="field-input" id="issue-hours" type="number" placeholder="e.g. 4" min="0" step="0.5"></div>
           <div class="field-group"><label class="field-label">Hourly Rate (£)</label><input class="field-input" id="issue-hourly" type="number" placeholder="e.g. 35"></div>
+        </div>
+
+        <!-- Step 4: Materials -->
+        <div class="var-step-card">
+          <div class="var-step-header">
+            <div class="var-step-icon">📦</div>
+            <div class="var-step-title">Extra Materials</div>
+          </div>
           <div class="field-group"><label class="field-label">Extra Materials Cost (£)</label><input class="field-input" id="issue-materials" type="number" placeholder="e.g. 150"></div>
         </div>
-        <button class="btn-next" onclick="generateVariation()">Generate Notice →</button>
-      </div>
-      <div id="issue-form" style="display:none;">
-        <div id="variation-result" class="variation-result">
-          <div class="var-doc-title">VARIATION NOTICE</div>
-          <div class="var-line" id="var-project"></div>
-          <div class="var-line" id="var-ref"></div>
-          <div style="margin:10px 0;font-size:0.85rem;color:var(--body);" id="var-desc"></div>
-          <div class="var-line" id="var-labour"></div>
-          <div class="var-line" id="var-mats"></div>
-          <div class="var-total" id="var-total"></div>
-          <div style="margin-top:16px;font-size:0.82rem;color:var(--muted);">Customer Signature: ___________________</div>
-          <div style="margin-top:6px;font-size:0.82rem;color:var(--muted);">Date: ___________________</div>
+
+        <!-- Step 5: AI Review -->
+        <div class="var-ai-card" id="var-ai-card" style="display:none;">
+          <div class="var-ai-header">
+            <div class="var-ai-icon">🤖</div>
+            <div class="var-ai-title">AI Review</div>
+          </div>
+          <div id="var-ai-content"><div class="var-ai-loading">Reviewing your variation...</div></div>
         </div>
-        <button class="btn-copy" onclick="copyVariation()">📋 Copy Notice</button>
-        <button class="btn-prev" style="margin-top:8px;" onclick="resetIssues()">← New Notice</button>
+
+        <button class="btn-next" onclick="generateVariation()">Generate Variation Notice →</button>
+      </div>
+
+      <!-- output screen -->
+      <div id="issue-form" style="display:none;">
+
+        <!-- AI Review (shown above output) -->
+        <div class="var-ai-card" style="margin-bottom:14px;">
+          <div class="var-ai-header">
+            <div class="var-ai-icon">🤖</div>
+            <div class="var-ai-title">AI Review</div>
+          </div>
+          <div id="var-ai-result" class="var-ai-body">Analysing your variation...</div>
+        </div>
+
+        <!-- Premium output document -->
+        <div class="var-output-card" id="variation-result">
+          <div class="var-output-header">
+            <div class="var-output-logo">Profit<span>Quote</span></div>
+            <div class="var-output-badge">Variation Notice</div>
+            <div class="var-output-biz" id="var-biz-details"></div>
+          </div>
+
+          <div class="var-section-label">Reference</div>
+          <div class="var-section-value" id="var-ref"></div>
+
+          <div class="var-section-label">Customer</div>
+          <div class="var-section-value" id="var-customer"></div>
+
+          <div class="var-section-label">Original Project</div>
+          <div class="var-section-value" id="var-project"></div>
+
+          <div class="var-section-label">Additional Work Required</div>
+          <div class="var-section-value" id="var-desc"></div>
+
+          <div class="var-section-label">Reason for Change</div>
+          <div class="var-section-value" id="var-reason"></div>
+
+          <div class="var-breakdown">
+            <div class="var-breakdown-row" id="var-labour-row" style="display:none;"><span>Extra Labour</span><span id="var-labour"></span></div>
+            <div class="var-breakdown-row" id="var-mats-row" style="display:none;"><span>Extra Materials</span><span id="var-mats"></span></div>
+            <div class="var-breakdown-row"><span>Total Additional Cost</span><span id="var-total"></span></div>
+          </div>
+
+          <div class="var-sig-section">
+            <div class="var-sig-line">Customer agrees to this additional charge:</div>
+            <div class="var-sig-line">Signature <span></span></div>
+            <div class="var-sig-line">Print name <span></span></div>
+            <div class="var-sig-line">Date <span></span></div>
+          </div>
+        </div>
+
+        <div class="var-output-actions">
+          <button class="btn-copy" onclick="copyVariation()">📋 Copy Notice</button>
+          <button class="btn-var-new" onclick="resetIssues()">← New Notice</button>
+        </div>
       </div>
     </div>
 
@@ -987,7 +1107,7 @@ function switchTab(tab){
   document.getElementById('sec-'+tab)?.classList.add('active');
   document.getElementById('nav-'+tab)?.classList.add('active');
   document.querySelector('.page').scrollTop=0;
-  if(tab==='issues'){ document.getElementById('issues-home').style.display='block'; document.getElementById('issue-form').style.display='none'; }
+  if(tab==='issues'){ document.getElementById('issues-home').style.display='block'; document.getElementById('issue-form').style.display='none'; const ac=document.getElementById('var-ai-card'); if(ac) ac.style.display='none'; }
   if(tab==='quotes') loadQuotes();
   // If switching to builder fresh (not via editQuote), ensure new mode
   if(tab==='builder' && editingQuoteId===null){
@@ -1631,30 +1751,79 @@ function emailQuote(){
 }
 
 // VARIATIONS
-function generateVariation(){
+async function generateVariation(){
   const project=document.getElementById('issue-project').value.trim();
   const desc=document.getElementById('issue-desc').value.trim();
+  if(!project||!desc){ showToast('Please fill in the project and additional work'); return; }
+
+  const customer=document.getElementById('issue-customer').value.trim();
+  const reason=document.getElementById('issue-reason').value.trim();
+  const origRef=document.getElementById('issue-ref').value.trim();
   const hours=parseFloat(document.getElementById('issue-hours').value)||0;
   const hourly=parseFloat(document.getElementById('issue-hourly').value)||35;
   const mats=parseFloat(document.getElementById('issue-materials').value)||0;
-  if(!project||!desc){ showToast('Please fill in project and description'); return; }
   const labourCost=hours*hourly;
   const total=labourCost+mats;
-  const ref='VAR-'+Date.now().toString().slice(-4);
-  document.getElementById('var-project').innerHTML='<b>Project:</b> '+project;
-  document.getElementById('var-ref').innerHTML='<b>Ref:</b> '+ref;
+  const ref='VAR-'+Date.now().toString().slice(-5);
+  const date=new Date().toLocaleDateString('en-GB');
+
+  // Show AI review card
+  const aiCard=document.getElementById('var-ai-card');
+  const aiContent=document.getElementById('var-ai-content');
+  aiCard.style.display='block';
+  aiContent.innerHTML='<div class="var-ai-loading">🤖 Reviewing your variation...</div>';
+
+  // Call AI
+  let aiReview='This variation appears reasonable for the additional work described.';
+  try{
+    const aiRes=await fetch(API+'/api/ai',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({prompt:`You are a profit protection assistant for UK tradespeople. A tradesperson has added a variation to a job. Analyse it and give ONE short, direct sentence of advice (max 25 words). Either confirm it looks reasonable, or flag one specific forgotten cost they may have missed. Be practical and specific to the work described.\n\nOriginal job: ${project}\nAdditional work: ${desc}\nExtra hours: ${hours}, hourly rate: £${hourly}\nExtra materials: £${mats}`})
+    });
+    if(aiRes.ok){
+      const aiData=await aiRes.json();
+      aiReview=aiData.result||aiReview;
+    }
+  }catch(e){}
+
+  // Populate output
+  const bizName=currentUser?.business_name||currentUser?.name||'';
+  const bizPhone=currentUser?.phone||'';
+  const bizTown=currentUser?.town||'';
+  let bizStr='';
+  if(bizName) bizStr+=bizName;
+  if(bizTown) bizStr+=(bizStr?' · ':'')+bizTown;
+  if(bizPhone) bizStr+=(bizStr?' · ':'')+bizPhone;
+  bizStr+=(bizStr?' · ':'')+date;
+
+  document.getElementById('var-biz-details').textContent=bizStr;
+  document.getElementById('var-ref').textContent=ref+(origRef?' (Original: '+origRef+')':'');
+  document.getElementById('var-customer').textContent=customer||'—';
+  document.getElementById('var-project').textContent=project;
   document.getElementById('var-desc').textContent=desc;
-  document.getElementById('var-labour').innerHTML=hours>0?'<b>Extra Labour:</b> '+hours+'hrs @ £'+hourly+'/hr = £'+labourCost.toFixed(2):'';
-  document.getElementById('var-mats').innerHTML=mats>0?'<b>Extra Materials:</b> £'+mats.toFixed(2):'';
-  document.getElementById('var-total').innerHTML='Total Additional Cost: <b>£'+total.toFixed(2)+'</b>';
+  document.getElementById('var-reason').textContent=reason||'Additional scope identified on site';
+
+  const labRow=document.getElementById('var-labour-row');
+  const matsRow=document.getElementById('var-mats-row');
+  if(hours>0){ labRow.style.display='flex'; document.getElementById('var-labour').textContent=hours+'hrs @ £'+hourly+'/hr = £'+labourCost.toFixed(2); }
+  else labRow.style.display='none';
+  if(mats>0){ matsRow.style.display='flex'; document.getElementById('var-mats').textContent='£'+mats.toFixed(2); }
+  else matsRow.style.display='none';
+  document.getElementById('var-total').textContent='£'+total.toFixed(2);
+
+  document.getElementById('var-ai-result').textContent=aiReview;
+
   document.getElementById('issues-home').style.display='none';
   document.getElementById('issue-form').style.display='block';
+  aiCard.style.display='none';
 }
 
 function resetIssues(){
   document.getElementById('issues-home').style.display='block';
   document.getElementById('issue-form').style.display='none';
-  ['issue-project','issue-desc','issue-hours','issue-materials'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('var-ai-card').style.display='none';
+  ['issue-customer','issue-project','issue-ref','issue-desc','issue-reason','issue-hours','issue-materials'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 
 function copyVariation(){
