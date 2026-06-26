@@ -77,18 +77,38 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .section{display:none;padding:16px;}
 .section.active{display:block;}
 
-/* HOME */
+/* HOME HERO */
 .home-hero{background:linear-gradient(135deg,#1a1200 0%,#111 60%);border:1px solid var(--card-border);border-radius:var(--radius);padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
 .home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);pointer-events:none;}
 .greeting{font-size:1.25rem;font-weight:800;color:var(--white);margin-bottom:3px;letter-spacing:-0.02em;}
-.greeting-date{font-size:0.8rem;color:var(--muted);margin-bottom:14px;}
+.greeting-date{font-size:0.8rem;color:var(--muted);margin-bottom:10px;}
+.profit-protected-year{font-size:0.78rem;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.profit-protected-year strong{font-size:1.5rem;font-weight:900;color:var(--amber);display:block;letter-spacing:-0.03em;line-height:1.2;}
 .trial-pill{display:inline-flex;align-items:center;gap:6px;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.75rem;font-weight:700;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;}
+
+/* STATS GRID - now 4 cards */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 .stat-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:16px 14px;position:relative;overflow:hidden;}
 .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--amber);opacity:0.4;}
 .stat-label{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .stat-val{font-size:1.8rem;font-weight:900;color:var(--white);letter-spacing:-0.04em;line-height:1;}
 .stat-sub{font-size:0.7rem;color:var(--muted);margin-top:4px;}
+.stat-val.amber{color:var(--amber);}
+.stat-val.green{color:var(--green);}
+
+/* AI PROFIT COACH */
+.coach-card{background:linear-gradient(135deg,#0d1a0d 0%,#1a1a1a 100%);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+.coach-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.coach-icon{width:32px;height:32px;background:var(--green-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.coach-title{font-size:0.78rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:0.8px;}
+.coach-body{font-size:0.85rem;color:var(--body);line-height:1.6;}
+.coach-job{font-size:0.78rem;color:var(--muted);margin-bottom:8px;font-style:italic;}
+.coach-tips{list-style:none;margin-top:8px;}
+.coach-tips li{font-size:0.83rem;color:var(--body);padding:4px 0;display:flex;align-items:flex-start;gap:6px;}
+.coach-tips li::before{content:'•';color:var(--green);font-weight:900;flex-shrink:0;}
+.coach-empty{font-size:0.83rem;color:var(--muted);font-style:italic;}
+
+/* ACTION GRID */
 .action-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
 .action-btn{display:flex;align-items:center;gap:14px;border:none;border-radius:var(--radius-sm);padding:16px;width:100%;cursor:pointer;font-family:var(--font);text-align:left;transition:transform 0.15s,opacity 0.15s;}
 .action-btn:hover{transform:translateY(-1px);opacity:0.92;}
@@ -105,6 +125,8 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .action-sub{font-size:0.75rem;opacity:0.65;}
 .action-btn.primary .action-sub{color:var(--black);}
 .action-arrow{font-size:1rem;opacity:0.5;}
+
+/* GET STARTED */
 .started-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
 .started-title{font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
 .started-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--card-border);}
@@ -122,14 +144,31 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .section-heading{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
 
 /* QUOTES LIST */
-.quote-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.quotes-search{width:100%;padding:11px 14px;background:var(--card);border:1px solid var(--card-border);border-radius:9px;color:var(--white);font-size:0.9rem;font-family:var(--font);outline:none;margin-bottom:14px;}
+.quotes-search:focus{border-color:var(--amber);}
+.quotes-search::placeholder{color:#555;}
+.quote-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;}
+.quote-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;}
 .quote-card-left{flex:1;}
 .quote-ref{font-size:0.7rem;font-family:monospace;color:var(--muted);margin-bottom:4px;}
-.quote-job{font-size:0.9rem;font-weight:700;color:var(--white);margin-bottom:8px;}
+.quote-job{font-size:0.9rem;font-weight:700;color:var(--white);margin-bottom:6px;}
 .quote-meta{display:flex;gap:12px;align-items:center;}
 .quote-amount{font-size:1.1rem;font-weight:800;color:var(--amber);}
 .quote-date{font-size:0.75rem;color:var(--muted);}
-.btn-delete{background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);color:var(--red);font-size:0.75rem;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--font);flex-shrink:0;}
+.quote-status-badge{font-size:0.68rem;font-weight:800;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;}
+.quote-status-badge.won{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.3);}
+.quote-status-badge.lost{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.3);}
+.quote-status-badge.draft{background:#1f1f1f;color:var(--muted);border:1px solid var(--card-border);}
+.quote-card-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.btn-won{background:var(--green-bg);border:1px solid rgba(34,197,94,0.3);color:var(--green);font-size:0.75rem;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);}
+.btn-won:hover{background:rgba(34,197,94,0.2);}
+.btn-won.active{background:var(--green);color:#000;}
+.btn-lost{background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);color:var(--red);font-size:0.75rem;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);}
+.btn-lost:hover{background:rgba(239,68,68,0.25);}
+.btn-lost.active{background:var(--red);color:#fff;}
+.btn-edit{background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.75rem;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);}
+.btn-edit:hover{background:rgba(245,166,35,0.2);}
+.btn-delete{background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);color:var(--red);font-size:0.75rem;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);}
 .btn-delete:hover{background:rgba(239,68,68,0.25);}
 .empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
 .empty-state-icon{font-size:2.5rem;margin-bottom:12px;opacity:0.4;}
@@ -140,6 +179,7 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .builder-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
 .btn-back{background:none;border:1px solid var(--card-border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--font);font-size:0.85rem;}
 .builder-title{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.edit-mode-badge{font-size:0.7rem;font-weight:700;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;}
 .step-dots{display:flex;gap:6px;margin-bottom:20px;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--card-border);}
 .dot.active{background:var(--amber);}
@@ -166,10 +206,40 @@ textarea.field-input{resize:vertical;min-height:80px;}
 .btn-next{width:100%;padding:14px;background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:8px;}
 .btn-prev{width:100%;padding:12px;background:none;border:1px solid var(--card-border);color:var(--muted);font-size:0.9rem;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:8px;}
 
-/* AI WARNING - BIG AND BOLD */
+/* AI WARNING */
 .ai-warning{background:#3d1a00;border:3px solid var(--amber);border-radius:10px;padding:16px;margin-bottom:16px;}
 .ai-warning-title{font-size:1rem;font-weight:900;color:var(--amber);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
 .ai-warning-text{font-size:0.92rem;color:var(--white);font-weight:600;line-height:1.5;}
+
+/* QUOTE HEALTH SCORE */
+.health-card{border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
+.health-card.green{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);}
+.health-card.amber{background:var(--amber-warn-bg);border:1px solid rgba(245,158,11,0.35);}
+.health-card.red{background:var(--red-bg);border:1px solid rgba(239,68,68,0.35);}
+.health-score-circle{width:56px;height:56px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.health-card.green .health-score-circle{background:var(--green-bg);border:2px solid var(--green);}
+.health-card.amber .health-score-circle{background:var(--amber-warn-bg);border:2px solid var(--amber-warn);}
+.health-card.red .health-score-circle{background:var(--red-bg);border:2px solid var(--red);}
+.health-score-num{font-size:1.2rem;font-weight:900;line-height:1;}
+.health-card.green .health-score-num{color:var(--green);}
+.health-card.amber .health-score-num{color:var(--amber-warn);}
+.health-card.red .health-score-num{color:var(--red);}
+.health-score-denom{font-size:0.6rem;color:var(--muted);}
+.health-info{}
+.health-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;}
+.health-verdict{font-size:0.9rem;font-weight:800;line-height:1.3;}
+.health-card.green .health-verdict{color:var(--green);}
+.health-card.amber .health-verdict{color:var(--amber-warn);}
+.health-card.red .health-verdict{color:var(--red);}
+
+/* FORGOTTEN COSTS CHECKLIST */
+.checklist-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;}
+.checklist-title{font-size:0.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;}
+.checklist-items{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.checklist-item{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 0;}
+.checklist-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;}
+.checklist-item label{font-size:0.8rem;color:var(--body);cursor:pointer;}
+.checklist-item input:checked+label{color:var(--muted);text-decoration:line-through;}
 
 /* AI RESULT BOX */
 .ai-box{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
@@ -271,12 +341,58 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div class="home-hero">
         <div class="greeting" id="home-greeting">Good morning 👋</div>
         <div class="greeting-date" id="home-date"></div>
+        <div class="profit-protected-year">
+          You have protected an estimated<br>
+          <strong id="hero-profit-year">£0</strong>
+          in profit this year.
+        </div>
         <div class="trial-pill">🔓 7-Day Free Trial Active</div>
       </div>
+
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total Quotes</div><div class="stat-val" id="stat-quotes">0</div><div class="stat-sub">All time</div></div>
-        <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-val" id="stat-month">0</div><div class="stat-sub">Quotes built</div></div>
+        <div class="stat-card">
+          <div class="stat-label">Total Quotes</div>
+          <div class="stat-val" id="stat-quotes">0</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">This Month</div>
+          <div class="stat-val" id="stat-month">0</div>
+          <div class="stat-sub">Quotes built</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Profit This Month</div>
+          <div class="stat-val amber" id="stat-profit-month">£0</div>
+          <div class="stat-sub">Estimated protected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Quote Value</div>
+          <div class="stat-val" id="stat-avg">£0</div>
+          <div class="stat-sub">Per quote</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Quotes Won</div>
+          <div class="stat-val green" id="stat-won">0</div>
+          <div class="stat-sub">Marked as won</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Conversion Rate</div>
+          <div class="stat-val green" id="stat-conversion">—</div>
+          <div class="stat-sub">Won vs total</div>
+        </div>
       </div>
+
+      <!-- AI PROFIT COACH -->
+      <div class="coach-card">
+        <div class="coach-header">
+          <div class="coach-icon">🧠</div>
+          <div class="coach-title">Today's Profit Coach</div>
+        </div>
+        <div id="coach-content">
+          <div class="coach-empty">Save your first quote to unlock personalised profit tips.</div>
+        </div>
+      </div>
+
       <div class="action-grid">
         <button class="action-btn primary" onclick="switchTab('builder')">
           <div class="action-icon">📋</div>
@@ -294,6 +410,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="action-arrow">→</div>
         </button>
       </div>
+
       <div class="started-card">
         <div class="started-title">Get started</div>
         <div class="started-step">
@@ -313,10 +430,11 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
     <!-- QUOTES LIST -->
     <div class="section" id="sec-quotes">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h2 class="section-heading">My Quotes</h2>
         <button onclick="switchTab('builder')" style="background:var(--amber);color:var(--black);border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;font-size:0.85rem;font-family:var(--font);">+ New</button>
       </div>
+      <input class="quotes-search" type="text" id="quotes-search" placeholder="Search by customer, job or postcode..." oninput="filterQuotes()">
       <div id="quotes-list">
         <div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes yet</div><p>Tap New to build your first profit-protected quote.</p></div>
       </div>
@@ -326,7 +444,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
     <div class="section" id="sec-builder">
       <div class="builder-header">
         <button class="btn-back" onclick="switchTab('home')">← Back</button>
-        <span class="builder-title">New Quote</span>
+        <span class="builder-title" id="builder-title">New Quote</span>
+        <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
       <div class="step-dots">
         <div class="dot active" id="dot-1"></div>
@@ -493,6 +612,19 @@ textarea.field-input{resize:vertical;min-height:80px;}
         </div>
         <div id="ai-loading" class="ai-box"><div class="ai-loading">🤖 Building your quote...</div></div>
         <div id="ai-output" style="display:none;">
+
+          <!-- Quote Health Score -->
+          <div id="health-card" class="health-card green">
+            <div class="health-score-circle">
+              <div class="health-score-num" id="health-score-num">0</div>
+              <div class="health-score-denom">/100</div>
+            </div>
+            <div class="health-info">
+              <div class="health-label">Quote Health</div>
+              <div class="health-verdict" id="health-verdict">Calculating...</div>
+            </div>
+          </div>
+
           <div class="ai-box">
             <div class="quote-output-header">
               <div class="quote-output-logo">Profit<span>Quote</span></div>
@@ -509,11 +641,27 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
             <div id="room-summary" style="font-size:0.78rem;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);"></div>
             <div class="ai-actions">
-              <button class="btn-action btn-save" onclick="saveQuote()">💾 Save</button>
+              <button class="btn-action btn-save" id="btn-save-quote" onclick="saveQuote()">💾 Save</button>
               <button class="btn-action btn-email" onclick="emailQuote()">✉️ Email</button>
               <button class="btn-action btn-new" onclick="resetBuilder()">New</button>
             </div>
           </div>
+
+          <!-- Forgotten Costs Checklist -->
+          <div class="checklist-card">
+            <div class="checklist-title">✅ Forgotten Costs Checklist — have you included these?</div>
+            <div class="checklist-items">
+              <label class="checklist-item"><input type="checkbox"> <label>Fuel</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>Parking</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>Waste disposal</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>Consumables</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>Collection time</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>Insurance</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>Tool wear</label></label>
+              <label class="checklist-item"><input type="checkbox"> <label>VAT</label></label>
+            </div>
+          </div>
+
         </div>
         <button class="btn-prev" style="margin-top:8px;" onclick="nextStep(5)">← Back</button>
       </div>
@@ -595,10 +743,12 @@ const API = '';
 let token = localStorage.getItem('pq_token');
 let currentUser = null;
 let quotes = [];
+let filteredQuotes = [];
 let selectedRisk = 'low';
 let currentQuoteData = null;
 let needsSkip = true;
 let needsScaffold = false;
+let editingQuoteId = null; // null = new quote, number = editing existing
 
 function setSkip(val){
   needsSkip = val;
@@ -722,6 +872,12 @@ function switchTab(tab){
   document.querySelector('.page').scrollTop=0;
   if(tab==='issues'){ document.getElementById('issues-home').style.display='block'; document.getElementById('issue-form').style.display='none'; }
   if(tab==='quotes') loadQuotes();
+  // If switching to builder fresh (not via editQuote), ensure new mode
+  if(tab==='builder' && editingQuoteId===null){
+    document.getElementById('builder-title').textContent='New Quote';
+    document.getElementById('edit-badge').style.display='none';
+    document.getElementById('btn-save-quote').textContent='💾 Save';
+  }
 }
 
 async function loadQuotes(){
@@ -729,29 +885,69 @@ async function loadQuotes(){
     const res=await fetch(API+'/api/quotes',{headers:{Authorization:'Bearer '+token}});
     if(!res.ok) return;
     quotes=await res.json();
+    filteredQuotes=[...quotes];
     renderQuotes();
     updateHomeStats();
+    renderProfitCoach();
   }catch(e){}
+}
+
+function filterQuotes(){
+  const q=(document.getElementById('quotes-search').value||'').toLowerCase().trim();
+  if(!q){ filteredQuotes=[...quotes]; } else {
+    filteredQuotes=quotes.filter(qt=>
+      (qt.job_description||'').toLowerCase().includes(q)||
+      (qt.customer_name||'').toLowerCase().includes(q)||
+      (qt.trade||'').toLowerCase().includes(q)
+    );
+  }
+  renderQuotes();
 }
 
 function renderQuotes(){
   const el=document.getElementById('quotes-list');
-  if(!quotes.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes yet</div><p>Tap New to build your first profit-protected quote.</p></div>';
+  if(!filteredQuotes.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes found</div><p>Tap New to build your first profit-protected quote.</p></div>';
     return;
   }
-  el.innerHTML=quotes.map(q=>`
+  el.innerHTML=filteredQuotes.map(q=>{
+    const status=q.status||'draft';
+    const badgeLabel=status==='won'?'WON':status==='lost'?'LOST':'DRAFT';
+    const wonActive=status==='won'?'active':'';
+    const lostActive=status==='lost'?'active':'';
+    return `
     <div class="quote-card">
-      <div class="quote-card-left">
-        <div class="quote-ref">${q.ref||'QUO-'+q.id}</div>
-        <div class="quote-job">${q.job_description||'Untitled job'}</div>
-        <div class="quote-meta">
-          <span class="quote-amount">£${parseFloat(q.total||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-          <span class="quote-date">${new Date(q.created_at).toLocaleDateString('en-GB')}</span>
+      <div class="quote-card-top">
+        <div class="quote-card-left">
+          <div class="quote-ref">${q.ref||'QUO-'+q.id}</div>
+          <div class="quote-job">${q.job_description||'Untitled job'}</div>
+          <div class="quote-meta">
+            <span class="quote-amount">£${parseFloat(q.total||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+            <span class="quote-date">${new Date(q.created_at).toLocaleDateString('en-GB')}</span>
+            <span class="quote-status-badge ${status}">${badgeLabel}</span>
+          </div>
         </div>
       </div>
-      <button class="btn-delete" onclick="deleteQuote(${q.id})">Delete</button>
-    </div>`).join('');
+      <div class="quote-card-actions">
+        <button class="btn-won ${wonActive}" onclick="setQuoteStatus(${q.id},'${status==='won'?'draft':'won'}')">✓ Won</button>
+        <button class="btn-lost ${lostActive}" onclick="setQuoteStatus(${q.id},'${status==='lost'?'draft':'lost'}')">✗ Lost</button>
+        <button class="btn-edit" onclick="editQuote(${q.id})">✏️ Edit</button>
+        <button class="btn-delete" onclick="deleteQuote(${q.id})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setQuoteStatus(id, status){
+  try{
+    const res=await fetch(API+'/api/quotes/'+id+'/status',{
+      method:'PATCH',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({status})
+    });
+    if(res.ok){ loadQuotes(); showToast(status==='won'?'Marked as Won ✓':status==='lost'?'Marked as Lost':'Status cleared'); }
+    else showToast('Error updating status');
+  }catch(e){ showToast('Connection error'); }
 }
 
 async function deleteQuote(id){
@@ -763,14 +959,159 @@ async function deleteQuote(id){
   }catch(e){ showToast('Connection error'); }
 }
 
+function editQuote(id){
+  const q=quotes.find(x=>x.id===id);
+  if(!q) return;
+  editingQuoteId=id;
+
+  // Load saved data back into fields
+  const qd=q.quote_data||{};
+  document.getElementById('q-desc').value=q.job_description||'';
+  document.getElementById('q-customer').value=q.customer_name||'';
+  document.getElementById('q-email').value='';
+  document.getElementById('q-postcode').value='';
+  document.getElementById('q-days').value=q.days||1;
+  document.getElementById('q-day-rate').value=q.day_rate||currentUser?.day_rate||200;
+  document.getElementById('q-materials').value=qd.materials||0;
+  document.getElementById('q-markup').value=q.markup_percent||currentUser?.markup_percent||20;
+  document.getElementById('q-profit-target').value=q.profit_target||currentUser?.profit_target||30;
+  document.getElementById('q-contingency').value=10;
+
+  // Skip
+  const hasSkip=!!(q.skip_cost&&q.skip_cost>0);
+  setSkip(hasSkip);
+  if(hasSkip){
+    document.getElementById('q-skip-cost').value=q.skip_cost||350;
+    const skipType=q.skip_type||'large';
+    document.getElementById('q-skip-size').value=skipType;
+  }
+
+  // Scaffold
+  const hasScaffold=!!(q.other_costs&&q.other_costs.toLowerCase().includes('scaffold'));
+  setScaffold(hasScaffold);
+  if(hasScaffold){
+    const match=(q.other_costs||'').match(/£([\d.]+)/);
+    if(match) document.getElementById('q-scaffold-cost').value=match[1];
+  }
+
+  // Risk
+  selectedRisk=qd.risk||'low';
+  setRisk(selectedRisk);
+
+  // Clear room fields
+  ['q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['length-m-conv','length-ft-conv','width-m-conv','width-ft-conv','height-m-conv','height-ft-conv'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent='';
+  });
+  document.getElementById('room-area').textContent='';
+
+  // Update builder header
+  document.getElementById('builder-title').textContent='Edit Quote';
+  document.getElementById('edit-badge').style.display='inline-flex';
+  document.getElementById('btn-save-quote').textContent='💾 Update Quote';
+
+  // Reset result panel
+  document.getElementById('ai-output').style.display='none';
+  document.getElementById('ai-loading').style.display='block';
+  document.getElementById('ai-warning-box').style.display='none';
+
+  switchTab('builder');
+  nextStep(1);
+}
+
 function updateHomeStats(){
+  const now=new Date();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const yearStart=new Date(now.getFullYear(),0,1);
+
+  const thisMonth=quotes.filter(q=>new Date(q.created_at)>=monthStart);
+  const thisYear=quotes.filter(q=>new Date(q.created_at)>=yearStart);
+  const wonQuotes=quotes.filter(q=>q.status==='won');
+
+  // Total profit this year (estimated as profit_percent of total)
+  const profitYear=thisYear.reduce((sum,q)=>{
+    const t=parseFloat(q.total||0);
+    const pp=parseFloat(q.profit_percent||0)/100;
+    return sum+(t*pp);
+  },0);
+
+  // Profit this month
+  const profitMonth=thisMonth.reduce((sum,q)=>{
+    const t=parseFloat(q.total||0);
+    const pp=parseFloat(q.profit_percent||0)/100;
+    return sum+(t*pp);
+  },0);
+
+  // Avg quote value
+  const avgVal=quotes.length>0?(quotes.reduce((s,q)=>s+parseFloat(q.total||0),0)/quotes.length):0;
+
+  // Conversion
+  const conversion=quotes.length>0?Math.round((wonQuotes.length/quotes.length)*100):null;
+
   document.getElementById('stat-quotes').textContent=quotes.length;
-  const now=new Date(); const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
-  document.getElementById('stat-month').textContent=quotes.filter(q=>new Date(q.created_at)>=monthStart).length;
+  document.getElementById('stat-month').textContent=thisMonth.length;
+  document.getElementById('stat-profit-month').textContent='£'+Math.round(profitMonth).toLocaleString('en-GB');
+  document.getElementById('stat-avg').textContent=quotes.length>0?'£'+Math.round(avgVal).toLocaleString('en-GB'):'—';
+  document.getElementById('stat-won').textContent=wonQuotes.length;
+  document.getElementById('stat-conversion').textContent=conversion!==null?conversion+'%':'—';
+
+  // Hero profit year
+  document.getElementById('hero-profit-year').textContent='£'+Math.round(profitYear).toLocaleString('en-GB');
+
+  // Get started steps
   if(quotes.length>0){
     const el=document.getElementById('step-first-quote');
     if(el){ el.className='step-num done'; el.textContent='✓'; }
   }
+}
+
+function renderProfitCoach(){
+  const el=document.getElementById('coach-content');
+  if(!quotes.length){
+    el.innerHTML='<div class="coach-empty">Save your first quote to unlock personalised profit tips.</div>';
+    return;
+  }
+  const latest=quotes[0];
+  const job=(latest.job_description||'').toLowerCase();
+  const trade=(latest.trade||currentUser?.trade||'').toLowerCase();
+
+  // Pick relevant tips based on job description keywords
+  const allTips=[
+    {kw:['bathroom','bath','shower','wet room','ensuite'],tips:['Silicone and sealant (often forgotten)','Waste pipe connections and fittings','Tile adhesive and grout quantities','Ventilation fan if required','Water pressure test time']},
+    {kw:['kitchen','cupboard','worktop','units'],tips:['Skirting and filler panels','Plumbing connections for dishwasher/sink','Electrical socket repositioning','Waste disposal and old unit removal','Silicone and finishing materials']},
+    {kw:['roof','roofing','flat roof','tiles','slates'],tips:['Felt and batten quantities','Lead flashing and soakers','Ridge and hip tiles','Scaffolding erection and strike time','Skip for old materials']},
+    {kw:['electrics','rewire','sockets','lighting','downlight'],tips:['Cable containment and trunking','Testing and certification time','Making good after chasing','Consumer unit upgrade if needed','Parking near site']},
+    {kw:['plaster','skim','boarding','dot and dab'],tips:['Primer/PVA before skimming','Drying time between coats','Beading and corner trim','Rubbish removal and skip','Dust sheets and protection']},
+    {kw:['extension','build','blockwork','foundations'],tips:['Groundworks contingency (always allow extra)','Building control fees and inspections','Structural engineer sign-off','Brick and block waste factor (10%)','Temporary weather protection']},
+    {kw:['decoration','paint','decorating','wallpaper'],tips:['Filling and prep time (always underestimated)','Primer coats on new plaster','Masking tape and dust sheets','Travel to and from trade counter','Waste disposal for old wallpaper']},
+    {kw:['flooring','laminate','vinyl','carpet','tiles'],tips:['Underlay and adhesive','Door trimming after fitting','Floor levelling compound if needed','Transition strips between rooms','Old floor removal and disposal']},
+  ];
+
+  let matchedTips=[];
+  let matchedLabel='';
+  for(const group of allTips){
+    if(group.kw.some(k=>job.includes(k))){
+      matchedTips=group.tips;
+      matchedLabel=group.kw[0].charAt(0).toUpperCase()+group.kw[0].slice(1)+' job';
+      break;
+    }
+  }
+
+  // Fallback generic tips by trade
+  if(!matchedTips.length){
+    matchedTips=['Fuel and travel costs to site','Parking charges','Consumables (tape, fixings, silicone)','Tool wear and replacement','Time for collection trips to the merchant'];
+    matchedLabel='General profit protection';
+  }
+
+  const jobSnippet=(latest.job_description||'').substring(0,60)+((latest.job_description||'').length>60?'…':'');
+  el.innerHTML=`
+    <div class="coach-job">Latest: "${jobSnippet}"</div>
+    <div class="coach-body">On jobs like this, tradespeople most often forget:</div>
+    <ul class="coach-tips">
+      ${matchedTips.map(t=>`<li>${t}</li>`).join('')}
+    </ul>`;
 }
 
 // ROOM CONVERSION
@@ -805,10 +1146,8 @@ function updateRoomArea(){
   const l=parseFloat(document.getElementById('q-length-m').value)||0;
   const w=parseFloat(document.getElementById('q-width-m').value)||0;
   const el=document.getElementById('room-area');
-  if(l>0&&w>0){
-    const area=(l*w).toFixed(2);
-    el.textContent='Floor area: '+area+' m²';
-  } else { el.textContent=''; }
+  if(l>0&&w>0){ el.textContent='Floor area: '+(l*w).toFixed(2)+' m²'; }
+  else { el.textContent=''; }
 }
 
 // QUOTE BUILDER
@@ -829,6 +1168,7 @@ function nextStep(n){
 }
 
 function resetBuilder(){
+  editingQuoteId=null;
   ['q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   needsSkip=true; needsScaffold=false;
   setSkip(true); setScaffold(false);
@@ -842,7 +1182,37 @@ function resetBuilder(){
   document.getElementById('ai-output').style.display='none';
   document.getElementById('ai-loading').style.display='block';
   document.getElementById('ai-warning-box').style.display='none';
+  document.getElementById('builder-title').textContent='New Quote';
+  document.getElementById('edit-badge').style.display='none';
+  document.getElementById('btn-save-quote').textContent='💾 Save';
   nextStep(1);
+}
+
+function calcHealthScore(profitPct, contingency, risk, hasSkip, hasScaffold, desc){
+  let score=50;
+  // Profit margin
+  if(profitPct>=30) score+=20;
+  else if(profitPct>=20) score+=12;
+  else if(profitPct>=10) score+=4;
+  else score-=15;
+  // Contingency
+  if(contingency>=15) score+=10;
+  else if(contingency>=10) score+=6;
+  else if(contingency>=5) score+=2;
+  else score-=8;
+  // Risk awareness
+  if(risk==='high') score+=8;
+  else if(risk==='med') score+=4;
+  // Skip considered
+  const jobLower=(desc||'').toLowerCase();
+  const likelyNeedsSkip=jobLower.includes('refurb')||jobLower.includes('renovation')||jobLower.includes('bathroom')||jobLower.includes('kitchen')||jobLower.includes('extension')||jobLower.includes('roof');
+  if(likelyNeedsSkip&&hasSkip) score+=6;
+  else if(likelyNeedsSkip&&!hasSkip) score-=6;
+  // Scaffolding considered
+  const likelyNeedsScaffold=jobLower.includes('roof')||jobLower.includes('dormer')||jobLower.includes('render')||jobLower.includes('extension');
+  if(likelyNeedsScaffold&&hasScaffold) score+=6;
+  // Cap
+  return Math.min(100,Math.max(0,score));
 }
 
 async function generateQuote(){
@@ -857,9 +1227,8 @@ async function generateQuote(){
   const markup=parseFloat(document.getElementById('q-markup').value)||20;
   const contingency=parseFloat(document.getElementById('q-contingency').value)||10;
   const profitTarget=parseFloat(document.getElementById('q-profit-target').value)||30;
-
-  const skipCost = needsSkip ? (parseFloat(document.getElementById('q-skip-cost').value)||0) : 0;
-  const scaffoldCost = needsScaffold ? (parseFloat(document.getElementById('q-scaffold-cost').value)||0) : 0;
+  const skipCost=needsSkip?(parseFloat(document.getElementById('q-skip-cost').value)||0):0;
+  const scaffoldCost=needsScaffold?(parseFloat(document.getElementById('q-scaffold-cost').value)||0):0;
   const labour=days*dayRate;
   const mats=materials*(1+(markup/100));
   const extras=skipCost+scaffoldCost;
@@ -892,7 +1261,7 @@ async function generateQuote(){
   if(bizPhone) builderDetails+=(builderDetails?' · ':'')+bizPhone;
   if(bizEmail) builderDetails+=(builderDetails?' · ':'')+bizEmail;
 
-  const skipSize = needsSkip ? (document.getElementById('q-skip-size')?.value||'') : '';
+  const skipSize=needsSkip?(document.getElementById('q-skip-size')?.value||''):'';
   currentQuoteData={
     job_description:desc,
     customer_name:document.getElementById('q-customer').value,
@@ -911,6 +1280,7 @@ async function generateQuote(){
     profit_percent:profitPct
   };
 
+  // Populate breakdown
   document.getElementById('result-labour').textContent='£'+labour.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-materials').textContent='£'+mats.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-contingency').textContent='£'+contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2});
@@ -918,77 +1288,61 @@ async function generateQuote(){
   document.getElementById('result-profit-badge').textContent='+£'+Math.round(profit).toLocaleString('en-GB')+' profit ('+profitPct+'%)';
   document.getElementById('quote-builder-details').textContent=builderDetails;
   document.getElementById('room-summary').textContent=roomSummary;
-  if(needsSkip && skipCost>0){
+  if(needsSkip&&skipCost>0){
     document.getElementById('result-skip-row').style.display='flex';
     document.getElementById('result-skip').textContent='£'+skipCost.toLocaleString('en-GB',{minimumFractionDigits:2});
   } else { document.getElementById('result-skip-row').style.display='none'; }
-  if(needsScaffold && scaffoldCost>0){
+  if(needsScaffold&&scaffoldCost>0){
     document.getElementById('result-scaffold-row').style.display='flex';
     document.getElementById('result-scaffold').textContent='£'+scaffoldCost.toLocaleString('en-GB',{minimumFractionDigits:2});
   } else { document.getElementById('result-scaffold-row').style.display='none'; }
 
-  // KEYWORD SCORING — reliable warning system
-  // Uses groups: only the highest-scoring match within each group is counted
-  const jobLower = desc.toLowerCase();
-  const taskGroups = [
-    // Group 1: Major structure — pick highest match only
-    { group:'structure', tasks:[
-      { keywords:['dormer','loft conversion','loft extension','loft room'], days:25, label:'dormer/loft conversion' },
-      { keywords:['rear extension','side extension','house extension'], days:20, label:'extension' },
+  // Quote Health Score
+  const healthScore=calcHealthScore(profitPct,contingency,selectedRisk,needsSkip,needsScaffold,desc);
+  const hCard=document.getElementById('health-card');
+  const hNum=document.getElementById('health-score-num');
+  const hVerdict=document.getElementById('health-verdict');
+  hNum.textContent=healthScore;
+  hCard.className='health-card';
+  if(healthScore>=80){ hCard.classList.add('green'); hVerdict.textContent='Strong — profit well protected'; }
+  else if(healthScore>=60){ hCard.classList.add('amber'); hVerdict.textContent='Moderate — review your margins'; }
+  else { hCard.classList.add('red'); hVerdict.textContent='High risk of underquoting'; }
+
+  // Keyword scoring warning
+  const jobLower=desc.toLowerCase();
+  const taskGroups=[
+    {group:'structure',tasks:[
+      {keywords:['dormer','loft conversion','loft extension','loft room'],days:25,label:'dormer/loft conversion'},
+      {keywords:['rear extension','side extension','house extension'],days:20,label:'extension'},
     ]},
-    // Group 2: Bathroom/kitchen — pick highest match only
-    { group:'wet', tasks:[
-      { keywords:['ensuite','en suite','wetroom','wet room'], days:8, label:'ensuite/wetroom' },
-      { keywords:['bathroom','new bathroom'], days:7, label:'bathroom' },
-      { keywords:['kitchen refurb','full kitchen','kitchen cupboard','kitchen units'], days:6, label:'kitchen' },
+    {group:'wet',tasks:[
+      {keywords:['ensuite','en suite','wetroom','wet room'],days:8,label:'ensuite/wetroom'},
+      {keywords:['bathroom','new bathroom'],days:7,label:'bathroom'},
+      {keywords:['kitchen refurb','full kitchen','kitchen cupboard','kitchen units'],days:6,label:'kitchen'},
     ]},
-    // Group 3: Heating
-    { group:'heating', tasks:[
-      { keywords:['underfloor heating','ufh'], days:3, label:'underfloor heating' },
+    {group:'heating',tasks:[{keywords:['underfloor heating','ufh'],days:3,label:'underfloor heating'}]},
+    {group:'electrics',tasks:[
+      {keywords:['rewire','full electrics','new electrics'],days:6,label:'full rewire'},
+      {keywords:['electrical','electrics','sockets','downlight','downlighter'],days:2,label:'electrics'},
     ]},
-    // Group 4: Electrics
-    { group:'electrics', tasks:[
-      { keywords:['rewire','full electrics','new electrics'], days:6, label:'full rewire' },
-      { keywords:['electrical','electrics','sockets','downlight','downlighter'], days:2, label:'electrics' },
-    ]},
-    // Group 5: Plaster/finish
-    { group:'plaster', tasks:[
-      { keywords:['plasterboard','plaster board','plastering','skimming','skim'], days:3, label:'plastering/skimming' },
-    ]},
-    // Group 6: Tiling
-    { group:'tiling', tasks:[
-      { keywords:['tiling','tiled','tiles'], days:2, label:'tiling' },
-    ]},
-    // Group 7: Doors/windows
-    { group:'doors', tasks:[
-      { keywords:['bifold','bi-fold','bi fold'], days:2, label:'bifold doors' },
-    ]},
-    // Group 8: Flooring
-    { group:'flooring', tasks:[
-      { keywords:['flooring','laminate','vinyl','carpet'], days:1, label:'flooring' },
-    ]},
-    // Group 9: Ceiling
-    { group:'ceiling', tasks:[
-      { keywords:['new ceiling','ceiling'], days:2, label:'new ceiling' },
-    ]},
+    {group:'plaster',tasks:[{keywords:['plasterboard','plaster board','plastering','skimming','skim'],days:3,label:'plastering/skimming'}]},
+    {group:'tiling',tasks:[{keywords:['tiling','tiled','tiles'],days:2,label:'tiling'}]},
+    {group:'doors',tasks:[{keywords:['bifold','bi-fold','bi fold'],days:2,label:'bifold doors'}]},
+    {group:'flooring',tasks:[{keywords:['flooring','laminate','vinyl','carpet'],days:1,label:'flooring'}]},
+    {group:'ceiling',tasks:[{keywords:['new ceiling','ceiling'],days:2,label:'new ceiling'}]},
   ];
-  let minDays = 0;
-  let detectedTasks = [];
-  taskGroups.forEach(group => {
-    let bestMatch = null;
-    group.tasks.forEach(task => {
-      if(task.keywords.some(kw => jobLower.includes(kw))){
-        if(!bestMatch || task.days > bestMatch.days) bestMatch = task;
+  let minDays=0; let detectedTasks=[];
+  taskGroups.forEach(group=>{
+    let bestMatch=null;
+    group.tasks.forEach(task=>{
+      if(task.keywords.some(kw=>jobLower.includes(kw))){
+        if(!bestMatch||task.days>bestMatch.days) bestMatch=task;
       }
     });
-    if(bestMatch){
-      minDays += bestMatch.days;
-      detectedTasks.push(bestMatch.label+' (min '+bestMatch.days+' days)');
-    }
+    if(bestMatch){ minDays+=bestMatch.days; detectedTasks.push(bestMatch.label+' (min '+bestMatch.days+' days)'); }
   });
-  if(minDays > 0 && days < minDays * 0.75){
-    const taskList = detectedTasks.join(', ');
-    document.getElementById('ai-warning-text').textContent='⚠️ This job contains complex tasks — please double-check your day estimate covers ALL the work before submitting this quote. Tasks detected: '+taskList+'. Underquoting is the #1 reason tradespeople lose money.';
+  if(minDays>0&&days<minDays*0.75){
+    document.getElementById('ai-warning-text').textContent='⚠️ This job contains complex tasks — please double-check your day estimate covers ALL the work before submitting this quote. Tasks detected: '+detectedTasks.join(', ')+'. Underquoting is the #1 reason tradespeople lose money.';
     document.getElementById('ai-warning-box').style.display='block';
   }
 
@@ -999,15 +1353,30 @@ async function generateQuote(){
 async function saveQuote(){
   if(!currentQuoteData) return;
   try{
-    const res=await fetch(API+'/api/quotes',{
-      method:'POST',
-      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify(currentQuoteData)
-    });
+    let res;
+    if(editingQuoteId){
+      // Update existing quote
+      res=await fetch(API+'/api/quotes/'+editingQuoteId,{
+        method:'PATCH',
+        headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify(currentQuoteData)
+      });
+    } else {
+      // Create new quote
+      res=await fetch(API+'/api/quotes',{
+        method:'POST',
+        headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify(currentQuoteData)
+      });
+    }
     if(res.ok){
-      showToast('Quote saved ✓');
+      showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
+      editingQuoteId=null;
       document.getElementById('step-first-quote').className='step-num done';
       document.getElementById('step-first-quote').textContent='✓';
+      document.getElementById('builder-title').textContent='New Quote';
+      document.getElementById('edit-badge').style.display='none';
+      document.getElementById('btn-save-quote').textContent='💾 Save';
       loadQuotes();
       switchTab('quotes');
     } else {
