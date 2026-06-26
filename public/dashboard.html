@@ -78,19 +78,25 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .section.active{display:block;}
 
 /* HOME HERO */
-.home-hero{background:linear-gradient(135deg,#1a1200 0%,#111 60%);border:1px solid var(--card-border);border-radius:var(--radius);padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
-.home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);pointer-events:none;}
-.greeting{font-size:1.25rem;font-weight:800;color:var(--white);margin-bottom:3px;letter-spacing:-0.02em;}
-.greeting-date{font-size:0.8rem;color:var(--muted);margin-bottom:10px;}
-.profit-protected-year{font-size:0.78rem;color:var(--muted);margin-bottom:14px;line-height:1.5;}
-.profit-protected-year strong{font-size:1.5rem;font-weight:900;color:var(--amber);display:block;letter-spacing:-0.03em;line-height:1.2;}
-.trial-pill{display:inline-flex;align-items:center;gap:6px;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.75rem;font-weight:700;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;}
+.home-hero{background:linear-gradient(160deg,#1c1400 0%,#0f0f0f 55%,#0a0a0a 100%);border:1px solid rgba(245,166,35,0.2);border-radius:var(--radius);padding:24px 20px 20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.home-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.12) 0%,transparent 65%);pointer-events:none;}
+.home-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,166,35,0.3),transparent);}
+.greeting{font-size:1.05rem;font-weight:600;color:var(--muted);margin-bottom:14px;letter-spacing:0;}
+.hero-profit-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;}
+.hero-profit-amount{font-size:3rem;font-weight:900;color:var(--amber);letter-spacing:-0.04em;line-height:1;margin-bottom:4px;}
+.hero-profit-month{font-size:0.82rem;color:var(--green);font-weight:700;margin-bottom:16px;}
+.hero-stats-row{display:flex;gap:20px;padding-top:14px;border-top:1px solid rgba(245,166,35,0.12);}
+.hero-stat{display:flex;flex-direction:column;gap:2px;}
+.hero-stat-val{font-size:1.2rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;}
+.hero-stat-label{font-size:0.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;}
+.trial-pill{display:inline-flex;align-items:center;gap:6px;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.75rem;font-weight:700;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;margin-top:14px;}
 
-/* STATS GRID - now 4 cards */
+/* STATS GRID - 4 KPI cards */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 .stat-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:16px 14px;position:relative;overflow:hidden;}
 .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--amber);opacity:0.4;}
-.stat-label{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat-icon{font-size:1.1rem;margin-bottom:6px;display:block;}
+.stat-label{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
 .stat-val{font-size:1.8rem;font-weight:900;color:var(--white);letter-spacing:-0.04em;line-height:1;}
 .stat-sub{font-size:0.7rem;color:var(--muted);margin-top:4px;}
 .stat-val.amber{color:var(--amber);}
@@ -107,6 +113,20 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .coach-tips li{font-size:0.83rem;color:var(--body);padding:4px 0;display:flex;align-items:flex-start;gap:6px;}
 .coach-tips li::before{content:'•';color:var(--green);font-weight:900;flex-shrink:0;}
 .coach-empty{font-size:0.83rem;color:var(--muted);font-style:italic;}
+
+/* RECENT QUOTES ON HOME */
+.recent-quotes-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+.recent-quotes-title{font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.recent-quotes-title a{font-size:0.75rem;color:var(--amber);font-weight:700;cursor:pointer;text-decoration:none;text-transform:none;letter-spacing:0;}
+.recent-quote-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--card-border);}
+.recent-quote-row:last-child{border-bottom:none;}
+.recent-quote-job{font-size:0.82rem;color:var(--white);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:10px;}
+.recent-quote-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.recent-quote-amount{font-size:0.85rem;font-weight:800;color:var(--amber);}
+.recent-quote-badge{font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:10px;text-transform:uppercase;}
+.recent-quote-badge.won{background:var(--green-bg);color:var(--green);}
+.recent-quote-badge.lost{background:var(--red-bg);color:var(--red);}
+.recent-quote-badge.draft{background:#1f1f1f;color:var(--muted);}
 
 /* ACTION GRID */
 .action-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
@@ -336,49 +356,57 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
   <div class="page">
 
-    <!-- HOME -->
+    <!-- DASHBOARD -->
     <div class="section active" id="sec-home">
+
+      <!-- HERO -->
       <div class="home-hero">
         <div class="greeting" id="home-greeting">Good morning 👋</div>
-        <div class="greeting-date" id="home-date"></div>
-        <div class="profit-protected-year">
-          You have protected an estimated<br>
-          <strong id="hero-profit-year">£0</strong>
-          in profit this year.
+        <div class="hero-profit-label">Profit Protected This Year</div>
+        <div class="hero-profit-amount" id="hero-profit-year">£0</div>
+        <div class="hero-profit-month" id="hero-profit-month"></div>
+        <div class="hero-stats-row">
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="hero-won">0</div>
+            <div class="hero-stat-label">Quotes Won</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="hero-conversion">—</div>
+            <div class="hero-stat-label">Conversion</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="hero-margin">—</div>
+            <div class="hero-stat-label">Avg Margin</div>
+          </div>
         </div>
         <div class="trial-pill">🔓 7-Day Free Trial Active</div>
       </div>
 
+      <!-- 4 KPI CARDS -->
       <div class="stats-grid">
         <div class="stat-card">
+          <div class="stat-icon">📋</div>
           <div class="stat-label">Total Quotes</div>
           <div class="stat-val" id="stat-quotes">0</div>
           <div class="stat-sub">All time</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">This Month</div>
-          <div class="stat-val" id="stat-month">0</div>
-          <div class="stat-sub">Quotes built</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Profit This Month</div>
-          <div class="stat-val amber" id="stat-profit-month">£0</div>
-          <div class="stat-sub">Estimated protected</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg Quote Value</div>
-          <div class="stat-val" id="stat-avg">£0</div>
-          <div class="stat-sub">Per quote</div>
-        </div>
-        <div class="stat-card">
+          <div class="stat-icon">🏆</div>
           <div class="stat-label">Quotes Won</div>
           <div class="stat-val green" id="stat-won">0</div>
           <div class="stat-sub">Marked as won</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Conversion Rate</div>
-          <div class="stat-val green" id="stat-conversion">—</div>
-          <div class="stat-sub">Won vs total</div>
+          <div class="stat-icon">📈</div>
+          <div class="stat-label">Average Quote</div>
+          <div class="stat-val amber" id="stat-avg">£0</div>
+          <div class="stat-sub">Per quote</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🛡</div>
+          <div class="stat-label">Quote Health</div>
+          <div class="stat-val green" id="stat-health">—</div>
+          <div class="stat-sub">Avg margin</div>
         </div>
       </div>
 
@@ -393,6 +421,24 @@ textarea.field-input{resize:vertical;min-height:80px;}
         </div>
       </div>
 
+      <!-- GET STARTED — only shown until onboarding complete -->
+      <div class="started-card" id="onboarding-card">
+        <div class="started-title">Get started</div>
+        <div class="started-step">
+          <div class="step-num done">✓</div>
+          <div><div class="step-label">Account created</div><div class="step-sub">You're in. 7-day free trial started.</div></div>
+        </div>
+        <div class="started-step">
+          <div class="step-num active" id="step-rates">2</div>
+          <div><div class="step-label">Set your rates</div><div class="step-sub">Add your day rate and business details in Settings</div></div>
+        </div>
+        <div class="started-step">
+          <div class="step-num pending" id="step-first-quote">3</div>
+          <div><div class="step-label">Build your first quote</div><div class="step-sub">Takes under 2 minutes</div></div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
       <div class="action-grid">
         <button class="action-btn primary" onclick="switchTab('builder')">
           <div class="action-icon">📋</div>
@@ -406,32 +452,26 @@ textarea.field-input{resize:vertical;min-height:80px;}
         </button>
         <button class="action-btn tertiary" onclick="switchTab('quotes')">
           <div class="action-icon">📁</div>
-          <div class="action-text"><div class="action-title">My Quotes</div><div class="action-sub">View and manage your quotes</div></div>
+          <div class="action-text"><div class="action-title">Quote Library</div><div class="action-sub">View and manage your quotes</div></div>
           <div class="action-arrow">→</div>
         </button>
       </div>
 
-      <div class="started-card">
-        <div class="started-title">Get started</div>
-        <div class="started-step">
-          <div class="step-num done">✓</div>
-          <div><div class="step-label">Account created</div><div class="step-sub">You're in. 7-day free trial started.</div></div>
+      <!-- RECENT QUOTES -->
+      <div class="recent-quotes-card" id="recent-quotes-card" style="display:none;">
+        <div class="recent-quotes-title">
+          Recent Quotes
+          <a onclick="switchTab('quotes')">View all →</a>
         </div>
-        <div class="started-step">
-          <div class="step-num active" id="step-rates">2</div>
-          <div><div class="step-label">Set your rates</div><div class="step-sub">Add your day rate and business details in Setup</div></div>
-        </div>
-        <div class="started-step">
-          <div class="step-num pending" id="step-first-quote">3</div>
-          <div><div class="step-label">Build your first quote</div><div class="step-sub">Takes under 2 minutes</div></div>
-        </div>
+        <div id="recent-quotes-list"></div>
       </div>
+
     </div>
 
     <!-- QUOTES LIST -->
     <div class="section" id="sec-quotes">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h2 class="section-heading">My Quotes</h2>
+        <h2 class="section-heading">Quote Library</h2>
         <button onclick="switchTab('builder')" style="background:var(--amber);color:var(--black);border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;font-size:0.85rem;font-family:var(--font);">+ New</button>
       </div>
       <input class="quotes-search" type="text" id="quotes-search" placeholder="Search by customer, job or postcode..." oninput="filterQuotes()">
@@ -698,7 +738,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       </div>
     </div>
 
-    <!-- SETUP -->
+    <!-- BUSINESS SETTINGS -->
     <div class="section" id="sec-setup">
       <div class="setup-avatar" id="setup-avatar">JJ</div>
       <div class="setup-name" id="setup-name"></div>
@@ -728,11 +768,11 @@ textarea.field-input{resize:vertical;min-height:80px;}
   </div><!-- end page -->
 
   <nav class="bottom-nav">
-    <button class="nav-btn active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span>Home</button>
-    <button class="nav-btn" id="nav-quotes" onclick="switchTab('quotes')"><span class="nav-icon">📁</span>Quotes</button>
+    <button class="nav-btn active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span>Dashboard</button>
+    <button class="nav-btn" id="nav-quotes" onclick="switchTab('quotes')"><span class="nav-icon">📁</span>Library</button>
     <button class="nav-btn" id="nav-builder" onclick="switchTab('builder')"><span class="nav-icon">📋</span>New Quote</button>
     <button class="nav-btn" id="nav-issues" onclick="switchTab('issues')"><span class="nav-icon">⚠️</span>Variations</button>
-    <button class="nav-btn" id="nav-setup" onclick="switchTab('setup')"><span class="nav-icon">⚙️</span>Setup</button>
+    <button class="nav-btn" id="nav-setup" onclick="switchTab('setup')"><span class="nav-icon">⚙️</span>Settings</button>
   </nav>
 </div>
 
@@ -859,7 +899,6 @@ function populateUserUI(){
   document.getElementById('q-profit-target').value=currentUser.profit_target||30;
   const h=new Date().getHours();
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
-  document.getElementById('home-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 }
 
 function switchTab(tab){
@@ -1030,7 +1069,7 @@ function updateHomeStats(){
   const thisYear=quotes.filter(q=>new Date(q.created_at)>=yearStart);
   const wonQuotes=quotes.filter(q=>q.status==='won');
 
-  // Total profit this year (estimated as profit_percent of total)
+  // Profit this year
   const profitYear=thisYear.reduce((sum,q)=>{
     const t=parseFloat(q.total||0);
     const pp=parseFloat(q.profit_percent||0)/100;
@@ -1047,24 +1086,70 @@ function updateHomeStats(){
   // Avg quote value
   const avgVal=quotes.length>0?(quotes.reduce((s,q)=>s+parseFloat(q.total||0),0)/quotes.length):0;
 
+  // Avg margin (quote health)
+  const avgMargin=quotes.length>0?Math.round(quotes.reduce((s,q)=>s+parseFloat(q.profit_percent||0),0)/quotes.length):null;
+
   // Conversion
   const conversion=quotes.length>0?Math.round((wonQuotes.length/quotes.length)*100):null;
 
-  document.getElementById('stat-quotes').textContent=quotes.length;
-  document.getElementById('stat-month').textContent=thisMonth.length;
-  document.getElementById('stat-profit-month').textContent='£'+Math.round(profitMonth).toLocaleString('en-GB');
-  document.getElementById('stat-avg').textContent=quotes.length>0?'£'+Math.round(avgVal).toLocaleString('en-GB'):'—';
-  document.getElementById('stat-won').textContent=wonQuotes.length;
-  document.getElementById('stat-conversion').textContent=conversion!==null?conversion+'%':'—';
-
-  // Hero profit year
+  // Hero
   document.getElementById('hero-profit-year').textContent='£'+Math.round(profitYear).toLocaleString('en-GB');
-
-  // Get started steps
-  if(quotes.length>0){
-    const el=document.getElementById('step-first-quote');
-    if(el){ el.className='step-num done'; el.textContent='✓'; }
+  const monthEl=document.getElementById('hero-profit-month');
+  if(profitMonth>0){
+    monthEl.textContent='↑ £'+Math.round(profitMonth).toLocaleString('en-GB')+' this month';
+  } else {
+    monthEl.textContent='';
   }
+  document.getElementById('hero-won').textContent=wonQuotes.length;
+  document.getElementById('hero-conversion').textContent=conversion!==null?conversion+'%':'—';
+  document.getElementById('hero-margin').textContent=avgMargin!==null?avgMargin+'%':'—';
+
+  // 4 KPI cards
+  document.getElementById('stat-quotes').textContent=quotes.length;
+  document.getElementById('stat-won').textContent=wonQuotes.length;
+  document.getElementById('stat-avg').textContent=quotes.length>0?'£'+Math.round(avgVal).toLocaleString('en-GB'):'—';
+  document.getElementById('stat-health').textContent=avgMargin!==null?avgMargin+'%':'—';
+
+  // Onboarding — hide once rates set AND first quote saved
+  const ratesSet=!!(currentUser?.day_rate&&currentUser.day_rate>0&&currentUser?.business_name);
+  const hasQuotes=quotes.length>0;
+  const onboarding=document.getElementById('onboarding-card');
+  if(ratesSet&&hasQuotes){
+    if(onboarding) onboarding.style.display='none';
+  } else {
+    if(onboarding) onboarding.style.display='block';
+    if(ratesSet){
+      const el=document.getElementById('step-rates');
+      if(el){ el.className='step-num done'; el.textContent='✓'; }
+    }
+    if(hasQuotes){
+      const el=document.getElementById('step-first-quote');
+      if(el){ el.className='step-num done'; el.textContent='✓'; }
+    }
+  }
+
+  // Recent quotes
+  renderRecentQuotes();
+}
+
+function renderRecentQuotes(){
+  const card=document.getElementById('recent-quotes-card');
+  const list=document.getElementById('recent-quotes-list');
+  if(!quotes.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  const recent=quotes.slice(0,3);
+  list.innerHTML=recent.map(q=>{
+    const status=q.status||'draft';
+    const badge=status==='won'?'WON':status==='lost'?'LOST':'DRAFT';
+    const jobSnippet=(q.job_description||'Untitled').substring(0,40)+((q.job_description||'').length>40?'…':'');
+    return `<div class="recent-quote-row">
+      <div class="recent-quote-job">${jobSnippet}</div>
+      <div class="recent-quote-right">
+        <div class="recent-quote-amount">£${parseFloat(q.total||0).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+        <div class="recent-quote-badge ${status}">${badge}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderProfitCoach(){
