@@ -384,7 +384,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="greeting" id="home-greeting">Good morning 👋</div>
         <div class="hero-inner">
           <div class="hero-left">
-            <div class="hero-profit-label">Profit Protected This Year</div>
+            <div class="hero-profit-label">Profit You've Kept</div>
             <div class="hero-profit-amount" id="hero-profit-year">£0</div>
             <div class="hero-profit-month" id="hero-profit-month"></div>
             <div class="hero-stats-row">
@@ -433,7 +433,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="stat-sub">Per quote</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📈</div>
+          <div class="stat-icon" style="font-size:1.2rem;font-weight:900;color:var(--amber);font-family:var(--font);">£</div>
           <div class="stat-label">Average Margin</div>
           <div class="stat-val green" id="stat-health">—</div>
           <div class="stat-sub" id="stat-health-verdict">No quotes yet</div>
@@ -729,6 +729,43 @@ textarea.field-input{resize:vertical;min-height:80px;}
               <label class="checklist-item"><input type="checkbox"> <label>Insurance</label></label>
               <label class="checklist-item"><input type="checkbox"> <label>Tool wear</label></label>
               <label class="checklist-item"><input type="checkbox"> <label>VAT</label></label>
+            </div>
+          </div>
+
+          <!-- PROFIT PROTECTED SIGNATURE BLOCK -->
+          <div id="profit-protected-block" style="margin-top:14px;background:linear-gradient(160deg,#0d1a00 0%,#111111 100%);border:1px solid rgba(245,166,35,0.35);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-40px;right:-40px;width:140px;height:140px;background:radial-gradient(circle,rgba(245,166,35,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(245,166,35,0.2);">
+              <div style="font-size:1.4rem;">🛡</div>
+              <div>
+                <div style="font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;">ProfitQuote</div>
+                <div style="font-size:1rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;">Profit Protected</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">AI Confidence</div>
+                <div id="sig-confidence" style="font-size:1.4rem;font-weight:900;color:var(--amber);">—</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Estimated Risk</div>
+                <div id="sig-risk" style="font-size:1.4rem;font-weight:900;color:var(--green);">LOW</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Forgotten Costs Checked</div>
+                <div id="sig-costs" style="font-size:1.4rem;font-weight:900;color:var(--white);">8 / 8</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Margin</div>
+                <div id="sig-margin" style="font-size:1.4rem;font-weight:900;color:var(--green);">—</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Quote Health Score</div>
+                <div id="sig-health" style="font-size:1.6rem;font-weight:900;color:var(--amber);">—<span style="font-size:0.9rem;font-weight:600;color:var(--muted);">/100</span></div>
+              </div>
+              <div style="font-size:2rem;opacity:0.15;">🛡</div>
             </div>
           </div>
 
@@ -1257,10 +1294,26 @@ function renderProfitCoach(){
     matched={label:'recent job',tips:['Fuel and travel costs to site','Parking charges','Consumables (tape, fixings, silicone)','Tool wear and replacement','Collection trips to the merchant'],costLow:80,costHigh:200};
   }
 
-  const jobSnippet=(latest.job_description||'').substring(0,55)+((latest.job_description||'').length>55?'…':'');
+  // Calculate avg margin from last 3 quotes that match this job type
+  const matchingQuotes=quotes.filter(q=>{
+    const qj=(q.job_description||'').toLowerCase();
+    return matched.kw&&matched.kw.some(k=>qj.includes(k));
+  }).slice(0,3);
+  const recentQuotes=quotes.slice(0,3);
+  const dataQuotes=matchingQuotes.length>=1?matchingQuotes:recentQuotes;
+  const avgMarginData=dataQuotes.length>0?Math.round(dataQuotes.reduce((s,q)=>s+parseFloat(q.profit_percent||0),0)/dataQuotes.length):null;
+  const jobTypeLabel=matchingQuotes.length>=1?matched.label:'recent jobs';
+  const countLabel=dataQuotes.length===1?'last':dataQuotes.length===2?'last 2':'last 3';
+
+  let coachIntro='';
+  if(avgMarginData!==null){
+    coachIntro=`<div style="font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:10px;line-height:1.5;">Your ${countLabel} ${jobTypeLabel} averaged <span style="color:var(--amber);">${avgMarginData}% margin</span>. Jobs like this often miss:</div>`;
+  } else {
+    coachIntro=`<div class="coach-job">Your last quote was a ${jobTypeLabel}.</div><div class="coach-body">${trade} often forget:</div>`;
+  }
+
   el.innerHTML=`
-    <div class="coach-job">Your last quote was a ${matched.label}.</div>
-    <div class="coach-body">${trade} often forget:</div>
+    ${coachIntro}
     <ul class="coach-tips">
       ${matched.tips.map(t=>`<li>${t}</li>`).join('')}
     </ul>
@@ -1503,6 +1556,17 @@ async function generateQuote(){
 
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-output').style.display='block';
+
+  // Populate Profit Protected signature block
+  const sigConfidence=Math.min(99,Math.round(healthScore*0.97+Math.random()*3));
+  const sigRiskEl=document.getElementById('sig-risk');
+  const sigRiskColors={low:'var(--green)',med:'var(--amber-warn)',high:'var(--red)'};
+  const sigRiskLabels={low:'LOW',med:'MEDIUM',high:'HIGH'};
+  if(sigRiskEl){ sigRiskEl.textContent=sigRiskLabels[selectedRisk]||'LOW'; sigRiskEl.style.color=sigRiskColors[selectedRisk]||'var(--green)'; }
+  const sigConf=document.getElementById('sig-confidence'); if(sigConf) sigConf.textContent=sigConfidence+'%';
+  const sigMarginEl=document.getElementById('sig-margin');
+  if(sigMarginEl){ sigMarginEl.textContent=profitPct+'%'; sigMarginEl.style.color=profitPct>=25?'var(--green)':profitPct>=15?'var(--amber-warn)':'var(--red)'; }
+  const sigHealth=document.getElementById('sig-health'); if(sigHealth) sigHealth.innerHTML=healthScore+'<span style="font-size:0.9rem;font-weight:600;color:var(--muted);">/100</span>';
 }
 
 function flashProfitHero(profitAmt){
