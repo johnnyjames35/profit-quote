@@ -301,14 +301,31 @@ textarea.field-input{resize:vertical;min-height:80px;}
 .var-hero-icon{font-size:2rem;margin-bottom:10px;display:block;filter:drop-shadow(0 0 8px rgba(245,166,35,0.5));}
 .var-hero-title{font-size:1.4rem;font-weight:900;color:var(--amber);letter-spacing:-0.03em;margin-bottom:8px;}
 .var-hero-sub{font-size:0.87rem;color:#aaaaaa;line-height:1.6;}
-.var-step-card{background:#202020;border:1px solid #383838;border-radius:var(--radius);padding:18px 16px;margin-bottom:12px;}
+.var-step-card{background:#202020;border:1px solid #383838;border-radius:var(--radius);padding:18px 16px;margin-bottom:0;position:relative;}
+.var-step-connector{width:2px;height:16px;background:linear-gradient(180deg,rgba(245,166,35,0.4),rgba(245,166,35,0.1));margin:0 auto 0 18px;}
 .var-step-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #2e2e2e;}
+.var-step-dot{width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0;box-shadow:0 0 6px rgba(245,166,35,0.5);}
 .var-step-icon{width:38px;height:38px;border-radius:9px;background:rgba(245,166,35,0.2);border:1.5px solid rgba(245,166,35,0.5);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
 .var-step-title{font-size:1rem;font-weight:800;color:var(--white);letter-spacing:-0.01em;}
 .var-step-card .field-label{color:#aaaaaa;}
 .var-step-card .field-input{background:#2a2a2a;border:1px solid #444;color:var(--white);}
 .var-step-card .field-input:focus{border-color:var(--amber);}
 .var-step-card .field-input::placeholder{color:#555;}
+/* AI preview card (static, before generate) */
+.var-ai-preview{background:linear-gradient(135deg,#0a1f0a 0%,#161f16 100%);border:1.5px solid rgba(34,197,94,0.4);border-radius:var(--radius);padding:16px;margin-top:0;margin-bottom:14px;}
+.var-ai-preview-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.var-ai-preview-icon{width:32px;height:32px;background:rgba(34,197,94,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.var-ai-preview-title{font-size:0.78rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:0.8px;}
+.var-ai-preview-intro{font-size:0.82rem;color:#aaaaaa;margin-bottom:10px;font-style:italic;}
+.var-ai-preview-checks{list-style:none;margin-bottom:10px;}
+.var-ai-preview-checks li{font-size:0.83rem;color:#cccccc;padding:3px 0;display:flex;align-items:flex-start;gap:7px;}
+.var-ai-preview-cost{font-size:0.82rem;font-weight:700;color:var(--amber);padding-top:10px;border-top:1px solid rgba(34,197,94,0.15);}
+/* Hero right panel */
+.var-hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.var-hero-left{flex:1;min-width:0;}
+.var-hero-right{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:12px 10px;background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.15);border-radius:12px;min-width:88px;}
+.var-hero-right-shield{font-size:1.8rem;opacity:0.5;line-height:1;}
+.var-hero-right-text{font-size:0.65rem;color:#888;line-height:1.5;}
 /* AI coach card for variation */
 .var-ai-card{background:linear-gradient(135deg,#0a1f0a 0%,#161f16 100%);border:1.5px solid rgba(34,197,94,0.4);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
 .var-ai-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
@@ -814,69 +831,92 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <!-- form screen -->
       <div id="issues-home">
 
-        <!-- Hero -->
-        <div class="var-hero">
-          <span class="var-hero-icon">🛡</span>
-          <div class="var-hero-title">Protect Your Profit</div>
-          <div class="var-hero-sub">When a customer asks for extra work, don't rely on a verbal agreement. Generate a professional variation notice in under 60 seconds — protect your time, materials and profit.</div>
+        <!-- Hero with right panel -->
+        <div class="var-hero" style="margin-bottom:14px;">
+          <div class="var-hero-inner">
+            <div class="var-hero-left">
+              <span class="var-hero-icon">🛡</span>
+              <div class="var-hero-title">Protect Your Profit</div>
+              <div class="var-hero-sub">When a customer asks for extra work, don't rely on a verbal agreement. Generate a professional variation notice in under 60 seconds — protect your time, materials and profit.</div>
+            </div>
+            <div class="var-hero-right">
+              <div class="var-hero-right-shield">🛡</div>
+              <div class="var-hero-right-text">Variations help prevent disputes and protect your agreed profit.</div>
+            </div>
+          </div>
         </div>
 
         <!-- Step 1: Original Project -->
-        <div class="var-step-card">
+        <div class="var-step-card" style="border-radius:var(--radius) var(--radius) 0 0;">
           <div class="var-step-header">
+            <div class="var-step-dot"></div>
             <div class="var-step-icon">📋</div>
             <div class="var-step-title">Original Project</div>
           </div>
           <div class="field-group"><label class="field-label">Customer Name</label><input class="field-input" id="issue-customer" placeholder="e.g. Mr & Mrs Smith"></div>
           <div class="field-group"><label class="field-label">Original Job Description</label><input class="field-input" id="issue-project" placeholder="e.g. Full bathroom refurbishment"></div>
-          <div class="field-group"><label class="field-label">Original Quote Reference (optional)</label><input class="field-input" id="issue-ref" placeholder="e.g. QUO-2401"></div>
+          <div class="field-group" style="margin-bottom:0;"><label class="field-label">Original Quote Reference (optional)</label><input class="field-input" id="issue-ref" placeholder="e.g. QUO-2401"></div>
         </div>
+        <div class="var-step-connector"></div>
 
         <!-- Step 2: Additional Work -->
-        <div class="var-step-card">
+        <div class="var-step-card" style="border-radius:0;">
           <div class="var-step-header">
+            <div class="var-step-dot"></div>
             <div class="var-step-icon">🔨</div>
             <div class="var-step-title">Additional Work</div>
           </div>
-          <div class="field-group"><label class="field-label">What changed / extra work required</label><textarea class="field-input" id="issue-desc" rows="3" placeholder="e.g. Water damage found under floor — requires replacement boards and additional waterproofing"></textarea></div>
-          <div class="field-group"><label class="field-label">Why did this change occur?</label><textarea class="field-input" id="issue-reason" rows="2" placeholder="e.g. Hidden damage not visible during original survey"></textarea></div>
+          <div class="field-group"><label class="field-label">What changed / extra work required</label><textarea class="field-input" id="issue-desc" rows="3" placeholder="e.g. Water damage found under floor — requires replacement boards and additional waterproofing" oninput="updateVarAIPreview()"></textarea></div>
+          <div class="field-group" style="margin-bottom:0;"><label class="field-label">Why did this change occur?</label><textarea class="field-input" id="issue-reason" rows="2" placeholder="e.g. Hidden damage not visible during original survey"></textarea></div>
         </div>
+        <div class="var-step-connector"></div>
 
-        <!-- Step 3: Extra Labour -->
-        <div class="var-step-card">
+        <!-- Step 3: Costs -->
+        <div class="var-step-card" style="border-radius:0;">
           <div class="var-step-header">
+            <div class="var-step-dot"></div>
             <div class="var-step-icon">⏱</div>
-            <div class="var-step-title">Extra Labour</div>
+            <div class="var-step-title">Costs</div>
           </div>
           <div class="field-group"><label class="field-label">Extra Hours</label><input class="field-input" id="issue-hours" type="number" placeholder="e.g. 4" min="0" step="0.5"></div>
           <div class="field-group"><label class="field-label">Hourly Rate (£)</label><input class="field-input" id="issue-hourly" type="number" placeholder="e.g. 35"></div>
+          <div class="field-group" style="margin-bottom:0;"><label class="field-label">Extra Materials Cost (£)</label><input class="field-input" id="issue-materials" type="number" placeholder="e.g. 150"></div>
+        </div>
+        <div class="var-step-connector"></div>
+
+        <!-- Step 4: Generate (label only, no card) -->
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0 14px;">
+          <div class="var-step-dot" style="margin-left:0;flex-shrink:0;"></div>
+          <div style="font-size:0.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Generate Notice</div>
         </div>
 
-        <!-- Step 4: Materials -->
-        <div class="var-step-card">
-          <div class="var-step-header">
-            <div class="var-step-icon">📦</div>
-            <div class="var-step-title">Extra Materials</div>
+        <!-- AI Variation Review (static, updates as user types) -->
+        <div class="var-ai-preview" id="var-ai-preview" style="display:none;">
+          <div class="var-ai-preview-header">
+            <div class="var-ai-preview-icon">🧠</div>
+            <div class="var-ai-preview-title">AI Variation Review</div>
           </div>
-          <div class="field-group"><label class="field-label">Extra Materials Cost (£)</label><input class="field-input" id="issue-materials" type="number" placeholder="e.g. 150"></div>
+          <div class="var-ai-preview-intro" id="var-preview-intro">Profit Coach says: This variation appears reasonable for the work described.</div>
+          <ul class="var-ai-preview-checks" id="var-preview-checks"></ul>
+          <div class="var-ai-preview-cost" id="var-preview-cost"></div>
         </div>
 
-        <!-- Step 5: AI Review -->
+        <!-- Loading state while generating -->
         <div class="var-ai-card" id="var-ai-card" style="display:none;">
           <div class="var-ai-header">
             <div class="var-ai-icon">🤖</div>
             <div class="var-ai-title">AI Review</div>
           </div>
-          <div id="var-ai-content"><div class="var-ai-loading">Reviewing your variation...</div></div>
+          <div id="var-ai-content"><div class="var-ai-loading">🤖 Reviewing your variation...</div></div>
         </div>
 
-        <button class="btn-next" onclick="generateVariation()">Generate Variation Notice →</button>
+        <button class="btn-next" onclick="generateVariation()">🛡 Protect My Profit →</button>
       </div>
 
       <!-- output screen -->
       <div id="issue-form" style="display:none;">
 
-        <!-- AI Review (shown above output) -->
+        <!-- AI Review result (shown above output) -->
         <div class="var-ai-card" style="margin-bottom:14px;">
           <div class="var-ai-header">
             <div class="var-ai-icon">🤖</div>
@@ -1755,6 +1795,33 @@ function emailQuote(){
 }
 
 // VARIATIONS
+// VARIATIONS — AI preview (updates live as user types)
+function updateVarAIPreview(){
+  const desc=(document.getElementById('issue-desc').value||'').toLowerCase().trim();
+  const preview=document.getElementById('var-ai-preview');
+  if(!desc||desc.length<8){ preview.style.display='none'; return; }
+  preview.style.display='block';
+
+  const groups=[
+    {kw:['bathroom','bath','shower','ensuite','wetroom','wet room'],checks:['Additional travel to merchant for materials','Waste disposal and old tile removal','Silicone, grout and sealant consumables'],costLow:120,costHigh:260},
+    {kw:['kitchen','cupboard','worktop','units','splashback'],checks:['Collection trips for extra materials','Waste removal for old units','Plumbing or electrical connection time'],costLow:150,costHigh:320},
+    {kw:['roof','roofing','felt','slates','tiles','flashing'],checks:['Additional scaffold erection time','Extra felt and batten quantities','Skip hire for removed materials'],costLow:200,costHigh:480},
+    {kw:['electrics','socket','lighting','rewire','consumer','fuse'],checks:['Additional testing and certification time','Cable containment for extra runs','Making good after chasing walls'],costLow:80,costHigh:200},
+    {kw:['plaster','skim','board','dot and dab'],checks:['Extra PVA primer before skimming','Beading and corner trim materials','Dust sheets and site protection'],costLow:60,costHigh:150},
+    {kw:['floor','flooring','laminate','vinyl','tile'],checks:['Underlay and adhesive for extra area','Door trimming after fitting','Levelling compound if needed'],costLow:70,costHigh:180},
+    {kw:['damage','leak','damp','water','rot','mould'],checks:['Additional waste disposal','Extra drying or treatment time','Replacement materials not in original quote'],costLow:140,costHigh:340},
+    {kw:['extension','build','block','foundation','structural'],checks:['Building control notification if scope changes','Extra brick and block waste allowance','Temporary weather protection'],costLow:300,costHigh:700},
+  ];
+
+  let matched=null;
+  for(const g of groups){ if(g.kw.some(k=>desc.includes(k))){ matched=g; break; } }
+  if(!matched){ matched={checks:['Additional travel to and from site','Waste disposal costs','Consumables and fixings'],costLow:80,costHigh:200}; }
+
+  document.getElementById('var-preview-intro').textContent='Profit Coach says: This variation appears reasonable for the work described.';
+  document.getElementById('var-preview-checks').innerHTML=matched.checks.map(c=>`<li><span style="color:var(--green);font-weight:800;">✅</span> ${c}</li>`).join('');
+  document.getElementById('var-preview-cost').textContent='Estimated additional forgotten costs: £'+matched.costLow+'–£'+matched.costHigh;
+}
+
 async function generateVariation(){
   const project=document.getElementById('issue-project').value.trim();
   const desc=document.getElementById('issue-desc').value.trim();
@@ -1827,6 +1894,7 @@ function resetIssues(){
   document.getElementById('issues-home').style.display='block';
   document.getElementById('issue-form').style.display='none';
   document.getElementById('var-ai-card').style.display='none';
+  document.getElementById('var-ai-preview').style.display='none';
   ['issue-customer','issue-project','issue-ref','issue-desc','issue-reason','issue-hours','issue-materials'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 
