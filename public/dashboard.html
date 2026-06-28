@@ -1359,13 +1359,13 @@ function editQuote(id){
 
   // Load saved data back into fields
   const qd=q.quote_data||{};
-  document.getElementById('q-desc').value=q.job_description||'';
-  document.getElementById('q-customer').value=q.customer_name||'';
-  document.getElementById('q-email').value=q.customer_email||'';
-  document.getElementById('q-postcode').value=qd.postcode||'';
-  document.getElementById('q-days').value=q.days||1;
-  document.getElementById('q-day-rate').value=q.day_rate||currentUser?.day_rate||200;
-  document.getElementById('q-materials').value=qd.materials||0;
+  document.getElementById('q-desc').value=q.job_description||qd.job_description||'';
+document.getElementById('q-customer').value=q.customer_name||qd.customer_name||'';
+document.getElementById('q-email').value=q.customer_email||qd.customer_email||'';
+document.getElementById('q-postcode').value=qd.postcode||q.postcode||'';
+document.getElementById('q-days').value=q.days||qd.days||1;
+document.getElementById('q-day-rate').value=q.day_rate||qd.day_rate||currentUser?.day_rate||200;
+document.getElementById('q-materials').value=qd.materials||q.materials||0;
   document.getElementById('q-markup').value=q.markup_percent||currentUser?.markup_percent||20;
   document.getElementById('q-profit-target').value=q.profit_target||currentUser?.profit_target||30;
   document.getElementById('q-contingency').value=qd.contingency||10;
@@ -1380,7 +1380,7 @@ function editQuote(id){
   const hasSkip=!!(q.skip_cost&&q.skip_cost>0);
   setSkip(hasSkip);
   if(hasSkip){
-    document.getElementById('q-skip-cost').value=q.skip_cost||350;
+    document.getElementById('q-skip-cost').value=q.skip_cost||qd.skipCost||350;
     const skipType=q.skip_type||'large';
     document.getElementById('q-skip-size').value=skipType;
   }
