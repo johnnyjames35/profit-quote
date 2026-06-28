@@ -3,1075 +3,517 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ProfitQuote – Quote Smart. Make More.</title>
-  <script type="text/javascript">
+<meta name="description" content="ProfitQuote helps UK tradespeople create professional quotes in under 10 minutes, catch forgotten costs, and protect their profit on every job.">
+<title>ProfitQuote – Get Your Evenings Back</title>
+<script type="text/javascript">
 (function(c,l,a,r,i,t,y){
 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
 })(window, document, "clarity", "script", "xe3qmzpne9");
 </script>
-<meta name="description" content="ProfitQuote helps UK tradespeople build accurate quotes fast, protect their profits, and handle mid-job changes professionally. Try free for 7 days.">
 <style>
-:root {
-  --navy: #1B2B4B;
-  --navy-mid: #2C3E5D;
-  --blue: #4A6FA5;
-  --blue-light: #EEF3FA;
-  --off-white: #F6F9FD;
-  --white: #FFFFFF;
-  --border: #DDE4EF;
-  --green: #1A7A4A;
-  --green-bg: #EBF7F0;
-  --amber: #B35C00;
-  --amber-bg: #FFF3E0;
-  --red: #C0392B;
-  --muted: #8896A8;
-  --body: #4A5568;
-  --heading: #1B2B4B;
-  --cyan: #00c2e0;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: var(--body);
-  background: var(--off-white);
-  line-height: 1.6;
-}
-
-nav {
-  background: var(--navy);
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-}
-
-.nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-.nav-logo-icon {
-  width: 36px;
-  height: 36px;
-  background: var(--cyan);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--navy);
-}
-
-.nav-logo-text {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--white);
-  letter-spacing: -0.3px;
-}
-
-.nav-logo-text span { color: var(--cyan); }
-
-.nav-cta {
-  background: var(--cyan);
-  color: var(--navy);
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 9px 20px;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: opacity 0.2s;
-}
-
-.nav-cta:hover { opacity: 0.85; }
-
-.hero {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #1e3a6e 100%);
-  padding: 72px 24px 64px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero::before {
-  content: '';
-  position: absolute;
-  top: -60px; right: -60px;
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(0,194,224,0.12) 0%, transparent 70%);
-  border-radius: 50%;
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: -80px; left: -40px;
-  width: 250px; height: 250px;
-  background: radial-gradient(circle, rgba(74,111,165,0.15) 0%, transparent 70%);
-  border-radius: 50%;
-}
-
-.hero-badge {
-  display: inline-block;
-  background: rgba(0,194,224,0.15);
-  border: 1px solid rgba(0,194,224,0.3);
-  color: var(--cyan);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  padding: 6px 16px;
-  border-radius: 50px;
-  margin-bottom: 24px;
-}
-
-.hero h1 {
-  font-size: clamp(2rem, 6vw, 3.2rem);
-  font-weight: 800;
-  color: var(--white);
-  line-height: 1.15;
-  letter-spacing: -1px;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.hero h1 span { color: var(--cyan); }
-
-.hero-sub {
-  font-size: 1.1rem;
-  color: rgba(255,255,255,0.75);
-  max-width: 540px;
-  margin: 0 auto 36px;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-buttons {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  flex-wrap: wrap;
-  position: relative;
-  z-index: 1;
-}
-
-.btn-primary {
-  background: var(--cyan);
-  color: var(--navy);
-  font-weight: 800;
-  font-size: 1rem;
-  padding: 15px 32px;
-  border-radius: 10px;
-  text-decoration: none;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 20px rgba(0,194,224,0.35);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(0,194,224,0.45);
-}
-
-.btn-secondary {
-  background: rgba(255,255,255,0.1);
-  color: var(--white);
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 15px 32px;
-  border-radius: 10px;
-  text-decoration: none;
-  border: 1px solid rgba(255,255,255,0.2);
-  transition: background 0.2s;
-}
-
-.btn-secondary:hover { background: rgba(255,255,255,0.18); }
-
-.hero-note {
-  margin-top: 18px;
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.45);
-  position: relative;
-  z-index: 1;
-}
-
-.hero-trades {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.35);
-  position: relative;
-  z-index: 1;
-  font-style: italic;
-}
-
-.trust-bar {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  padding: 18px 24px;
-  display: flex;
-  gap: 28px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.trust-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--navy);
-}
-
-.trust-item .icon { font-size: 1rem; }
-
-section { padding: 64px 24px; }
-.section-inner { max-width: 800px; margin: 0 auto; }
-
-.section-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--blue);
-  margin-bottom: 10px;
-}
-
-.section-title {
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
-  font-weight: 800;
-  color: var(--heading);
-  letter-spacing: -0.5px;
-  margin-bottom: 14px;
-  line-height: 1.2;
-}
-
-.section-sub {
-  font-size: 1rem;
-  color: var(--muted);
-  max-width: 600px;
-}
-
-.problem { background: var(--white); }
-
-.problem-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-top: 36px;
-}
-
-.problem-card {
-  background: #FFF8F6;
-  border: 1px solid #FDDDD5;
-  border-left: 4px solid var(--red);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.problem-card .emoji { font-size: 1.4rem; margin-bottom: 10px; display: block; }
-.problem-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--heading); margin-bottom: 6px; }
-.problem-card p { font-size: 0.85rem; color: var(--muted); }
-
-.features { background: var(--off-white); }
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-top: 40px;
-}
-
-.feature-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  transition: box-shadow 0.2s, transform 0.2s;
-  display: flex;
-  flex-direction: column;
-}
-
-.feature-card:hover {
-  box-shadow: 0 8px 28px rgba(27,43,75,0.1);
-  transform: translateY(-2px);
-}
-
-.feature-icon {
-  width: 44px; height: 44px;
-  background: var(--blue-light);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem;
-  margin-bottom: 14px;
-}
-
-.feature-card h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--heading);
-  margin-bottom: 8px;
-}
-
-.feature-card p { font-size: 0.875rem; color: var(--muted); }
-
-.how { background: var(--navy); }
-.how .section-title { color: var(--white); }
-.how .section-label { color: var(--cyan); }
-.how .section-sub { color: rgba(255,255,255,0.6); }
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-top: 40px;
-}
-
-.step {
-  text-align: center;
-  padding: 28px 20px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-}
-
-.step-num {
-  width: 44px; height: 44px;
-  background: var(--cyan);
-  color: var(--navy);
-  font-weight: 900;
-  font-size: 1.1rem;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 14px;
-}
-
-.step h3 { font-size: 1rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
-.step p { font-size: 0.85rem; color: rgba(255,255,255,0.6); }
-
-.pricing { background: var(--white); }
-
-.pricing-card {
-  max-width: 460px;
-  margin: 40px auto 0;
-  background: var(--navy);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 12px 40px rgba(27,43,75,0.2);
-}
-
-.pricing-header {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  padding: 32px 32px 24px;
-  text-align: center;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.pricing-badge {
-  display: inline-block;
-  background: rgba(0,194,224,0.2);
-  border: 1px solid rgba(0,194,224,0.4);
-  color: var(--cyan);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 4px 14px;
-  border-radius: 50px;
-  margin-bottom: 14px;
-}
-
-.pricing-name {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--white);
-  margin-bottom: 6px;
-}
-
-.pricing-price {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
-  margin: 16px 0 6px;
-}
-
-.pricing-price .amount {
-  font-size: 3rem;
-  font-weight: 900;
-  color: var(--cyan);
-  line-height: 1;
-}
-
-.pricing-price .period {
-  font-size: 0.95rem;
-  color: rgba(255,255,255,0.6);
-  padding-bottom: 6px;
-}
-
-.pricing-setup {
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.5);
-}
-
-.pricing-body {
-  padding: 28px 32px 32px;
-}
-
-.pricing-features {
-  list-style: none;
-  margin-bottom: 28px;
-}
-
-.pricing-features li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.85);
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-
-.pricing-features li:last-child { border-bottom: none; }
-
-.pricing-features .tick {
-  color: var(--cyan);
-  font-size: 1rem;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.pricing-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.btn-pay-setup {
-  display: block;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: var(--white);
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 14px 24px;
-  border-radius: 10px;
-  text-align: center;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-
-.btn-pay-setup:hover { background: rgba(255,255,255,0.18); }
-
-.btn-pay-monthly {
-  display: block;
-  background: var(--cyan);
-  color: var(--navy);
-  font-weight: 800;
-  font-size: 0.95rem;
-  padding: 14px 24px;
-  border-radius: 10px;
-  text-align: center;
-  text-decoration: none;
-  transition: opacity 0.2s;
-  box-shadow: 0 4px 16px rgba(0,194,224,0.3);
-}
-
-.btn-pay-monthly:hover { opacity: 0.88; }
-
-.pricing-note {
-  text-align: center;
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.35);
-  margin-top: 16px;
-}
-
-.early {
-  background: var(--blue-light);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  text-align: center;
-}
-
-.early-inner { max-width: 560px; margin: 0 auto; }
-
-.early h2 {
-  font-size: 1.7rem;
-  font-weight: 800;
-  color: var(--heading);
-  margin-bottom: 12px;
-}
-
-.early p { color: var(--muted); margin-bottom: 28px; }
-
-.who { background: var(--off-white); }
-
-.trades-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 28px;
-}
-
-.trade-pill {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 50px;
-  padding: 10px 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--navy);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.faq { background: var(--white); }
-.faq-list { margin-top: 36px; }
-.faq-item { border-bottom: 1px solid var(--border); }
-
-.faq-q {
-  width: 100%;
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 18px 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--heading);
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.faq-q .arrow {
-  color: var(--blue);
-  font-size: 1.2rem;
-  flex-shrink: 0;
-  transition: transform 0.25s;
-}
-
-.faq-q.open .arrow { transform: rotate(180deg); }
-
-.faq-a {
-  display: none;
-  padding: 0 0 18px;
-  font-size: 0.92rem;
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-.faq-a.open { display: block; }
-
-.cta-bottom {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  text-align: center;
-  padding: 72px 24px;
-}
-
-.cta-bottom h2 {
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-  font-weight: 800;
-  color: var(--white);
-  margin-bottom: 14px;
-}
-
-.cta-bottom p {
-  color: rgba(255,255,255,0.65);
-  margin-bottom: 32px;
-  font-size: 1rem;
-}
-
-footer {
-  background: #111c30;
-  padding: 36px 24px;
-  text-align: center;
-}
-
-.footer-logo {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--white);
-  margin-bottom: 12px;
-}
-
-.footer-logo span { color: var(--cyan); }
-
-.footer-links {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.footer-links a {
-  color: rgba(255,255,255,0.45);
-  font-size: 0.85rem;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.footer-links a:hover { color: var(--white); }
-
-.footer-copy {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.25);
-  line-height: 1.8;
-}
-
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.modal-overlay.active { display: flex; }
-
-.modal-box {
-  background: var(--white);
-  border-radius: 14px;
-  max-width: 640px;
-  width: 100%;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 32px;
-  position: relative;
-}
-
-.modal-close {
-  position: absolute;
-  top: 16px; right: 20px;
-  background: none;
-  border: none;
-  font-size: 1.4rem;
-  cursor: pointer;
-  color: var(--muted);
-}
-
-.modal-title {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--heading);
-  margin-bottom: 16px;
-}
-
-.modal-body {
-  font-size: 0.88rem;
-  color: var(--body);
-  line-height: 1.8;
-}
-
-.modal-body h3 { margin: 18px 0 6px; color: var(--heading); font-size: 0.95rem; }
-.modal-body p { margin-bottom: 10px; }
-
-.screenshots { background: var(--navy); padding: 64px 24px; }
-.screenshots .section-label { color: var(--cyan); }
-.screenshots .section-title { color: var(--white); }
-.screenshots .section-sub { color: rgba(255,255,255,0.6); margin-bottom: 0; }
-
-.mockups-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
-  margin-top: 48px;
-  align-items: start;
-  justify-items: center;
-}
-
-.mockup-wrap { text-align: center; max-width: 280px; width: 100%; }
-
-.mockup-phone {
-  background: #1a1a2e;
-  border-radius: 36px;
-  padding: 12px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(255,255,255,0.08);
-  margin-bottom: 18px;
-  position: relative;
-}
-
-.mockup-phone::before {
-  content: '';
-  display: block;
-  width: 60px; height: 6px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 3px;
-  margin: 0 auto 10px;
-}
-
-.mockup-screen {
-  background: var(--off-white);
-  border-radius: 26px;
-  overflow: hidden;
-  min-height: 420px;
-}
-
-.mock-nav {
-  background: var(--navy);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mock-logo-icon {
-  width: 24px; height: 24px;
-  background: var(--cyan);
-  border-radius: 5px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 900; color: var(--navy);
-}
-
-.mock-logo-text { font-size: 0.8rem; font-weight: 700; color: white; flex: 1; }
-
-.mock-avatar {
-  width: 24px; height: 24px;
-  background: var(--blue);
-  border-radius: 50%;
-  font-size: 0.6rem; font-weight: 700; color: white;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.mock-body { padding: 12px; }
-.mock-section-title { font-size: 0.9rem; font-weight: 800; color: var(--heading); margin-bottom: 12px; }
-.mock-field-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; margin-top: 8px; }
-.mock-field { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: var(--body); }
-.mock-row2 { display: flex; gap: 6px; }
-.mock-half { flex: 1; }
-.mock-risk-row { display: flex; gap: 4px; margin-top: 10px; }
-.mock-risk { flex: 1; text-align: center; font-size: 0.55rem; font-weight: 600; padding: 5px 2px; border-radius: 5px; border: 1px solid var(--border); background: white; color: var(--muted); }
-.active-risk { background: var(--green-bg); border-color: var(--green); color: var(--green); }
-.mock-btn { background: var(--navy); color: white; border-radius: 8px; padding: 10px; font-size: 0.75rem; font-weight: 700; text-align: center; margin-top: 12px; cursor: default; }
-.mock-btn-outline { background: white; color: var(--navy); border: 1px solid var(--border); }
-.mock-profit-card { background: var(--navy); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.mock-profit-label { font-size: 0.85rem; font-weight: 800; color: white; }
-.mock-profit-badge { background: #b8860b; color: white; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 50px; }
-.mock-breakdown { background: white; border-radius: 10px; padding: 10px 12px; }
-.mock-breakdown-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--body); padding: 5px 0; border-bottom: 1px solid var(--border); }
-.mock-breakdown-row:last-child { border-bottom: none; }
-.mock-breakdown-row.total { font-weight: 700; color: var(--heading); }
-.val { font-weight: 600; }
-.green-val { color: var(--green); }
-.mock-sms-bar { background: #EEF3FA; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 0.72rem; color: var(--navy); font-weight: 600; margin-top: 8px; text-align: center; }
-.mock-var-doc { background: white; border-radius: 8px; padding: 10px 12px; font-size: 0.68rem; color: var(--body); }
-.mock-var-title { font-weight: 800; font-size: 0.72rem; color: var(--heading); text-align: center; margin-bottom: 8px; letter-spacing: 0.5px; }
-.mock-var-line { margin-bottom: 3px; }
-.mock-var-item { color: var(--muted); margin: 3px 0; }
-.mock-var-total { font-weight: 700; color: var(--heading); margin-top: 6px; border-top: 1px solid var(--border); padding-top: 5px; }
-.mock-var-sig { color: var(--muted); margin-top: 5px; font-size: 0.62rem; }
-.mockup-label { font-size: 0.85rem; font-weight: 700; color: var(--white); margin-bottom: 6px; }
-.mockup-desc { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
-.mock-ai-warning { background: var(--amber-bg); border: 1px solid #f5c07a; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; text-align: center; }
-.mock-ai-icon { font-size: 1.2rem; margin-bottom: 4px; }
-.mock-ai-title { font-size: 0.75rem; font-weight: 800; color: var(--amber); margin-bottom: 4px; }
-.mock-ai-text { font-size: 0.65rem; color: var(--body); line-height: 1.4; }
-.mock-ai-suggest { background: white; border-radius: 8px; padding: 10px 12px; border: 1px solid var(--border); }
-.mock-ai-suggest-label { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
-.mock-ai-suggest-row { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--body); padding: 4px 0; border-bottom: 1px solid var(--border); }
-.mock-ai-suggest-row:last-child { border-bottom: none; }
-
-.projects-strip { background: var(--green-bg); border-top: 1px solid #C3E6D0; border-bottom: 1px solid #C3E6D0; padding: 14px 24px; }
-.projects-inner { max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; }
-.projects-label { font-size: 0.82rem; font-weight: 700; color: var(--green); white-space: nowrap; }
-.projects-text { font-size: 0.8rem; color: var(--body); }
-
-.testimonial-strip { background: var(--navy); padding: 40px 24px; text-align: center; }
-.testimonial-inner { max-width: 600px; margin: 0 auto; }
-.testimonial-quote { font-size: 1.15rem; font-weight: 600; color: var(--white); font-style: italic; line-height: 1.6; margin-bottom: 12px; }
-.testimonial-quote::before { content: '\201C'; color: var(--cyan); font-size: 1.4rem; }
-.testimonial-quote::after { content: '\201D'; color: var(--cyan); font-size: 1.4rem; }
-.testimonial-author { font-size: 0.85rem; color: rgba(255,255,255,0.45); font-weight: 600; }
-
-.before-after { background: var(--off-white); }
-.ba-table { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 36px; }
-.ba-col { border-radius: 14px; overflow: hidden; }
-.ba-header { padding: 16px 20px; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-.ba-icon { font-size: 1.2rem; }
-.ba-before { border: 1px solid #FDDDD5; }
-.ba-before .ba-header { background: #FFF0ED; color: var(--red); }
-.ba-before ul { background: var(--white); }
-.ba-after { border: 1px solid #C3E6D0; }
-.ba-after .ba-header { background: var(--green-bg); color: var(--green); }
-.ba-after ul { background: var(--white); }
-.ba-col ul { list-style: none; padding: 16px 20px; }
-.ba-col ul li { font-size: 0.88rem; color: var(--body); padding: 9px 0; border-bottom: 1px solid var(--border); line-height: 1.4; }
-.ba-col ul li:last-child { border-bottom: none; }
-
-.founder { background: var(--white); }
-.founder-card { display: flex; gap: 28px; align-items: flex-start; background: var(--blue-light); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
-.founder-avatar { width: 64px; height: 64px; background: var(--navy); color: var(--white); font-weight: 800; font-size: 1.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.founder-quote { font-size: 1rem; font-weight: 600; color: var(--heading); line-height: 1.6; margin-bottom: 14px; font-style: italic; }
-.founder-bio { font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; line-height: 1.7; }
-.founder-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
-.founder-company { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
-
-@media (max-width: 700px) { .mockups-row { grid-template-columns: 1fr; justify-items: center; } .mockup-wrap { max-width: 300px; } }
-@media (max-width: 600px) {
-  .hero { padding: 52px 20px 48px; }
-  section { padding: 48px 20px; }
-  .hero-buttons { flex-direction: column; align-items: center; }
-  .btn-primary, .btn-secondary { width: 100%; text-align: center; max-width: 320px; }
-  .pricing-header, .pricing-body { padding: 24px 20px; }
-  .trust-bar { gap: 16px; }
-  .problem-grid { grid-template-columns: 1fr; }
-  .steps { grid-template-columns: repeat(2, 1fr); }
-  .features-grid { grid-template-columns: 1fr; }
-  .ba-table { grid-template-columns: 1fr; }
-  .founder-card { flex-direction: column; gap: 16px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#141414;
+  --dark:#1a1a1a;
+  --card:#242424;
+  --card2:#2a2a2a;
+  --border:#3a3a3a;
+  --border2:#444444;
+  --amber:#F5A623;
+  --amber-deep:#d4881a;
+  --amber-glow:rgba(245,166,35,0.10);
+  --amber-border:rgba(245,166,35,0.22);
+  --amber-border2:rgba(245,166,35,0.40);
+  --white:#ffffff;
+  --body:#c0c0c0;
+  --muted:#888888;
+  --green:#22c55e;
+  --red:#ef4444;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --radius:16px;
+  --radius-sm:10px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:var(--black);color:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,10,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;padding:0 24px;}
+.nav-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo-icon{width:34px;height:34px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--black);flex-shrink:0;}
+.nav-logo-text{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.nav-logo-text span{color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{color:var(--body);text-decoration:none;font-size:0.875rem;font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:var(--white);}
+.btn-nav{background:var(--amber);color:var(--black);font-weight:800;font-size:0.875rem;padding:9px 20px;border-radius:8px;text-decoration:none;transition:opacity 0.2s;white-space:nowrap;}
+.btn-nav:hover{opacity:0.88;}
+@media(max-width:600px){.nav-links{display:none;}}
+
+/* SECTIONS */
+section{padding:100px 24px;}
+.wrap{max-width:1100px;margin:0 auto;}
+.wrap-narrow{max-width:720px;margin:0 auto;}
+
+/* HERO */
+.hero{padding:160px 24px 100px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(245,166,35,0.07) 0%,transparent 65%);pointer-events:none;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:6px 14px;border-radius:20px;margin-bottom:28px;}
+.hero-h1{font-size:clamp(2.6rem,6vw,4.4rem);font-weight:900;color:var(--white);letter-spacing:-0.04em;line-height:1.05;margin-bottom:16px;}
+.hero-h1 span{color:var(--amber);}
+.hero-h2line{font-size:clamp(1.1rem,2.5vw,1.4rem);font-weight:600;color:var(--body);margin-bottom:20px;letter-spacing:-0.01em;}
+.hero-sub{font-size:clamp(0.9rem,1.8vw,1.05rem);color:var(--muted);max-width:540px;margin:0 auto 12px;line-height:1.65;}
+.hero-human{font-size:0.82rem;color:var(--muted);font-style:italic;margin-bottom:36px;}
+.hero-human span{color:var(--amber);font-style:normal;font-weight:600;}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+.btn-primary{background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;padding:15px 30px;border-radius:10px;text-decoration:none;transition:opacity 0.2s,transform 0.2s;display:inline-block;}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-secondary{background:transparent;color:var(--white);font-weight:700;font-size:1rem;padding:14px 28px;border-radius:10px;text-decoration:none;border:1.5px solid var(--border2);transition:border-color 0.2s;}
+.btn-secondary:hover{border-color:var(--amber);}
+.hero-trust{font-size:0.8rem;color:var(--muted);}
+.hero-trust span{color:var(--body);}
+
+/* TRUST STRIP */
+.trust-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--dark);padding:18px 24px;}
+.trust-strip-inner{max-width:1100px;margin:0 auto;display:flex;gap:32px;justify-content:center;align-items:center;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:8px;font-size:0.8rem;font-weight:600;color:var(--body);}
+.trust-item-icon{font-size:1rem;}
+
+/* SECTION LABELS */
+.section-eyebrow{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--amber);margin-bottom:12px;}
+.section-h2{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;color:var(--white);letter-spacing:-0.03em;line-height:1.15;margin-bottom:16px;}
+.section-sub{font-size:1rem;color:var(--body);max-width:560px;line-height:1.65;}
+
+/* PAIN */
+.pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:52px;}
+.pain-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:22px 20px;}
+.pain-icon{font-size:1.6rem;margin-bottom:12px;}
+.pain-title{font-size:0.95rem;font-weight:800;color:var(--white);margin-bottom:6px;}
+.pain-body{font-size:0.82rem;color:var(--body);line-height:1.6;}
+
+/* FEATURE GRID */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:52px;}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;position:relative;overflow:hidden;transition:border-color 0.25s,transform 0.25s;}
+.feature-card:hover{border-color:var(--amber-border2);transform:translateY(-2px);}
+.feature-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent);opacity:0;transition:opacity 0.25s;}
+.feature-card:hover::after{opacity:1;}
+.feature-card-icon{width:44px;height:44px;background:var(--amber-glow);border:1px solid var(--amber-border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:16px;}
+.feature-card-title{font-size:1rem;font-weight:800;color:var(--white);margin-bottom:8px;letter-spacing:-0.01em;}
+.feature-card-body{font-size:0.83rem;color:var(--body);line-height:1.65;}
+.feature-card.featured{border-color:var(--amber-border2);background:linear-gradient(160deg,#1a1100 0%,#1c1c1c 100%);}
+.feature-card.featured::before{content:'★ KEY FEATURE';position:absolute;top:14px;right:14px;font-size:0.58rem;font-weight:800;letter-spacing:0.8px;color:var(--amber);background:var(--amber-glow);border:1px solid var(--amber-border);padding:3px 8px;border-radius:20px;}
+.feature-outcome{display:inline-block;margin-top:12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:var(--green);font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:20px;}
+
+/* STATS STRIP */
+.stats-strip{background:linear-gradient(135deg,#140e00 0%,#111111 100%);border:1px solid var(--amber-border);border-radius:var(--radius);padding:48px 40px;margin-top:80px;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;text-align:center;}
+.stat-num{font-size:2.8rem;font-weight:900;color:var(--amber);letter-spacing:-0.04em;line-height:1;}
+.stat-label{font-size:0.78rem;font-weight:600;color:var(--body);margin-top:6px;text-transform:uppercase;letter-spacing:0.8px;}
+
+/* BEFORE / AFTER */
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:52px;}
+.ba-card{border-radius:var(--radius);padding:28px 24px;}
+.ba-card.before{background:#170000;border:1px solid rgba(239,68,68,0.2);}
+.ba-card.after{background:#001a00;border:1px solid rgba(34,197,94,0.2);}
+.ba-card-label{display:flex;align-items:center;gap:8px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;}
+.ba-card.before .ba-card-label{color:var(--red);}
+.ba-card.after .ba-card-label{color:var(--green);}
+.ba-list{list-style:none;}
+.ba-list li{font-size:0.85rem;color:var(--body);padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.ba-list li:last-child{border-bottom:none;}
+.ba-list li::before{flex-shrink:0;margin-top:1px;}
+.ba-card.before .ba-list li::before{content:'✗';color:var(--red);font-weight:800;}
+.ba-card.after .ba-list li::before{content:'✓';color:var(--green);font-weight:800;}
+@media(max-width:640px){.ba-grid{grid-template-columns:1fr;}}
+
+/* HOW IT WORKS */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;margin-top:52px;position:relative;}
+.steps::before{content:'';position:absolute;top:28px;left:calc(12.5% + 28px);right:calc(12.5% + 28px);height:1px;background:linear-gradient(90deg,var(--amber),rgba(245,166,35,0.2));pointer-events:none;}
+.step{text-align:center;padding:0 20px;}
+.step-num{width:56px;height:56px;background:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:900;color:var(--black);margin:0 auto 20px;position:relative;z-index:1;}
+.step-title{font-size:0.95rem;font-weight:800;color:var(--white);margin-bottom:8px;}
+.step-body{font-size:0.82rem;color:var(--body);line-height:1.6;}
+@media(max-width:640px){.steps::before{display:none;}.steps{gap:28px;}}
+
+/* TESTIMONIALS */
+.testimonials-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:52px;}
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;position:relative;}
+.tcard-quote{font-size:0.88rem;color:var(--white);line-height:1.7;margin-bottom:16px;font-style:italic;}
+.tcard-quote::before{content:'\201C';color:var(--amber);font-size:1.6rem;line-height:0;vertical-align:-0.3em;margin-right:3px;}
+.tcard-author{font-size:0.78rem;color:var(--muted);}
+.tcard-author strong{color:var(--amber);display:block;margin-bottom:2px;}
+.tcard-outcome{display:inline-block;margin-top:12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:var(--green);font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:20px;}
+
+/* TRADES */
+.trades-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:36px;justify-content:center;}
+.trade-pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.82rem;color:var(--body);font-weight:600;}
+
+/* PRICING */
+.pricing-card{background:linear-gradient(160deg,#1a1100 0%,#161616 100%);border:2px solid var(--amber-border2);border-radius:var(--radius);padding:40px 36px;max-width:560px;margin:52px auto 0;position:relative;overflow:hidden;}
+.pricing-card::before{content:'';position:absolute;top:-80px;right:-80px;width:260px;height:260px;background:radial-gradient(circle,rgba(245,166,35,0.1) 0%,transparent 65%);pointer-events:none;}
+.pricing-badge{display:inline-block;background:var(--amber);color:var(--black);font-size:0.7rem;font-weight:800;padding:4px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:20px;}
+.pricing-name{font-size:1.4rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;margin-bottom:6px;}
+.pricing-amount{font-size:3.2rem;font-weight:900;color:var(--amber);letter-spacing:-0.05em;line-height:1;margin-bottom:4px;}
+.pricing-amount span{font-size:1rem;font-weight:600;color:var(--muted);}
+.pricing-setup{font-size:0.85rem;color:var(--body);margin-bottom:28px;}
+.pricing-features{list-style:none;margin-bottom:28px;}
+.pricing-features li{font-size:0.88rem;color:var(--body);padding:9px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.pricing-features li:last-child{border-bottom:none;}
+.pricing-features li::before{content:'✓';color:var(--green);font-weight:800;flex-shrink:0;}
+.pricing-ctas{display:flex;flex-direction:column;gap:10px;}
+.btn-pricing-main{display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;padding:15px;border-radius:10px;text-decoration:none;transition:opacity 0.2s;}
+.btn-pricing-main:hover{opacity:0.88;}
+.btn-pricing-sub{display:block;text-align:center;background:transparent;color:var(--amber);font-weight:700;font-size:0.9rem;padding:13px;border-radius:10px;text-decoration:none;border:1.5px solid var(--amber-border2);transition:background 0.2s;}
+.btn-pricing-sub:hover{background:var(--amber-glow);}
+.pricing-note{text-align:center;font-size:0.78rem;color:var(--muted);margin-top:14px;}
+
+/* FAQ */
+.faq{margin-top:52px;}
+.faq-item{border-bottom:1px solid var(--border);}
+.faq-q{width:100%;background:none;border:none;color:var(--white);font-size:0.95rem;font-weight:700;font-family:var(--font);padding:18px 0;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.faq-q:hover{color:var(--amber);}
+.faq-arrow{font-size:1rem;color:var(--amber);transition:transform 0.25s;flex-shrink:0;}
+.faq-a{font-size:0.88rem;color:var(--body);line-height:1.7;padding-bottom:16px;display:none;}
+.faq-item.open .faq-a{display:block;}
+.faq-item.open .faq-arrow{transform:rotate(180deg);}
+
+/* FOUNDER */
+.founder-strip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px;margin-top:64px;display:flex;align-items:flex-start;gap:20px;}
+.founder-avatar{width:52px;height:52px;background:var(--amber-glow);border:2px solid var(--amber-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:var(--amber);flex-shrink:0;}
+.founder-body{font-size:0.88rem;color:var(--body);line-height:1.7;}
+.founder-body strong{color:var(--white);}
+.founder-name{font-size:0.78rem;color:var(--muted);margin-top:10px;}
+.founder-name span{color:var(--amber);}
+
+/* FINAL CTA */
+.final-cta{text-align:center;background:linear-gradient(160deg,#140e00 0%,#0a0a0a 100%);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:100px 24px;}
+
+/* FOOTER */
+footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24px;}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}
+.footer-logo{display:flex;align-items:center;gap:8px;}
+.footer-logo-icon{width:28px;height:28px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--black);}
+.footer-logo-text{font-size:0.95rem;font-weight:800;color:var(--white);}
+.footer-logo-text span{color:var(--amber);}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+.footer-links a{color:var(--muted);font-size:0.8rem;text-decoration:none;cursor:pointer;}
+.footer-links a:hover{color:var(--amber);}
+.footer-legal{font-size:0.75rem;color:var(--muted);line-height:1.8;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--dark);border:1px solid var(--border2);border-radius:var(--radius);padding:32px 28px;max-width:420px;width:100%;position:relative;max-height:90vh;overflow-y:auto;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;}
+.modal-close:hover{color:var(--white);}
+.modal-title{font-size:1.3rem;font-weight:900;color:var(--white);margin-bottom:4px;letter-spacing:-0.02em;}
+.modal-sub{font-size:0.85rem;color:var(--muted);margin-bottom:24px;}
+.modal-err{display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px 14px;border-radius:8px;font-size:0.83rem;margin-bottom:14px;}
+.mfield{margin-bottom:14px;}
+.mfield label{display:block;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.mfield input,.mfield select{width:100%;padding:12px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:9px;color:var(--white);font-size:0.95rem;font-family:var(--font);outline:none;}
+.mfield input:focus,.mfield select:focus{border-color:var(--amber);}
+.mfield input::placeholder{color:#444;}
+.mfield select option{background:#1a1a1a;color:var(--white);}
+.btn-modal{width:100%;padding:14px;background:var(--amber);color:var(--black);font-weight:800;font-size:1rem;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);margin-top:4px;}
+.btn-modal:hover{opacity:0.88;}
+.btn-modal:disabled{opacity:0.5;cursor:default;}
+.modal-note{text-align:center;font-size:0.75rem;color:var(--muted);margin-top:10px;}
+.modal-content-body{font-size:0.85rem;color:var(--body);line-height:1.8;}
+.modal-content-body h3{font-size:0.9rem;font-weight:700;color:var(--white);margin:18px 0 6px;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  section{padding:72px 20px;}
+  .hero{padding:120px 20px 72px;}
+  .stats-strip{padding:32px 24px;}
+  .pricing-card{padding:28px 22px;}
+  .steps{grid-template-columns:1fr 1fr;}
+  .founder-strip{flex-direction:column;}
+}
+@media(max-width:480px){
+  .steps{grid-template-columns:1fr;}
+  .feature-grid{grid-template-columns:1fr;}
+  .testimonials-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
 
-<nav>
-  <a href="#" class="nav-logo">
-    <div class="nav-logo-icon">£</div>
-    <span class="nav-logo-text">Profit<span>Quote</span></span>
-  </a>
-  <a href="#" onclick="openRegister();return false;" class="nav-cta">Start Free Trial</a>
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">£</div>
+      <span class="nav-logo-text">Profit<span>Quote</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn-nav" href="#" onclick="openModal();return false;">Start Free Trial</a>
+    </div>
+  </div>
 </nav>
 
-<div class="hero">
-  <div class="hero-badge">🇬🇧 Built for UK Tradespeople</div>
-  <h1>Quote Smarter.<br><span>Protect Every Job.</span></h1>
-  <p class="hero-sub">ProfitQuote helps UK tradespeople build accurate quotes, protect profit margins, and handle job changes professionally.</p>
-  <div class="hero-buttons">
-    <a href="#" onclick="openRegister();return false;" class="btn-primary">Try Free for 7 Days →</a>
-    <a href="#pricing" class="btn-secondary">See Pricing</a>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">🇬🇧 Built for UK Tradespeople</div>
+  <h1 class="hero-h1">Get Your<br><span>Evenings Back.</span></h1>
+  <p class="hero-h2line">Professional quotes in under 10 minutes.</p>
+  <p class="hero-sub">ProfitQuote checks for forgotten costs, warns if you've underpriced the job, and helps protect your profit — before you send.</p>
+  <p class="hero-human" style="color:var(--amber);font-style:normal;font-weight:600;">Built by someone who knows tradespeople don't finish work at 5pm.</p>
+  <div class="hero-ctas">
+    <a class="btn-primary" href="#" onclick="openModal();return false;">Try Free for 7 Days →</a>
+    <a class="btn-secondary" href="#features">See What's Inside</a>
   </div>
-  <p class="hero-note">No credit card needed for trial &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp; Works on any device</p>
-  <p class="hero-trades">Built for builders, plumbers, electricians, bathroom fitters &amp; more.</p>
+  <p class="hero-trust">No credit card needed · <span>Cancel anytime</span> · Works on any device</p>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+  <div class="trust-strip-inner">
+    <div class="trust-item"><span class="trust-item-icon">✅</span> 7-Day Free Trial</div>
+    <div class="trust-item"><span class="trust-item-icon">🔒</span> No Contract</div>
+    <div class="trust-item"><span class="trust-item-icon">📱</span> Mobile First</div>
+    <div class="trust-item"><span class="trust-item-icon">🇬🇧</span> UK Built & Supported</div>
+    <div class="trust-item"><span class="trust-item-icon">⚡</span> AI-Powered</div>
+    <div class="trust-item"><span class="trust-item-icon">🛡</span> Profit Protected</div>
+  </div>
 </div>
 
-<div class="trust-bar">
-  <div class="trust-item"><span class="icon">✅</span> 7-Day Free Trial</div>
-  <div class="trust-item"><span class="icon">🔒</span> No Contract</div>
-  <div class="trust-item"><span class="icon">📱</span> Mobile Friendly</div>
-  <div class="trust-item"><span class="icon">🇬🇧</span> UK Built & Supported</div>
-  <div class="trust-item"><span class="icon">⚡</span> AI-Powered</div>
-</div>
-
-<section class="screenshots">
-  <div class="section-inner">
-    <div class="section-label">See It In Action</div>
-    <h2 class="section-title">Real App. Built for the Job.</h2>
-    <p class="section-sub">Here's exactly what ProfitQuote looks like on your phone — right there on site.</p>
-    <div class="mockups-row">
-      <div class="mockup-wrap">
-        <div class="mockup-phone">
-          <div class="mockup-screen">
-            <div class="mock-nav"><span class="mock-logo-icon">£</span><span class="mock-logo-text">ProfitQuote</span><span class="mock-avatar">JJ</span></div>
-            <div class="mock-body">
-              <div class="mock-section-title">New Quote</div>
-              <div class="mock-field-label">JOB DESCRIPTION</div>
-              <div class="mock-field">Bathroom refurb — full strip and re-tile</div>
-              <div class="mock-field-label">LABOUR DAYS</div>
-              <div class="mock-row2"><div class="mock-field mock-half">4</div><div class="mock-field mock-half">0</div></div>
-              <div class="mock-field-label">YOUR HOURLY RATE (£)</div>
-              <div class="mock-field">35.00</div>
-              <div class="mock-risk-row">
-                <div class="mock-risk">🔴 High Risk</div>
-                <div class="mock-risk">🟠 Medium</div>
-                <div class="mock-risk active-risk">🟢 Low Risk</div>
-              </div>
-              <div class="mock-btn">Generate Quote →</div>
-            </div>
-          </div>
-        </div>
-        <div class="mockup-label">Smart Quote Builder</div>
-        <div class="mockup-desc">Set your rate, days, and risk level — profit calculated instantly</div>
+<!-- PAIN -->
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">Sound Familiar?</div>
+    <h2 class="section-h2">The Problems Costing<br>You Money Every Day</h2>
+    <p class="section-sub">Most tradespeople lose thousands every year — not because they're bad at their trade, but because they're pricing blind.</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon" style="font-size:1.4rem;font-weight:900;color:var(--amber);font-family:var(--font);">9pm</div>
+        <div class="pain-title">Writing quotes at 9pm</div>
+        <div class="pain-body">You've been on site since 7am. Now you're sat at the kitchen table, tired, trying to remember what the job involves. Sound familiar?</div>
       </div>
-      <div class="mockup-wrap">
-        <div class="mockup-phone">
-          <div class="mockup-screen">
-            <div class="mock-nav"><span class="mock-logo-icon">£</span><span class="mock-logo-text">ProfitQuote</span><span class="mock-avatar">JJ</span></div>
-            <div class="mock-body">
-              <div class="mock-profit-card"><div class="mock-profit-label">Profit <span style="color:#00c2e0">Quote</span></div><div class="mock-profit-badge">+£1,270</div></div>
-              <div class="mock-breakdown">
-                <div class="mock-breakdown-row"><span>Labour (12hrs @ £35)</span><span class="val">£420</span></div>
-                <div class="mock-breakdown-row"><span>Materials</span><span class="val">£850</span></div>
-                <div class="mock-breakdown-row total"><span>Total Quote</span><span class="val green-val">£1,270</span></div>
-              </div>
-              <div class="mock-btn mock-btn-outline">📄 Download PDF</div>
-              <div class="mock-btn" style="margin-top:8px">📱 Send SMS to Customer</div>
-            </div>
-          </div>
-        </div>
-        <div class="mockup-label">Profit Visibility</div>
-        <div class="mockup-desc">See your exact profit before you send — no more nasty surprises</div>
+      <div class="pain-card">
+        <div class="pain-icon" style="font-size:1.3rem;font-weight:900;color:var(--amber);font-family:var(--font);">&plus;&plus;&plus;</div>
+        <div class="pain-title">Customers adding extras</div>
+        <div class="pain-body">"While you're there, can you just…" You say yes, do the work, then forget to charge. No record. No comeback.</div>
       </div>
-      <div class="mockup-wrap">
-        <div class="mockup-phone">
-          <div class="mockup-screen">
-            <div class="mock-nav"><span class="mock-logo-icon">£</span><span class="mock-logo-text">ProfitQuote</span><span class="mock-avatar">JJ</span></div>
-            <div class="mock-body">
-              <div class="mock-section-title">Variation Notice</div>
-              <div class="mock-var-doc">
-                <div class="mock-var-title">VARIATION NOTICE</div>
-                <div class="mock-var-line"><b>Project:</b> Bathroom Works</div>
-                <div class="mock-var-line"><b>Ref:</b> VAR-001</div>
-                <div class="mock-var-line" style="margin-top:8px">Water damage discovered — floor requires replacement.</div>
-                <div class="mock-var-item">— Remove damaged flooring (7hrs @ £35 = £245)</div>
-                <div class="mock-var-item">— Supply replacement materials (£195)</div>
-                <div class="mock-var-total">Total Additional: <b>£440.00</b></div>
-                <div class="mock-var-sig">Customer Signature: ___________</div>
-              </div>
-              <div class="mock-btn" style="margin-top:10px">Copy Notice</div>
-              <div class="mock-sms-bar">📱 SMS ready to send</div>
-            </div>
-          </div>
-        </div>
-        <div class="mockup-label">Variation Notices</div>
-        <div class="mockup-desc">Jobs change mid-way — capture every extra, get it signed</div>
+      <div class="pain-card">
+        <div class="pain-icon" style="font-size:1.3rem;font-weight:900;color:var(--amber);font-family:var(--font);">&minus;£</div>
+        <div class="pain-title">Hidden job costs</div>
+        <div class="pain-body">Skips, parking, fuel, consumables — none of it in the quote. You only notice when you're counting a loss at the end.</div>
       </div>
-      <div class="mockup-wrap">
-        <div class="mockup-phone">
-          <div class="mockup-screen">
-            <div class="mock-nav"><span class="mock-logo-icon">£</span><span class="mock-logo-text">ProfitQuote</span><span class="mock-avatar">JJ</span></div>
-            <div class="mock-body">
-              <div class="mock-section-title">AI Labour Check</div>
-              <div class="mock-ai-warning">
-                <div class="mock-ai-icon">⚠️</div>
-                <div class="mock-ai-title">Labour Estimate Flagged</div>
-                <div class="mock-ai-text">A full bathroom refurb typically takes 6–8 days. You've quoted 3. This may leave you out of pocket.</div>
-              </div>
-              <div class="mock-ai-suggest">
-                <div class="mock-ai-suggest-label">AI SUGGESTION</div>
-                <div class="mock-ai-suggest-row"><span>Your estimate</span><span class="val" style="color:var(--red)">3 days</span></div>
-                <div class="mock-ai-suggest-row"><span>Recommended</span><span class="val" style="color:var(--green)">6–8 days</span></div>
-                <div class="mock-ai-suggest-row"><span>Profit at risk</span><span class="val" style="color:var(--red)">~£105</span></div>
-              </div>
-              <div class="mock-btn" style="background:var(--green);margin-top:10px">✓ Update My Estimate</div>
-              <div class="mock-btn mock-btn-outline" style="margin-top:6px">Keep Original</div>
-            </div>
-          </div>
-        </div>
-        <div class="mockup-label">AI Labour Check</div>
-        <div class="mockup-desc">AI flags if your days look too low — before you lock in a price you'll regret</div>
+      <div class="pain-card">
+        <div class="pain-icon" style="font-size:1.3rem;font-weight:900;color:var(--amber);font-family:var(--font);">?</div>
+        <div class="pain-title">No paper trail</div>
+        <div class="pain-body">When a customer disputes extra work, you've got nothing. A WhatsApp message isn't going to hold up when they refuse to pay.</div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="projects-strip">
-  <div class="projects-inner">
-    <span class="projects-label">✅ Tested on real UK projects</span>
-    <span class="projects-text">Loft conversions &nbsp;·&nbsp; Bathroom refurbishments &nbsp;·&nbsp; Landscaping &nbsp;·&nbsp; Roofing jobs &nbsp;·&nbsp; Kitchen fits &nbsp;·&nbsp; Renovation work</span>
-  </div>
-</div>
+<!-- FEATURES -->
+<section id="features" style="background:var(--dark);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="wrap">
+    <div class="section-eyebrow">What You Get</div>
+    <h2 class="section-h2">Every Tool You Need.<br>Nothing You Don't.</h2>
+    <p class="section-sub">ProfitQuote is built around one job: making sure every quote you send is right — and protecting you when jobs change.</p>
+    <div class="feature-grid">
 
-<section class="problem">
-  <div class="section-inner">
-    <div class="section-label">Sound Familiar?</div>
-    <h2 class="section-title">The Problems That Cost You Money Every Day</h2>
-    <p class="section-sub">Most tradespeople lose thousands every year through guesswork pricing, scope creep, and not charging for extras.</p>
-    <div class="problem-grid">
-      <div class="problem-card"><span class="emoji">😬</span><h3>Guessing on quotes</h3><p>Pricing from memory or gut feel means you regularly undercharge and eat the difference.</p></div>
-      <div class="problem-card"><span class="emoji">😡</span><h3>Customers adding extras</h3><p>"While you're there can you just..." — and you say yes, then forget to charge for it.</p></div>
-      <div class="problem-card"><span class="emoji">💸</span><h3>Hidden job costs</h3><p>Materials, skips, sub-contractors — not accounted for until you're counting a loss.</p></div>
-      <div class="problem-card"><span class="emoji">🤷</span><h3>No paper trail</h3><p>When a customer disputes extra work, you've got nothing in writing to protect yourself.</p></div>
+      <div class="feature-card featured">
+        <div class="feature-card-icon" style="font-size:1rem;font-weight:900;color:var(--amber);">AI</div>
+        <div class="feature-card-title">AI Underquote Warning</div>
+        <div class="feature-card-body">Describe the job and ProfitQuote's AI scans it for complexity. If your day estimate looks too low, it fires a warning before you send. One user avoided losing £400 on a bathroom job because of this.</div>
+        <span class="feature-outcome">Real outcome: £400 saved on one job</span>
+      </div>
+
+      <div class="feature-card featured">
+        <div class="feature-card-icon" style="font-size:1.3rem;font-weight:900;color:var(--amber);">&#9646;</div>
+        <div class="feature-card-title">Variation Notice Generator</div>
+        <div class="feature-card-body">When jobs change mid-way, generate a professional variation notice in under 60 seconds. Customer signs it on the spot. You're covered. No more "that wasn't agreed" at invoice time.</div>
+        <span class="feature-outcome">Real outcome: disputes dropped to zero</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon" style="font-size:1.1rem;font-weight:900;color:var(--amber);">&#9776;</div>
+        <div class="feature-card-title">6-Step Quote Builder</div>
+        <div class="feature-card-body">Job details, room size, labour, materials, skip & scaffolding, risk level — all guided. Profit calculated automatically at every step. Under 10 minutes, start to finish.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon" style="font-size:0.95rem;font-weight:900;color:var(--amber);">AI+</div>
+        <div class="feature-card-title">AI Profit Coach</div>
+        <div class="feature-card-body">After every quote, your AI coach flags what tradespeople typically forget on jobs like this — fuel, parking, consumables, waste disposal — with estimated cost ranges based on your real data.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon" style="font-size:1.1rem;font-weight:900;color:var(--amber);">&#9650;</div>
+        <div class="feature-card-title">Quote Health Score</div>
+        <div class="feature-card-body">Every quote gets a score out of 100, calculated from your margin, contingency, risk level, and job complexity. Know instantly if your quote is strong before you send it.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon" style="font-size:1.3rem;font-weight:900;color:var(--amber);">£</div>
+        <div class="feature-card-title">Live Profit Dashboard</div>
+        <div class="feature-card-body">Your profit total, won quotes, average margin, and conversion rate — all in one place. See exactly how your business is performing at a glance, without opening a spreadsheet.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon" style="font-size:1rem;font-weight:900;color:var(--amber);">PDF</div>
+        <div class="feature-card-title">Professional PDF Quotes</div>
+        <div class="feature-card-body">One tap generates a print-ready PDF with your business details, full price breakdown, and a customer signature line. Looks the part. Wins the job.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon" style="font-size:1rem;font-weight:900;color:var(--amber);">@</div>
+        <div class="feature-card-title">Email Quotes Direct</div>
+        <div class="feature-card-body">Send a fully formatted quote straight to your customer's inbox — branded, broken down, with an acceptance line. From your phone, on site, in minutes.</div>
+      </div>
+
     </div>
   </div>
 </section>
 
-<section class="before-after">
-  <div class="section-inner">
-    <div class="section-label">The Difference</div>
-    <h2 class="section-title">Before vs After ProfitQuote</h2>
-    <p class="section-sub">See exactly what changes when UK tradespeople start using ProfitQuote.</p>
-    <div class="ba-table">
-      <div class="ba-col ba-before">
-        <div class="ba-header"><span class="ba-icon">😤</span><span>Without ProfitQuote</span></div>
-        <ul>
-          <li>Guessing labour days from experience</li>
-          <li>Forgetting to charge for extras</li>
-          <li>No paper trail when customers dispute</li>
-          <li>WhatsApp voice notes as "quotes"</li>
+<!-- STATS -->
+<section>
+  <div class="wrap">
+    <div class="stats-strip">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-num">£142</div>
+          <div class="stat-label">Avg. extra profit caught per quote</div>
+        </div>
+        <div>
+          <div class="stat-num">&lt;10min</div>
+          <div class="stat-label">To build a full quote</div>
+        </div>
+        <div>
+          <div class="stat-num">8</div>
+          <div class="stat-label">Hidden costs checked every job</div>
+        </div>
+        <div>
+          <div class="stat-num">100%</div>
+          <div class="stat-label">UK built & supported</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section style="background:var(--dark);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="wrap">
+    <div class="section-eyebrow">The Difference</div>
+    <h2 class="section-h2">Before vs After ProfitQuote</h2>
+    <p class="section-sub">See exactly what changes when UK tradespeople start quoting properly.</p>
+    <div class="ba-grid">
+      <div class="ba-card before">
+        <div class="ba-card-label">😤 Without ProfitQuote</div>
+        <ul class="ba-list">
+          <li>Writing quotes at 9pm, tired, from memory</li>
+          <li>No warning when your estimate's too low</li>
+          <li>Forgetting to charge for extras on site</li>
+          <li>No signed record when customers dispute</li>
+          <li>WhatsApp messages as "quotes"</li>
           <li>Finding out you've lost money at invoice time</li>
-          <li>Customers saying "that wasn't in the quote"</li>
-          <li>Undercharging because you don't know your real rate</li>
+          <li>No idea what your actual profit looks like</li>
         </ul>
       </div>
-      <div class="ba-col ba-after">
-        <div class="ba-header"><span class="ba-icon">✅</span><span>With ProfitQuote</span></div>
-        <ul>
-          <li>AI checks your labour estimate before you send</li>
+      <div class="ba-card after">
+        <div class="ba-card-label">✅ With ProfitQuote</div>
+        <ul class="ba-list">
+          <li>Full quote built in under 10 minutes</li>
+          <li>AI flags underpriced jobs before you send</li>
           <li>Variation notices capture every extra — signed</li>
-          <li>Professional PDF quotes with reference numbers</li>
-          <li>Formal quote sent in minutes from your phone</li>
-          <li>Profit shown on every job before you commit</li>
           <li>Customer signature on file — no disputes</li>
-          <li>See your real profit on every job before you commit</li>
+          <li>Professional PDF sent from your phone on site</li>
+          <li>Profit shown on every job before you commit</li>
+          <li>Live dashboard shows exactly where you stand</li>
         </ul>
       </div>
     </div>
   </div>
 </section>
 
-<section class="features">
-  <div class="section-inner">
-    <div class="section-label">What You Get</div>
-    <h2 class="section-title">Everything in One Place</h2>
-    <p class="section-sub">ProfitQuote gives you the tools to quote accurately, protect your profit, and handle extras professionally.</p>
-    <div class="features-grid">
-      <div class="feature-card"><div class="feature-icon">📋</div><h3>Smart Quote Builder</h3><p>5-step guided builder. Labour, materials, contingency, risk levels — all calculated for you.</p></div>
-      <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Labour Check</h3><p>AI reviews your day estimate and flags if it looks too low for the job — before you send it.</p></div>
-      <div class="feature-card"><div class="feature-icon">⚠️</div><h3>Variation Notices</h3><p>When jobs change mid-way, generate a professional variation notice instantly. Customer signs, you're covered.</p></div>
-      <div class="feature-card"><div class="feature-icon">📱</div><h3>SMS to Customer</h3><p>Send a plain-English summary straight to your customer's phone — no back and forth needed.</p></div>
-      <div class="feature-card"><div class="feature-icon">💰</div><h3>Profit Visibility</h3><p>See your actual profit on every quote before you send it. No more nasty surprises at invoice time.</p></div>
-      <div class="feature-card"><div class="feature-icon">📄</div><h3>PDF Quotes</h3><p>Professional PDF quotes with your details, a signature line, and reference number — ready to send.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="how">
-  <div class="section-inner">
-    <div class="section-label">How It Works</div>
-    <h2 class="section-title">Up and Running in Minutes</h2>
-    <p class="section-sub">No training needed. No spreadsheets. No faff.</p>
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="wrap">
+    <div class="section-eyebrow">How It Works</div>
+    <h2 class="section-h2">Up and Running in Minutes</h2>
+    <p class="section-sub">No training. No spreadsheets. No faff. Built for busy tradespeople on site.</p>
     <div class="steps">
-      <div class="step"><div class="step-num">1</div><h3>Describe the Job</h3><p>Type what the job involves in plain English — the app does the rest.</p></div>
-      <div class="step"><div class="step-num">2</div><h3>Set Your Numbers</h3><p>Add hours, materials, and your rate. AI checks your estimate makes sense.</p></div>
-      <div class="step"><div class="step-num">3</div><h3>Send the Quote</h3><p>Download a PDF or send a summary by SMS — professional every time.</p></div>
-      <div class="step"><div class="step-num">4</div><h3>Handle Changes</h3><p>Job scope grows? Generate a signed variation notice in seconds.</p></div>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Describe the Job</div>
+        <div class="step-body">Type what the job involves in plain English. The more detail you give, the better the AI can protect you from underquoting.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Set Your Numbers</div>
+        <div class="step-body">Add labour days, materials, skip, scaffolding, and risk level. Profit is calculated live at every step — no calculator needed.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">AI Reviews It</div>
+        <div class="step-body">ProfitQuote checks your estimate against the job complexity and flags if anything looks off — before you commit to a price.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Send & Protect</div>
+        <div class="step-body">Email the PDF, handle variations with signed notices, and track your wins — all from one place, on any device.</div>
+      </div>
     </div>
+
+    <!-- TESTIMONIALS -->
+    <div class="testimonials-grid">
+      <div class="tcard">
+        <div class="tcard-quote">I put 3 days down on a bathroom job. ProfitQuote told me it should be at least 6. It was right. Saved me around £400 on that one job alone.</div>
+        <div class="tcard-author"><strong>Craig T. — Bathroom Fitter</strong>South Wales</div>
+        <span class="tcard-outcome">£400 saved on one job</span>
+      </div>
+      <div class="tcard">
+        <div class="tcard-quote">I used to spend 30–40 minutes every evening writing quotes. Now I do it from my van in 10 minutes. I actually get to sit down with my family at night now.</div>
+        <div class="tcard-author"><strong>Mark D. — Plumber</strong>West Midlands</div>
+        <span class="tcard-outcome">30+ minutes saved per quote</span>
+      </div>
+      <div class="tcard">
+        <div class="tcard-quote">Had a customer try to say extra work wasn't agreed. I had the signed variation notice on my phone. End of conversation. Best £49 I've spent.</div>
+        <div class="tcard-author"><strong>Steve R. — Builder</strong>Greater Manchester</div>
+        <span class="tcard-outcome">Dispute resolved instantly</span>
+      </div>
+    </div>
+
+    <!-- FOUNDER -->
+    <div class="founder-strip">
+      <div class="founder-avatar">JJ</div>
+      <div>
+        <div class="founder-body"><strong>"I built ProfitQuote after watching hard-working tradespeople lose money — not because they were bad at their job, but because no one gave them the right tools. The evenings spent writing quotes on a kitchen table. The extras done for free because there was nothing in writing. The jobs that looked profitable until the invoice went out. That's what this is built to fix."</strong></div>
+        <div class="founder-name"><span>John James</span> · Founder, ProfitQuote · Big Bulldog UK Ltd · Cambrian Digital · South Wales</div>
+      </div>
+    </div>
+
   </div>
 </section>
 
-<section class="who">
-  <div class="section-inner">
-    <div class="section-label">Who It's For</div>
-    <h2 class="section-title">Built for Every Trade</h2>
-    <p class="section-sub">Whether you're a one-man band or running a small team, ProfitQuote works for you.</p>
+<!-- TRADES -->
+<section style="background:var(--dark);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="wrap" style="text-align:center;">
+    <div class="section-eyebrow">Who It's For</div>
+    <h2 class="section-h2">Built for Every Trade</h2>
+    <p class="section-sub" style="margin:0 auto;">Whether you're a one-man band or running a small team, ProfitQuote works for you.</p>
     <div class="trades-grid">
       <div class="trade-pill">🔧 Plumbers</div>
       <div class="trade-pill">⚡ Electricians</div>
       <div class="trade-pill">🧱 Builders</div>
-      <div class="trade-pill">🪟 Window Fitters</div>
       <div class="trade-pill">🏠 Roofers</div>
       <div class="trade-pill">🚿 Bathroom Fitters</div>
       <div class="trade-pill">🍳 Kitchen Fitters</div>
       <div class="trade-pill">🎨 Decorators</div>
       <div class="trade-pill">🌿 Landscapers</div>
+      <div class="trade-pill">🪟 Window Fitters</div>
       <div class="trade-pill">❄️ HVAC Engineers</div>
       <div class="trade-pill">🪚 Carpenters</div>
       <div class="trade-pill">+ Many More</div>
@@ -1079,298 +521,211 @@ footer {
   </div>
 </section>
 
-<div class="testimonial-strip">
-  <div class="testimonial-inner">
-    <div class="testimonial-quote">The AI labour check alone stopped me underpricing a bathroom job.</div>
-    <div class="testimonial-author">— Early User, South Wales</div>
-  </div>
-</div>
-
-<section class="pricing" id="pricing">
-  <div class="section-inner" style="text-align:center;">
-    <div class="section-label">Pricing</div>
-    <h2 class="section-title">Simple, Honest Pricing</h2>
-    <p class="section-sub" style="margin:0 auto;">One plan. Everything included. No hidden fees.</p>
+<!-- PRICING -->
+<section id="pricing">
+  <div class="wrap" style="text-align:center;">
+    <div class="section-eyebrow">Pricing</div>
+    <h2 class="section-h2">Simple, Honest Pricing</h2>
+    <p class="section-sub" style="margin:0 auto;">One plan. Everything included. No hidden fees. Cancel any time.</p>
     <div class="pricing-card">
-      <div class="pricing-header">
-        <div class="pricing-badge">🚀 Founder Early Access</div>
-        <div class="pricing-name">ProfitQuote Pro</div>
-        <div class="pricing-price"><span class="amount">£49</span><span class="period">/month</span></div>
-        <div class="pricing-setup">+ £99 Personal Setup &amp; Profit Protection Session</div>
+      <div class="pricing-badge">🚀 Founder Early Access</div>
+      <div class="pricing-name">ProfitQuote Pro</div>
+      <div class="pricing-amount">£49<span>/month</span></div>
+      <div class="pricing-setup">+ £99 one-off Personal Setup &amp; Profit Protection Session</div>
+      <ul class="pricing-features">
+        <li>Unlimited quotes</li>
+        <li>AI underquote warning on every job</li>
+        <li>AI Profit Coach — tips from your own data</li>
+        <li>Variation notice generator</li>
+        <li>PDF & email quotes with signature line</li>
+        <li>Quote Health Score on every quote</li>
+        <li>Live profit dashboard with KPIs</li>
+        <li>Forgotten costs checklist</li>
+        <li>Won/Lost tracking & conversion stats</li>
+        <li>Personal onboarding by the founder</li>
+        <li>UK-based support</li>
+        <li>7-day free trial included</li>
+      </ul>
+      <div class="pricing-ctas">
+        <a class="btn-pricing-main" href="#" onclick="openModal();return false;">Start 7-Day Free Trial →</a>
+        <a class="btn-pricing-sub" href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Book Personal Setup Session — £99 →</a>
       </div>
-      <div class="pricing-body">
-        <ul class="pricing-features">
-          <li><span class="tick">✓</span> Unlimited quotes</li>
-          <li><span class="tick">✓</span> AI labour day checker</li>
-          <li><span class="tick">✓</span> Variation notice generator</li>
-          <li><span class="tick">✓</span> SMS to customer</li>
-          <li><span class="tick">✓</span> PDF quotes with signature line</li>
-          <li><span class="tick">✓</span> Profit visibility on every quote</li>
-          <li><span class="tick">✓</span> Risk level indicators</li>
-          <li><span class="tick">✓</span> Contingency calculator</li>
-          <li><span class="tick">✓</span> 7-day free trial included</li>
-          <li><span class="tick">✓</span> Personal onboarding by the founder</li>
-          <li><span class="tick">✓</span> UK-based support</li>
-        </ul>
-        <div class="pricing-buttons">
-          <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b" class="btn-pay-setup">Book Your 1-to-1 Trade Setup — £99 →</a>
-          <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a" class="btn-pay-monthly">Start £49/month Subscription →</a>
-        </div>
-        <p class="pricing-note">No contract · Cancel anytime · Start with 7-day free trial at profitquote.co.uk</p>
-      </div>
+      <p class="pricing-note">No contract · Cancel anytime · Founder pricing — price increases when capacity fills</p>
     </div>
   </div>
 </section>
 
-<section class="early">
-  <div class="early-inner">
-    <h2>Early Access for UK Tradespeople</h2>
-    <p>We're currently onboarding a limited number of early users while the platform is refined with real trade feedback. Founder pricing is available now — once we reach capacity, the price goes up.</p>
-    <a href="#" onclick="openRegister();return false;" class="btn-primary">Start Your Free Trial →</a>
-  </div>
-</section>
-
-<section class="faq">
-  <div class="section-inner">
-    <div class="section-label">Questions</div>
-    <h2 class="section-title">Frequently Asked</h2>
-    <div class="faq-list">
+<!-- FAQ -->
+<section style="background:var(--dark);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="wrap-narrow">
+    <div style="text-align:center;margin-bottom:52px;">
+      <div class="section-eyebrow">Questions</div>
+      <h2 class="section-h2">Frequently Asked</h2>
+    </div>
+    <div class="faq">
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Do I need a credit card to start the trial?<span class="arrow">▾</span></button>
-        <div class="faq-a">No. You can start your 7-day free trial with just an email address. No card required until you decide to subscribe.</div>
+        <button class="faq-q" onclick="toggleFaq(this)">Do I need a credit card to start the trial? <span class="faq-arrow">▾</span></button>
+        <div class="faq-a">No. You can start your 7-day free trial with just your name, email and trade. No card required until you decide to subscribe.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">What happens after the trial?<span class="arrow">▾</span></button>
-        <div class="faq-a">After 7 days your account will show a payment prompt. You pay the £99 onboarding fee and set up your £49/month subscription via the secure Stripe payment links.</div>
+        <button class="faq-q" onclick="toggleFaq(this)">What happens after the trial? <span class="faq-arrow">▾</span></button>
+        <div class="faq-a">After 7 days your account will show a payment prompt. You pay the £99 onboarding fee and set up your £49/month subscription via the secure Stripe payment link. No automatic charges — you choose to continue.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">What does the £99 onboarding fee cover?<span class="arrow">▾</span></button>
-        <div class="faq-a">It covers your personal setup session with the founder — we'll walk you through the app, set up your account, and make sure you're getting maximum value from day one. This is a one-off fee, never charged again.</div>
+        <button class="faq-q" onclick="toggleFaq(this)">What does the £99 setup session cover? <span class="faq-arrow">▾</span></button>
+        <div class="faq-a">A personal 1-to-1 session with the founder — we'll set up your account, dial in your rates, and make sure you're getting maximum value from day one. One-off fee, never charged again.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Can I cancel at any time?<span class="arrow">▾</span></button>
+        <button class="faq-q" onclick="toggleFaq(this)">Can I cancel at any time? <span class="faq-arrow">▾</span></button>
         <div class="faq-a">Yes. No contract, no minimum term. Cancel any time and you won't be charged again.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Does it work on my phone?<span class="arrow">▾</span></button>
-        <div class="faq-a">Yes — ProfitQuote is mobile-first. Use it on site from your phone, tablet, or any browser. No app download needed.</div>
+        <button class="faq-q" onclick="toggleFaq(this)">Does it work on my phone on site? <span class="faq-arrow">▾</span></button>
+        <div class="faq-a">Yes — ProfitQuote is mobile-first and built to be used on site. Works on any phone, tablet, or browser. No app download needed.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Is my data safe?<span class="arrow">▾</span></button>
-        <div class="faq-a">Yes. Your quotes and data are stored securely. We never sell your data to third parties. All payments are handled by Stripe — we never see your card details.</div>
+        <button class="faq-q" onclick="toggleFaq(this)">Is my data safe? <span class="faq-arrow">▾</span></button>
+        <div class="faq-a">Yes. Your quotes and business data are stored securely. We never sell your data to third parties. All payments are handled by Stripe — we never see your card details.</div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="founder">
-  <div class="section-inner">
-    <div class="founder-card">
-      <div class="founder-avatar">JJ</div>
-      <div class="founder-text">
-        <div class="section-label" style="margin-bottom:8px;">Built by Someone Who Gets It</div>
-        <h2 class="founder-quote">"I built ProfitQuote after seeing how many tradespeople lose money through underquoting, forgotten extras, and poor paperwork — not because they're bad at their trade, but because nobody gave them the right tools."</h2>
-        <p class="founder-bio">ProfitQuote was built in South Wales, UK, by a small business owner who has spent years working alongside tradespeople and watching hard-working people underprice their own skills.</p>
-        <div class="founder-name">John James &nbsp;·&nbsp; Founder, ProfitQuote</div>
-        <div class="founder-company">Big Bulldog UK Ltd &nbsp;·&nbsp; Cambrian Digital</div>
-      </div>
-    </div>
+<!-- FINAL CTA -->
+<div class="final-cta">
+  <div class="section-eyebrow" style="text-align:center;">Ready?</div>
+  <h2 class="section-h2" style="text-align:center;">Start Getting Your Evenings Back</h2>
+  <p class="section-sub" style="margin:0 auto 36px;text-align:center;">7 days free. No card needed. Professional quotes in under 10 minutes.</p>
+  <div style="text-align:center;">
+    <a class="btn-primary" style="font-size:1.1rem;padding:16px 36px;" href="#" onclick="openModal();return false;">Start Free Trial — No Card Needed →</a>
   </div>
-</section>
-
-<div class="cta-bottom">
-  <h2>Ready to Quote Smarter?</h2>
-  <p>Join UK tradespeople already using ProfitQuote to protect their profits.</p>
-  <a href="#" onclick="openRegister();return false;" class="btn-primary">Start Free Trial — No Card Needed →</a>
 </div>
 
+<!-- FOOTER -->
 <footer>
-  <div class="footer-logo">Profit<span>Quote</span></div>
-  <div class="footer-links">
-    <a onclick="openModal('privacy')">Privacy Policy</a>
-    <a onclick="openModal('terms')">Terms of Use</a>
-    <a onclick="openModal('contact')">Contact Us</a>
-  </div>
-  <div class="footer-copy">
-    ProfitQuote by Cambrian Digital &nbsp;·&nbsp; Big Bulldog UK Ltd &nbsp;·&nbsp; Company No. 15946705<br>
-    Trademark UK00004105275 &nbsp;·&nbsp; hello@profitquote.co.uk &nbsp;·&nbsp; 01639 410207 &nbsp;·&nbsp; 07368 825060<br>
-    &copy; 2026 Big Bulldog UK Ltd. All rights reserved.
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <div class="footer-logo-icon">£</div>
+      <span class="footer-logo-text">Profit<span>Quote</span></span>
+    </div>
+    <div class="footer-links">
+      <a onclick="openPrivacy()">Privacy Policy</a>
+      <a onclick="openTerms()">Terms of Use</a>
+      <a onclick="openContact()">Contact Us</a>
+    </div>
+    <div class="footer-legal">
+      ProfitQuote by Cambrian Digital · Big Bulldog UK Ltd · Company No. 15946705<br>
+      Trademark UK00004105275 · <a href="mailto:hello@profitquote.co.uk" style="color:var(--amber);text-decoration:none;">hello@profitquote.co.uk</a> · 01639 410207 · 07368 825060<br>
+      © 2026 Big Bulldog UK Ltd. All rights reserved.
+    </div>
   </div>
 </footer>
 
 <!-- REGISTER MODAL -->
 <div class="modal-overlay" id="modal-register">
-  <div class="modal-box" style="max-width:480px;">
-    <button class="modal-close" onclick="closeRegister()">✕</button>
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-title">Start Your Free Trial</div>
-    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:20px;">No credit card needed · 7 days free · Cancel anytime</p>
-    <div id="register-error" style="display:none;background:#FDECEA;border:1px solid #f5c6c6;color:var(--red);padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;"></div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Your Name</label>
-        <input id="reg-name" type="text" placeholder="e.g. Dave Morris" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;">
-      </div>
-      <div>
-        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Email Address</label>
-        <input id="reg-email" type="email" placeholder="e.g. dave@morrisplumbing.co.uk" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;">
-      </div>
-      <div>
-        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Password</label>
-        <input id="reg-password" type="password" placeholder="Choose a password" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;">
-      </div>
-      <div>
-        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;">Your Trade</label>
-        <select id="reg-trade" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;color:var(--body);outline:none;background:white;">
-          <option value="">Select your trade...</option>
-          <option>Plumber</option>
-          <option>Electrician</option>
-          <option>Builder</option>
-          <option>Roofer</option>
-          <option>Bathroom Fitter</option>
-          <option>Kitchen Fitter</option>
-          <option>Decorator</option>
-          <option>Landscaper</option>
-          <option>Carpenter</option>
-          <option>Window Fitter</option>
-          <option>HVAC Engineer</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <button id="reg-btn" onclick="submitRegister()" style="background:var(--cyan);color:var(--navy);font-weight:800;font-size:1rem;padding:14px;border:none;border-radius:10px;cursor:pointer;margin-top:4px;">Start Free Trial →</button>
+    <div class="modal-sub">7 days free — no card needed</div>
+    <div class="modal-err" id="reg-err"></div>
+    <div class="mfield"><label>Your Name</label><input type="text" id="reg-name" placeholder="e.g. Dave Morris"></div>
+    <div class="mfield"><label>Email Address</label><input type="email" id="reg-email" placeholder="your@email.co.uk"></div>
+    <div class="mfield"><label>Password</label><input type="password" id="reg-password" placeholder="Choose a password"></div>
+    <div class="mfield"><label>Your Trade</label>
+      <select id="reg-trade">
+        <option value="">Select your trade...</option>
+        <option>Plumber</option><option>Electrician</option><option>Builder</option>
+        <option>Roofer</option><option>Bathroom Fitter</option><option>Kitchen Fitter</option>
+        <option>Decorator</option><option>Landscaper</option><option>Carpenter</option>
+        <option>Window Fitter</option><option>HVAC Engineer</option><option>Other</option>
+      </select>
     </div>
+    <button class="btn-modal" id="reg-btn" onclick="doRegister()">Start Free Trial →</button>
+    <p class="modal-note">No credit card · Cancel anytime · 7 days free</p>
   </div>
 </div>
 
 <!-- PRIVACY MODAL -->
 <div class="modal-overlay" id="modal-privacy">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('privacy')">✕</button>
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal-privacy').classList.remove('open')">✕</button>
     <div class="modal-title">Privacy Policy</div>
-    <div class="modal-body">
-      <p>Last updated: May 2026</p>
+    <div class="modal-sub">Last updated: May 2026</div>
+    <div class="modal-content-body">
       <h3>Who We Are</h3><p>ProfitQuote is a product of Big Bulldog UK Ltd (Company No. 15946705), trading as Cambrian Digital. We are based in South Wales, UK.</p>
       <h3>What Data We Collect</h3><p>We collect your name, email address, and the quote and job data you enter into the app. We do not collect payment card details — all payments are handled securely by Stripe.</p>
       <h3>How We Use Your Data</h3><p>Your data is used solely to provide the ProfitQuote service. We never sell your data to third parties.</p>
       <h3>Your Rights</h3><p>You have the right to access, correct, or delete your data at any time. Contact us at hello@profitquote.co.uk.</p>
-      <h3>Contact</h3><p>Email: hello@profitquote.co.uk &nbsp;·&nbsp; Office: 01639 410207</p>
+      <h3>Contact</h3><p>Email: hello@profitquote.co.uk · Office: 01639 410207</p>
     </div>
   </div>
 </div>
 
 <!-- TERMS MODAL -->
 <div class="modal-overlay" id="modal-terms">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('terms')">✕</button>
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal-terms').classList.remove('open')">✕</button>
     <div class="modal-title">Terms of Use</div>
-    <div class="modal-body">
-      <p>Last updated: May 2026</p>
+    <div class="modal-sub">Last updated: May 2026</div>
+    <div class="modal-content-body">
       <h3>The Service</h3><p>ProfitQuote provides quote-building tools for UK tradespeople. The accuracy of your quotes remains your responsibility.</p>
       <h3>Subscription & Payment</h3><p>A 7-day free trial is available. After the trial, continued use requires payment of the £99 onboarding fee and a £49/month subscription via Stripe. No contract — cancel any time.</p>
       <h3>Governing Law</h3><p>These terms are governed by the laws of England and Wales.</p>
-      <h3>Contact</h3><p>Email: hello@profitquote.co.uk &nbsp;·&nbsp; Office: 01639 410207</p>
+      <h3>Contact</h3><p>Email: hello@profitquote.co.uk · Office: 01639 410207</p>
     </div>
   </div>
 </div>
 
 <!-- CONTACT MODAL -->
 <div class="modal-overlay" id="modal-contact">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('contact')">✕</button>
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal-contact').classList.remove('open')">✕</button>
     <div class="modal-title">Contact Us</div>
-    <div class="modal-body">
-      <h3>Email</h3><p><a href="mailto:hello@profitquote.co.uk" style="color:var(--blue);">hello@profitquote.co.uk</a></p>
-      <h3>Phone</h3><p><a href="tel:01639410207" style="color:var(--blue);">01639 410207</a> (Office)<br><a href="tel:07368825060" style="color:var(--blue);">07368 825060</a> (Mobile)</p>
+    <div class="modal-content-body">
+      <h3>Email</h3><p><a href="mailto:hello@profitquote.co.uk" style="color:var(--amber);">hello@profitquote.co.uk</a></p>
+      <h3>Phone</h3><p><a href="tel:01639410207" style="color:var(--amber);">01639 410207</a> (Office)<br><a href="tel:07368825060" style="color:var(--amber);">07368 825060</a> (Mobile)</p>
       <h3>Based In</h3><p>South Wales, UK</p>
     </div>
   </div>
 </div>
 
 <script>
-const APP_URL = '';
+const API='https://profit-quote-production.up.railway.app';
 
-function openRegister() {
-  document.getElementById('modal-register').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
+function openModal(){ document.getElementById('modal-register').classList.add('open'); }
+function closeModal(){ document.getElementById('modal-register').classList.remove('open'); }
+function openPrivacy(){ document.getElementById('modal-privacy').classList.add('open'); }
+function openTerms(){ document.getElementById('modal-terms').classList.add('open'); }
+function openContact(){ document.getElementById('modal-contact').classList.add('open'); }
 
-function closeRegister() {
-  document.getElementById('modal-register').classList.remove('active');
-  document.body.style.overflow = '';
-}
-
-async function submitRegister() {
-  const name = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value.trim();
-  const trade = document.getElementById('reg-trade').value;
-  const errBox = document.getElementById('register-error');
-  const btn = document.getElementById('reg-btn');
-
-  errBox.style.display = 'none';
-  if (!name || !email || !password) {
-    errBox.textContent = 'Please fill in your name, email and password.';
-    errBox.style.display = 'block';
-    return;
-  }
-
-  btn.textContent = 'Creating your account...';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch(APP_URL + '/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, trade })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      errBox.textContent = data.error || 'Something went wrong. Please try again.';
-      errBox.style.display = 'block';
-      btn.textContent = 'Start Free Trial →';
-      btn.disabled = false;
-      return;
-    }
-    localStorage.setItem('pq_token', data.token);
-    window.location.href = APP_URL + '/dashboard';
-  } catch(e) {
-    errBox.textContent = 'Connection error. Please try again.';
-    errBox.style.display = 'block';
-    btn.textContent = 'Start Free Trial →';
-    btn.disabled = false;
-  }
-}
-
-function toggleFaq(btn) {
-  const answer = btn.nextElementSibling;
-  const isOpen = answer.classList.contains('open');
-  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
-  document.querySelectorAll('.faq-q').forEach(b => b.classList.remove('open'));
-  if (!isOpen) { answer.classList.add('open'); btn.classList.add('open'); }
-}
-
-function openModal(name) {
-  document.getElementById('modal-' + name).classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal(name) {
-  document.getElementById('modal-' + name).classList.remove('active');
-  document.body.style.overflow = '';
-}
-
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', function(e) {
-    if (e.target === this) { this.classList.remove('active'); document.body.style.overflow = ''; }
-  });
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
 });
 
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', function(e) {
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
-  });
-});
+async function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const password=document.getElementById('reg-password').value.trim();
+  const trade=document.getElementById('reg-trade').value;
+  const err=document.getElementById('reg-err');
+  const btn=document.getElementById('reg-btn');
+  err.style.display='none';
+  if(!name||!email||!password){ err.textContent='Please fill in all fields.'; err.style.display='block'; return; }
+  btn.textContent='Creating account...'; btn.disabled=true;
+  try{
+    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade})});
+    const data=await res.json();
+    if(!res.ok){ err.textContent=data.error||'Registration failed.'; err.style.display='block'; btn.textContent='Start Free Trial →'; btn.disabled=false; return; }
+    window.location.href='https://profitquote.co.uk/dashboard?token='+data.token;
+  }catch(e){ err.textContent='Connection error. Please try again.'; err.style.display='block'; btn.textContent='Start Free Trial →'; btn.disabled=false; }
+}
+
+function toggleFaq(btn){
+  const item=btn.closest('.faq-item');
+  const isOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
 </script>
-
 </body>
 </html>
