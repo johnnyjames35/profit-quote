@@ -60,3 +60,10 @@ CREATE TABLE IF NOT EXISTS issues (
   variation_data JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS job_photos (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  quote_id INTEGER REFERENCES quotes(id) ON DELETE CASCADE,
+  photo_url TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
