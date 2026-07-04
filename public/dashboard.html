@@ -1340,7 +1340,8 @@ function renderQuotes(){
       <div class="quote-card-actions">
         <button class="btn-won ${wonActive}" onclick="setQuoteStatus(${q.id},'${status==='won'?'draft':'won'}')">✓ Won</button>
         <button class="btn-lost ${lostActive}" onclick="setQuoteStatus(${q.id},'${status==='lost'?'draft':'lost'}')">✗ Lost</button>
-        <button class="btn-edit" onclick="editQuote(${q.id})">✏️ Edit</button>
+       <button class="btn-edit" onclick="editQuote(${q.id})">✏️ Edit</button>
+        <button class="btn-photos" onclick="openPhotoGallery(${q.id})">📷 Photos</button>
         <button class="btn-delete" onclick="deleteQuote(${q.id})">Delete</button>
       </div>
     </div>`;
