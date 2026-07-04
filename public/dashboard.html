@@ -243,6 +243,22 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .btn-edit:hover{background:rgba(245,166,35,0.2);}
 .btn-delete{background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);color:var(--red);font-size:0.75rem;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);}
 .btn-delete:hover{background:rgba(239,68,68,0.25);}
+.btn-photos{background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.75rem;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);}
+.btn-photos:hover{background:rgba(245,166,35,0.2);}
+.photo-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:flex-end;justify-content:center;}
+.photo-overlay.active{display:flex;}
+.photo-panel{background:var(--dark);border-top-left-radius:var(--radius);border-top-right-radius:var(--radius);width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;padding:16px;overflow:hidden;}
+.photo-panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.photo-panel-title{font-size:1rem;font-weight:800;color:var(--white);}
+.photo-panel-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;padding-bottom:8px;}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--card);border:1px solid var(--card-border);}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-thumb-delete{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:var(--white);border:none;border-radius:50%;width:22px;height:22px;font-size:0.75rem;cursor:pointer;line-height:1;}
+.photo-add-btn{aspect-ratio:1;border-radius:8px;border:2px dashed var(--amber-border);background:var(--amber-glow);color:var(--amber);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:0.7rem;font-weight:700;gap:4px;}
+.photo-add-btn .icon{font-size:1.4rem;}
+.photo-empty{text-align:center;padding:30px 10px;color:var(--muted);font-size:0.85rem;grid-column:2/4;}
+.photo-uploading{grid-column:1/-1;text-align:center;padding:14px;color:var(--amber);font-size:0.85rem;}
 .empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
 .empty-state-icon{font-size:2.5rem;margin-bottom:12px;opacity:0.4;}
 .empty-state-title{font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:6px;}
