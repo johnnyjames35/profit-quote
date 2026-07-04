@@ -1137,6 +1137,17 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
 <div class="toast" id="toast"></div>
 
+<div class="photo-overlay" id="photo-overlay">
+  <div class="photo-panel">
+    <div class="photo-panel-header">
+      <div class="photo-panel-title">Job Photos</div>
+      <button class="photo-panel-close" onclick="closePhotoGallery()">✕</button>
+    </div>
+    <div class="photo-grid" id="photo-grid"></div>
+  </div>
+</div>
+<input type="file" id="photo-camera-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelected(event)">
+
 <script>
 const API = '';
 let token = localStorage.getItem('pq_token');
