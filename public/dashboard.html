@@ -1380,6 +1380,73 @@ async function deleteQuote(id){
   }catch(e){ showToast('Connection error'); }
 }
 
+let photoGalleryQuoteId=null;
+
+function openPhotoGallery(quoteId){
+  photoGalleryQuoteId=quoteId;
+  document.getElementById('photo-overlay').classList.add('active');
+  loadJobPhotos(quoteId);
+}
+
+function closePhotoGallery(){
+  document.getElementById('photo-overlay').classList.remove('active');
+  photoGalleryQuoteId=null;
+}
+
+async function loadJobPhotos(quoteId){
+  const grid=document.getElementById('photo-grid');
+  grid.innerHTML='<div class="photo-empty">Loading photos...</div>';
+  try{
+    const res=await fetch(API+'/api/photos/'+quoteId,{headers:{Authorization:'Bearer '+token}});
+    if(!res.ok){ grid.innerHTML='<div class="photo-empty">Could not load photos</div>'; return; }
+    const photos=await res.json();
+    renderPhotoGrid(photos);
+  }catch(e){ grid.innerHTML='<div class="photo-empty">Connection error</div>'; }
+}
+
+function renderPhotoGrid(photos){
+  const grid=document.getElementById('photo-grid');
+  const addBtn='<div class="photo-add-btn" onclick="triggerPhotoCapture()"><span class="icon">📷</span>Add Photo</div>';
+  if(!photos.length){
+    grid.innerHTML=addBtn+'<div class="photo-empty">No photos yet</div>';
+    return;
+  }
+  grid.innerHTML=addBtn+photos.map(p=>`
+    <div class="photo-thumb">
+      <img src="${p.url}" loading="lazy">
+      <button class="photo-thumb-delete" onclick="deletePhoto(${p.id})">✕</button>
+    </div>`).join('');
+}
+
+function triggerPhotoCapture(){
+  document.getElementById('photo-camera-input').click();
+}
+
+async function handlePhotoSelected(event){
+  const file=event.target.files[0];
+  event.target.value='';
+  if(!file||!photoGalleryQuoteId) return;
+  const grid=document.getElementById('photo-grid');
+  grid.insertAdjacentHTML('beforeend','<div class="photo-uploading" id="photo-uploading-msg">Uploading photo...</div>');
+  try{
+    const formData=new FormData();
+    formData.append('photo',file);
+    formData.append('quote_id',photoGalleryQuoteId);
+    const res=await fetch(API+'/api/photos',{method:'POST',headers:{Authorization:'Bearer '+token},body:formData});
+    if(res.ok){ showToast('Photo added ✓'); loadJobPhotos(photoGalleryQuoteId); }
+    else { showToast('Error uploading photo'); document.getElementById('photo-uploading-msg')?.remove(); }
+  }catch(e){ showToast('Connection error'); document.getElementById('photo-uploading-msg')?.remove(); }
+}
+
+async function deletePhoto(id){
+  if(!confirm('Delete this photo?')) return;
+  try{
+    const res=await fetch(API+'/api/photos/'+id,{method:'DELETE',headers:{Authorization:'Bearer '+token}});
+    if(res.ok){ showToast('Photo deleted'); loadJobPhotos(photoGalleryQuoteId); }
+    else showToast('Error deleting photo');
+  }catch(e){ showToast('Connection error'); }
+}
+
 function editQuote(id){
   const q=quotes.find(x=>x.id===id);
   if(!q) return;
@@ -1387,6 +1454,7 @@ function editQuote(id){
 
   // Load saved data back into fields
   const qd=q.quote_data||{};
+  
   document.getElementById('q-desc').value=q.job_description||qd.job_description||'';
 document.getElementById('q-customer').value=q.customer_name||qd.customer_name||'';
 document.getElementById('q-email').value=q.customer_email||qd.customer_email||'';
