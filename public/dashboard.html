@@ -42,8 +42,10 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 
 /* LOGIN */
 /* AUTH SPLIT SCREEN */
-#login-screen,#register-screen{display:flex;min-height:100vh;background:var(--black);}
+#login-screen,#register-screen,#forgot-screen,#reset-screen{display:flex;min-height:100vh;background:var(--black);}
 #register-screen{display:none;}
+#forgot-screen{display:none;}
+#reset-screen{display:none;}
 .auth-left{flex:1;background:#111;border-right:1px solid #222;display:flex;flex-direction:column;justify-content:center;padding:60px 52px;min-height:100vh;}
 .auth-left-logo{display:flex;align-items:center;gap:10px;margin-bottom:48px;}
 .auth-left-logo-icon{width:42px;height:42px;background:var(--amber);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--black);}
@@ -88,8 +90,10 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 @media(max-width:768px){
   .auth-left{display:none;}
   .auth-right{width:100%;padding:32px 24px;}
-  #login-screen,#register-screen{display:block;}
+  #login-screen,#register-screen,#forgot-screen,#reset-screen{display:block;}
   #register-screen{display:none;}
+  #forgot-screen{display:none;}
+  #reset-screen{display:none;}
   .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
   .login-logo-icon{width:38px;height:38px;background:var(--amber);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--black);}
   .login-logo-text{font-size:1.3rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
@@ -468,6 +472,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div class="login-err" id="login-err"></div>
       <div class="lfield"><label>Email Address</label><input type="email" id="login-email" placeholder="your@email.co.uk" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="lfield"><label>Password</label><input type="password" id="login-password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:14px;"><a onclick="showForgot()" style="color:var(--amber);font-size:0.8rem;cursor:pointer;text-decoration:none;">Forgot password?</a></div>
       <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
       <div class="auth-divider">or</div>
       <div class="login-switch" style="margin-top:0;">No account yet?</div>
@@ -530,6 +535,68 @@ textarea.field-input{resize:vertical;min-height:80px;}
       </div>
       <button class="btn-login" id="reg-btn" onclick="doRegister()">Create Account →</button>
       <div class="login-switch">Already have an account? <a onclick="showLogin()">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD -->
+<div id="forgot-screen" style="display:none;">
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-left-logo">
+      <div class="auth-left-logo-icon">£</div>
+      <span class="auth-left-logo-text">Profit<span>Quote</span></span>
+    </div>
+    <div class="auth-left-headline">Forgot your<br>password? <span>No problem.</span></div>
+    <div class="auth-left-sub">Enter your email and we'll send you a link to set a new one.</div>
+    <div class="auth-left-footer">
+      <div class="auth-left-footer-item"><div class="icon">🔒</div><strong>Secure &amp; Private</strong><span>Always protected</span></div>
+      <div class="auth-left-footer-item"><div class="icon">🇬🇧</div><strong>UK Based Support</strong><span>Here when you need us</span></div>
+      <div class="auth-left-footer-item"><div class="icon">🛡️</div><strong>Trusted by Trades</strong><span>Built for tradespeople</span></div>
+    </div>
+  </div>
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="login-card">
+      <div class="login-logo"><div class="login-logo-icon">£</div><span class="login-logo-text">Profit<span>Quote</span></span></div>
+      <div class="login-title">Reset your password</div>
+      <div class="login-sub">Enter your email and we'll send you a reset link.</div>
+      <div class="login-err" id="forgot-err"></div>
+      <div class="login-err" id="forgot-success" style="display:none;color:var(--green,#4caf72);background:rgba(76,175,114,0.1);border:1px solid rgba(76,175,114,0.3);padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;"></div>
+      <div class="lfield"><label>Email Address</label><input type="email" id="forgot-email" placeholder="your@email.co.uk" onkeydown="if(event.key==='Enter')doForgotPassword()"></div>
+      <button class="btn-login" id="forgot-btn" onclick="doForgotPassword()">Send Reset Link →</button>
+      <div class="login-switch">Remembered it? <a onclick="showLogin()">Back to sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD -->
+<div id="reset-screen" style="display:none;">
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-left-logo">
+      <div class="auth-left-logo-icon">£</div>
+      <span class="auth-left-logo-text">Profit<span>Quote</span></span>
+    </div>
+    <div class="auth-left-headline">Set a new<br><span>password.</span></div>
+    <div class="auth-left-sub">Choose a strong password to keep your account secure.</div>
+    <div class="auth-left-footer">
+      <div class="auth-left-footer-item"><div class="icon">🔒</div><strong>Secure &amp; Private</strong><span>Always protected</span></div>
+      <div class="auth-left-footer-item"><div class="icon">🇬🇧</div><strong>UK Based Support</strong><span>Here when you need us</span></div>
+      <div class="auth-left-footer-item"><div class="icon">🛡️</div><strong>Trusted by Trades</strong><span>Built for tradespeople</span></div>
+    </div>
+  </div>
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="login-card">
+      <div class="login-logo"><div class="login-logo-icon">£</div><span class="login-logo-text">Profit<span>Quote</span></span></div>
+      <div class="login-title">Set new password</div>
+      <div class="login-sub">Choose a new password for your account.</div>
+      <div class="login-err" id="reset-err"></div>
+      <div class="lfield"><label>New Password</label><input type="password" id="reset-password" placeholder="At least 6 characters" onkeydown="if(event.key==='Enter')doResetPassword()"></div>
+      <div class="lfield"><label>Confirm Password</label><input type="password" id="reset-password-confirm" placeholder="Type it again" onkeydown="if(event.key==='Enter')doResetPassword()"></div>
+      <button class="btn-login" id="reset-btn" onclick="doResetPassword()">Set New Password →</button>
+      <div class="login-switch">Changed your mind? <a onclick="showLogin()">Back to sign in</a></div>
     </div>
   </div>
 </div>
@@ -1184,17 +1251,78 @@ const urlParams = new URLSearchParams(window.location.search);
 const urlToken = urlParams.get('token');
 if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; window.history.replaceState({}, '', '/dashboard'); }
 
-if(token){ initApp(); } else { showLogin(); }
+const resetTokenFromUrl = urlParams.get('reset');
+
+if(resetTokenFromUrl){ showReset(resetTokenFromUrl); }
+else if(token){ initApp(); } else { showLogin(); }
 
 function showLogin(){
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('register-screen').style.display='none';
+  document.getElementById('forgot-screen').style.display='none';
+  document.getElementById('reset-screen').style.display='none';
   document.getElementById('app-screen').style.display='none';
 }
 function showRegister(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='flex';
+  document.getElementById('forgot-screen').style.display='none';
+  document.getElementById('reset-screen').style.display='none';
   document.getElementById('app-screen').style.display='none';
+}
+function showForgot(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('register-screen').style.display='none';
+  document.getElementById('forgot-screen').style.display='flex';
+  document.getElementById('reset-screen').style.display='none';
+  document.getElementById('app-screen').style.display='none';
+}
+function showReset(resetToken){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('register-screen').style.display='none';
+  document.getElementById('forgot-screen').style.display='none';
+  document.getElementById('reset-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('reset-screen').dataset.token = resetToken;
+}
+
+async function doForgotPassword(){
+  const email=document.getElementById('forgot-email').value.trim();
+  const err=document.getElementById('forgot-err');
+  const success=document.getElementById('forgot-success');
+  const btn=document.getElementById('forgot-btn');
+  err.style.display='none'; success.style.display='none';
+  if(!email){ err.textContent='Please enter your email address.'; err.style.display='block'; return; }
+  btn.textContent='Sending...'; btn.disabled=true;
+  try{
+    const res=await fetch(API+'/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    await res.json();
+    success.textContent='If that email is registered, a reset link is on its way. Check your inbox.';
+    success.style.display='block';
+    btn.textContent='Send Reset Link →'; btn.disabled=false;
+  }catch(e){ err.textContent='Connection error. Please try again.'; err.style.display='block'; btn.textContent='Send Reset Link →'; btn.disabled=false; }
+}
+
+async function doResetPassword(){
+  const resetToken=document.getElementById('reset-screen').dataset.token;
+  const password=document.getElementById('reset-password').value.trim();
+  const confirm=document.getElementById('reset-password-confirm').value.trim();
+  const err=document.getElementById('reset-err');
+  const btn=document.getElementById('reset-btn');
+  err.style.display='none';
+  if(!password||!confirm){ err.textContent='Please fill in both fields.'; err.style.display='block'; return; }
+  if(password.length<6){ err.textContent='Password must be at least 6 characters.'; err.style.display='block'; return; }
+  if(password!==confirm){ err.textContent='Passwords do not match.'; err.style.display='block'; return; }
+  btn.textContent='Saving...'; btn.disabled=true;
+  try{
+    const res=await fetch(API+'/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:resetToken,password})});
+    const data=await res.json();
+    if(!res.ok){ err.textContent=data.error||'Something went wrong.'; err.style.display='block'; btn.textContent='Set New Password →'; btn.disabled=false; return; }
+    window.history.replaceState({}, '', '/dashboard');
+    showLogin();
+    document.getElementById('login-err').textContent='Password updated. Please sign in with your new password.';
+    document.getElementById('login-err').style.display='block';
+  }catch(e){ err.textContent='Connection error. Please try again.'; err.style.display='block'; btn.textContent='Set New Password →'; btn.disabled=false; }
 }
 
 async function doLogin(){
@@ -1239,6 +1367,8 @@ async function initApp(){
   }catch(e){ doLogout(); return; }
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='none';
+  document.getElementById('forgot-screen').style.display='none';
+  document.getElementById('reset-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   populateUserUI();
   loadQuotes();
