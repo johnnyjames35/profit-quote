@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
+const crypto = require('crypto');
 
 const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
 
@@ -75,6 +76,16 @@ function sendTrialExpiryEmail(name, email) {
   );
 }
 
+function sendResetEmail(name, email, resetLink) {
+  return sendBrevoEmail(email,
+    'Reset your ProfitQuote password',
+    `<p>Hi ${name},</p>
+     <p>We received a request to reset your ProfitQuote password.</p>
+     <p><a href="${resetLink}">Click here to set a new password</a></p>
+     <p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
+     <p>John James<br>ProfitQuote | Cambrian Digital</p>`
+  );
+}
 router.post('/register', async (req, res) => {
   const { name, email, password, trade } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
@@ -130,6 +141,44 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  try {
+    const pool = req.app.locals.pool;
+    const result = await pool.query('SELECT id,name,email FROM users WHERE email=$1', [email.toLowerCase()]);
+    if (result.rows.length) {
+      const user = result.rows[0];
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expires = new Date(Date.now() + 60 * 60 * 1000);
+      await pool.query('UPDATE users SET reset_token=$1, reset_token_expires=$2 WHERE id=$3', [hashedToken, expires, user.id]);
+      const resetLink = `https://profitquote.co.uk/dashboard?reset=${rawToken}`;
+      sendResetEmail(user.name, user.email, resetLink).catch(e => console.error('Reset email error:', e.message));
+    }
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token and new password required' });
+  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  try {
+    const pool = req.app.locals.pool;
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const result = await pool.query('SELECT id FROM users WHERE reset_token=$1 AND reset_token_expires > NOW()', [hashedToken]);
+    if (!result.rows.length) return res.status(400).json({ error: 'This reset link is invalid or has expired.' });
+    const user = result.rows[0];
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash=$1, reset_token=NULL, reset_token_expires=NULL WHERE id=$2', [hash, user.id]);
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
