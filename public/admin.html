@@ -52,7 +52,6 @@ body {
   min-height: 100vh;
 }
 
-/* ── LOGIN ── */
 #login-screen {
   display: flex;
   align-items: center;
@@ -64,190 +63,110 @@ body {
                     radial-gradient(ellipse at 80% 20%, rgba(0,194,224,0.04) 0%, transparent 50%);
 }
 
-.login-card {
-  width: 100%;
-  max-width: 380px;
-}
-
-.login-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 36px;
-}
-
+.login-card { width: 100%; max-width: 380px; }
+.login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 36px; }
 .login-logo-icon {
-  width: 38px; height: 38px;
-  background: var(--cyan);
-  border-radius: 8px;
+  width: 38px; height: 38px; background: var(--cyan); border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 17px; font-weight: 800; color: var(--navy);
-  font-family: var(--mono);
+  font-size: 17px; font-weight: 800; color: var(--navy); font-family: var(--mono);
 }
-
-.login-logo-text {
-  font-size: 1.2rem; font-weight: 700; color: var(--white);
-}
+.login-logo-text { font-size: 1.2rem; font-weight: 700; color: var(--white); }
 .login-logo-text span { color: var(--cyan); }
 .login-logo-badge {
-  font-size: 0.65rem; font-family: var(--mono);
-  color: var(--muted); border: 1px solid rgba(255,255,255,0.1);
-  padding: 2px 7px; border-radius: 4px; margin-left: 4px;
+  font-size: 0.65rem; font-family: var(--mono); color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 4px; margin-left: 4px;
 }
-
 .login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
 .login-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 28px; }
-
 .field { margin-bottom: 16px; }
 .field label {
-  display: block; font-size: 0.72rem; font-family: var(--mono);
-  color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase;
-  margin-bottom: 6px;
+  display: block; font-size: 0.72rem; font-family: var(--mono); color: var(--muted);
+  letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px;
 }
 .field input {
-  width: 100%; padding: 11px 14px;
-  background: var(--navy2); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--white); font-size: 0.95rem;
-  font-family: var(--font); outline: none;
-  transition: border-color 0.2s;
+  width: 100%; padding: 11px 14px; background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--white); font-size: 0.95rem; font-family: var(--font);
+  outline: none; transition: border-color 0.2s;
 }
 .field input:focus { border-color: var(--cyan-border); }
-
 #login-err {
   display: none; background: var(--red-dim); border: 1px solid rgba(255,71,87,0.3);
-  color: var(--red); padding: 10px 14px; border-radius: 8px;
-  font-size: 0.85rem; margin-bottom: 16px;
+  color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px;
 }
-
 .btn-login {
   width: 100%; padding: 13px; background: var(--cyan); color: var(--navy);
   font-weight: 700; font-size: 0.95rem; border: none; border-radius: 8px;
-  cursor: pointer; font-family: var(--font);
-  transition: opacity 0.2s;
+  cursor: pointer; font-family: var(--font); transition: opacity 0.2s;
 }
 .btn-login:hover { opacity: 0.88; }
 .btn-login:disabled { opacity: 0.5; cursor: default; }
-
-/* ── SHELL ── */
 #app-screen { display: none; }
-
 .topbar {
-  background: var(--navy2);
-  border-bottom: 1px solid var(--border);
-  padding: 0 28px;
-  height: 58px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 50;
+  background: var(--navy2); border-bottom: 1px solid var(--border); padding: 0 28px; height: 58px;
+  display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
 }
-
-.topbar-logo {
-  display: flex; align-items: center; gap: 10px;
-}
-
+.topbar-logo { display: flex; align-items: center; gap: 10px; }
 .topbar-logo-icon {
-  width: 30px; height: 30px; background: var(--cyan);
-  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; background: var(--cyan); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 800; color: var(--navy); font-family: var(--mono);
 }
-
 .topbar-logo-text { font-size: 1rem; font-weight: 700; color: var(--white); }
 .topbar-logo-text span { color: var(--cyan); }
 .topbar-badge {
-  font-size: 0.62rem; font-family: var(--mono);
-  background: var(--cyan-dim); border: 1px solid var(--cyan-border);
-  color: var(--cyan); padding: 2px 8px; border-radius: 4px;
+  font-size: 0.62rem; font-family: var(--mono); background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border); color: var(--cyan); padding: 2px 8px; border-radius: 4px;
 }
-
 .topbar-right { display: flex; align-items: center; gap: 16px; }
 .topbar-time { font-size: 0.78rem; font-family: var(--mono); color: var(--muted); }
-
 .btn-logout {
   background: none; border: 1px solid var(--border); color: var(--muted);
   font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
   font-family: var(--font); transition: all 0.2s;
 }
 .btn-logout:hover { border-color: var(--red); color: var(--red); }
-
-/* ── MAIN ── */
 .main { padding: 32px 28px; max-width: 1100px; margin: 0 auto; }
-
-/* Stats row */
-.stats-row {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 16px; margin-bottom: 32px;
-}
-
-.stat-card {
-  background: var(--navy2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 20px 22px;
-}
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; }
 .stat-label {
   font-size: 0.7rem; font-family: var(--mono); color: var(--muted);
   text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
 }
-.stat-val {
-  font-size: 2rem; font-weight: 700; font-family: var(--mono);
-  line-height: 1;
-}
+.stat-val { font-size: 2rem; font-weight: 700; font-family: var(--mono); line-height: 1; }
 .stat-val.cyan { color: var(--cyan); }
 .stat-val.green { color: var(--green); }
 .stat-val.amber { color: var(--amber); }
 .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
-
-/* Table card */
-.table-card {
-  background: var(--navy2); border: 1px solid var(--border);
-  border-radius: 12px; overflow: hidden;
-}
-
+.table-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .table-header {
-  padding: 18px 22px;
-  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--border);
 }
-
 .table-title { font-size: 0.95rem; font-weight: 600; }
 .table-count {
-  font-size: 0.75rem; font-family: var(--mono);
-  color: var(--cyan); background: var(--cyan-dim);
+  font-size: 0.75rem; font-family: var(--mono); color: var(--cyan); background: var(--cyan-dim);
   border: 1px solid var(--cyan-border); padding: 3px 10px; border-radius: 20px;
 }
-
 .refresh-btn {
   background: none; border: 1px solid var(--border); color: var(--muted);
   font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer;
   font-family: var(--font); transition: all 0.2s;
 }
 .refresh-btn:hover { border-color: var(--cyan-border); color: var(--cyan); }
-
 .table-wrap { overflow-x: auto; }
-
 table { width: 100%; border-collapse: collapse; }
-
 thead th {
-  padding: 12px 18px; text-align: left;
-  font-size: 0.68rem; font-family: var(--mono);
+  padding: 12px 18px; text-align: left; font-size: 0.68rem; font-family: var(--mono);
   color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
 }
-
-tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(255,255,255,0.03); }
-
-tbody td {
-  padding: 14px 18px; font-size: 0.875rem;
-  vertical-align: middle;
-}
-
+tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .td-name { font-weight: 600; color: var(--white); }
 .td-email { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
 .td-date { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
-
 .badge {
   display: inline-block; padding: 3px 10px; border-radius: 20px;
   font-size: 0.72rem; font-weight: 600; font-family: var(--mono);
@@ -255,16 +174,16 @@ tbody td {
 .badge-trial { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(246,201,14,0.25); }
 .badge-active { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,217,126,0.25); }
 .badge-expired { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.25); }
-
 .td-quotes { font-family: var(--mono); font-size: 0.85rem; color: var(--cyan); }
-
-.empty-row td {
-  text-align: center; padding: 48px; color: var(--muted);
-  font-size: 0.875rem;
-}
-
+.empty-row td { text-align: center; padding: 48px; color: var(--muted); font-size: 0.875rem; }
 #loading-row td { text-align: center; padding: 48px; color: var(--muted); font-size: 0.875rem; }
-
+.btn-delete {
+  background: var(--red-dim); border: 1px solid rgba(255,71,87,0.25); color: var(--red);
+  font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
+  cursor: pointer; font-family: var(--font); transition: all 0.2s;
+}
+.btn-delete:hover { background: rgba(255,71,87,0.2); }
+.btn-delete:disabled { opacity: 0.5; cursor: default; }
 @media (max-width: 768px) {
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .main { padding: 20px 16px; }
@@ -274,7 +193,6 @@ tbody td {
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">
@@ -295,7 +213,6 @@ tbody td {
   </div>
 </div>
 
-<!-- APP -->
 <div id="app-screen">
   <div class="topbar">
     <div class="topbar-logo">
@@ -311,7 +228,6 @@ tbody td {
 
   <div class="main">
 
-    <!-- Stats -->
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">Total Signups</div>
@@ -335,7 +251,6 @@ tbody td {
       </div>
     </div>
 
-    <!-- Users Table -->
     <div class="table-card">
       <div class="table-header">
         <div style="display:flex;align-items:center;gap:12px;">
@@ -355,10 +270,11 @@ tbody td {
               <th>Status</th>
               <th>Quotes</th>
               <th>Signed Up</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="users-tbody">
-            <tr id="loading-row"><td colspan="7">Loading...</td></tr>
+            <tr id="loading-row"><td colspan="8">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -371,7 +287,6 @@ tbody td {
 const API = '';
 let adminToken = sessionStorage.getItem('pq_admin_token');
 
-// Live clock
 function updateClock() {
   const now = new Date();
   document.getElementById('live-time').textContent =
@@ -381,7 +296,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Init
 if (adminToken) showApp();
 
 async function doLogin() {
@@ -444,7 +358,7 @@ async function loadUsers() {
     renderStats(data.users || []);
   } catch(e) {
     document.getElementById('users-tbody').innerHTML =
-      '<tr class="empty-row"><td colspan="7">Could not load users — check connection.</td></tr>';
+      '<tr class="empty-row"><td colspan="8">Could not load users — check connection.</td></tr>';
   }
 }
 
@@ -471,7 +385,7 @@ function renderStats(users) {
 function renderUsers(users) {
   const tbody = document.getElementById('users-tbody');
   if (!users.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No users yet.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No users yet.</td></tr>';
     return;
   }
   tbody.innerHTML = users.map((u, i) => {
@@ -494,8 +408,30 @@ function renderUsers(users) {
       <td>${statusBadge}</td>
       <td class="td-quotes">${u.quote_count || 0}</td>
       <td class="td-date">${dateStr}</td>
+      <td><button class="btn-delete" onclick="deleteUser('${u.id}', '${esc(u.name).replace(/'/g, "\\'")}')">Delete</button></td>
     </tr>`;
   }).join('');
+}
+
+async function deleteUser(id, name) {
+  const confirmed = confirm('Are you sure you want to delete ' + name + '? This cannot be undone.');
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(API + '/api/admin/users/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Could not delete user: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    loadUsers();
+  } catch(e) {
+    alert('Connection error — could not delete user.');
+  }
 }
 
 function esc(s) {
