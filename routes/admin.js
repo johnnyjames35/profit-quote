@@ -47,4 +47,24 @@ router.get('/users', requireAdmin, async (req, res) => {
   }
 });
 
+// Delete a user (and their quotes) — admin only
+router.delete('/users/:id', requireAdmin, async (req, res) => {
+  const pool = req.app.locals.pool;
+  const { id } = req.params;
+  try {
+    await pool.query('BEGIN');
+    await pool.query('DELETE FROM quotes WHERE user_id = $1', [id]);
+    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+    await pool.query('COMMIT');
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ success: true, deletedId: id });
+  } catch(e) {
+    await pool.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
