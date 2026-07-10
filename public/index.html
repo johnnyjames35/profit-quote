@@ -737,7 +737,26 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
 <script>
 const API='https://profit-quote-production.up.railway.app';
 
-function openModal(){ document.getElementById('modal-register').classList.add('open'); }
+function getSource(){
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('utm_source')) return params.get('utm_source');
+  const ref = document.referrer.toLowerCase();
+  if (ref.includes('linkedin')) return 'linkedin';
+  if (ref.includes('google')) return 'google';
+  if (ref.includes('facebook')) return 'facebook';
+  if (ref) return 'referral';
+  return 'direct';
+}
+
+function logEvent(eventType){
+  try{
+    fetch(API+'/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_type:eventType,source:getSource()})});
+  }catch(e){}
+}
+
+logEvent('page_viewed');
+
+function openModal(){ logEvent('trial_click'); document.getElementById('modal-register').classList.add('open'); }
 function closeModal(){ document.getElementById('modal-register').classList.remove('open'); }
 function openPrivacy(){ document.getElementById('modal-privacy').classList.add('open'); }
 function openTerms(){ document.getElementById('modal-terms').classList.add('open'); }
