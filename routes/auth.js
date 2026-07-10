@@ -86,8 +86,16 @@ function sendResetEmail(name, email, resetLink) {
      <p>John James<br>ProfitQuote | Cambrian Digital</p>`
   );
 }
+
+function logEvent(pool, eventType, userId, source) {
+  return pool.query(
+    'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
+    [eventType, userId || null, source || null]
+  ).catch(e => console.error('Event log error:', e.message));
+}
+
 router.post('/register', async (req, res) => {
-  const { name, email, password, trade } = req.body;
+  const { name, email, password, trade, source } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
   try {
     const pool = req.app.locals.pool;
@@ -105,6 +113,7 @@ router.post('/register', async (req, res) => {
 
     res.json({ token, user });
 
+    logEvent(pool, 'account_created', user.id, source);
     sendWelcomeEmail(name, email).catch(e => console.error('Welcome email error:', e.message));
     sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
 
@@ -136,6 +145,14 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' });
     delete user.password_hash;
     res.json({ token, user });
+
+    const alreadyLogged = await pool.query(
+      "SELECT 1 FROM events WHERE event_type='first_login' AND user_id=$1",
+      [user.id]
+    );
+    if (!alreadyLogged.rows.length) {
+      logEvent(pool, 'first_login', user.id, null);
+    }
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -179,6 +196,7 @@ router.post('/reset-password', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
