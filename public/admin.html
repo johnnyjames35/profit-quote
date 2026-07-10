@@ -126,6 +126,16 @@ body {
 }
 .btn-logout:hover { border-color: var(--red); color: var(--red); }
 .main { padding: 32px 28px; max-width: 1100px; margin: 0 auto; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+.tab-btn {
+  background: var(--navy2); border: 1px solid var(--border); color: var(--muted);
+  font-size: 0.85rem; font-weight: 600; padding: 9px 18px; border-radius: 8px;
+  cursor: pointer; font-family: var(--font); transition: all 0.2s;
+}
+.tab-btn:hover { border-color: var(--cyan-border); color: var(--white); }
+.tab-btn.active { background: var(--cyan-dim); border-color: var(--cyan-border); color: var(--cyan); }
+
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
 .stat-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; }
 .stat-label {
@@ -197,10 +207,34 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
   cursor: pointer; font-family: var(--font); transition: all 0.2s;
 }
 .btn-cancel:hover { background: rgba(246,201,14,0.2); }
+
+.funnel-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.impressions-card {
+  background: var(--navy2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 22px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.impressions-card label {
+  font-size: 0.7rem; font-family: var(--mono); color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.impressions-card input {
+  background: var(--navy); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--white); font-family: var(--mono); font-size: 1.1rem; padding: 8px 12px; width: 160px;
+}
+.impressions-card .imp-note { font-size: 0.75rem; color: var(--muted); flex: 1; min-width: 200px; }
+.funnel-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+.funnel-step { margin-bottom: 4px; }
+.funnel-bar-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; }
+.funnel-bar-label { width: 160px; font-size: 0.82rem; color: var(--muted); flex-shrink: 0; }
+.funnel-bar-track { flex: 1; background: var(--navy); border-radius: 6px; height: 34px; position: relative; overflow: hidden; }
+.funnel-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--green)); border-radius: 6px; transition: width 0.4s; }
+.funnel-bar-num { width: 70px; text-align: right; font-family: var(--mono); font-weight: 700; color: var(--white); flex-shrink: 0; }
+.funnel-arrow { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 2px 0; font-family: var(--mono); }
 @media (max-width: 768px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row, .funnel-stats-row { grid-template-columns: repeat(2, 1fr); }
   .main { padding: 20px 16px; }
   .topbar { padding: 0 16px; }
+  .funnel-bar-label { width: 100px; font-size: 0.72rem; }
 }
 </style>
 </head>
@@ -241,56 +275,115 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
   <div class="main">
 
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Total Signups</div>
-        <div class="stat-val cyan" id="stat-total">—</div>
-        <div class="stat-sub">All registered users</div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-users-btn" onclick="showTab('users')">Registered Users</button>
+      <button class="tab-btn" id="tab-funnel-btn" onclick="showTab('funnel')">Sales Funnel</button>
+    </div>
+
+    <div id="view-users">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Signups</div>
+          <div class="stat-val cyan" id="stat-total">—</div>
+          <div class="stat-sub">All registered users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">On Trial</div>
+          <div class="stat-val amber" id="stat-trial">—</div>
+          <div class="stat-sub">Within 7-day trial</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Paying</div>
+          <div class="stat-val green" id="stat-paying">—</div>
+          <div class="stat-sub">Active subscribers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">This Week</div>
+          <div class="stat-val cyan" id="stat-week">—</div>
+          <div class="stat-sub">New signups (7 days)</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">On Trial</div>
-        <div class="stat-val amber" id="stat-trial">—</div>
-        <div class="stat-sub">Within 7-day trial</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Paying</div>
-        <div class="stat-val green" id="stat-paying">—</div>
-        <div class="stat-sub">Active subscribers</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">This Week</div>
-        <div class="stat-val cyan" id="stat-week">—</div>
-        <div class="stat-sub">New signups (7 days)</div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="table-title">Registered Users</span>
+            <span class="table-count" id="user-count">0</span>
+          </div>
+          <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Trade</th>
+                <th>Status</th>
+                <th>Quotes</th>
+                <th>Signed Up</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr id="loading-row"><td colspan="8">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="table-header">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span class="table-title">Registered Users</span>
-          <span class="table-count" id="user-count">0</span>
+    <div id="view-funnel" style="display:none;">
+
+      <div class="impressions-card">
+        <div>
+          <label>LinkedIn Impressions (this week)</label><br>
+          <input type="number" id="impressions-input" placeholder="0" onchange="saveImpressions()">
         </div>
-        <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
+        <div class="imp-note">Manual entry — LinkedIn doesn't share this number automatically. Everything below is fully automatic.</div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Trade</th>
-              <th>Status</th>
-              <th>Quotes</th>
-              <th>Signed Up</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody">
-            <tr id="loading-row"><td colspan="8">Loading...</td></tr>
-          </tbody>
-        </table>
+
+      <div class="funnel-stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Visitors Today</div>
+          <div class="stat-val cyan" id="f-visitors-today">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">LinkedIn Visitors</div>
+          <div class="stat-val cyan" id="f-linkedin">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Google Visitors</div>
+          <div class="stat-val cyan" id="f-google">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Trial Sign-ups</div>
+          <div class="stat-val amber" id="f-trial-clicks">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Accounts Created</div>
+          <div class="stat-val amber" id="f-accounts">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Quotes Created</div>
+          <div class="stat-val cyan" id="f-quotes">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Paid Customers</div>
+          <div class="stat-val green" id="f-paid">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Monthly Recurring Revenue</div>
+          <div class="stat-val green" id="f-mrr">—</div>
+        </div>
       </div>
+
+      <div class="funnel-card">
+        <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
+        <div id="funnel-bars"></div>
+      </div>
+
     </div>
 
   </div>
@@ -358,6 +451,14 @@ function doLogout() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
   document.getElementById('admin-password').value = '';
+}
+
+function showTab(tab) {
+  document.getElementById('view-users').style.display = tab === 'users' ? 'block' : 'none';
+  document.getElementById('view-funnel').style.display = tab === 'funnel' ? 'block' : 'none';
+  document.getElementById('tab-users-btn').classList.toggle('active', tab === 'users');
+  document.getElementById('tab-funnel-btn').classList.toggle('active', tab === 'funnel');
+  if (tab === 'funnel') loadFunnel();
 }
 
 async function loadUsers() {
@@ -490,6 +591,68 @@ async function deleteUser(id, name) {
   } catch(e) {
     alert('Connection error — could not delete user.');
   }
+}
+
+function saveImpressions() {
+  const val = document.getElementById('impressions-input').value;
+  localStorage.setItem('pq_linkedin_impressions', val);
+  renderFunnelBars(window.lastFunnelData);
+}
+
+async function loadFunnel() {
+  const savedImpressions = localStorage.getItem('pq_linkedin_impressions');
+  if (savedImpressions) document.getElementById('impressions-input').value = savedImpressions;
+
+  try {
+    const res = await fetch(API + '/api/admin/funnel', {
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    window.lastFunnelData = data;
+
+    document.getElementById('f-visitors-today').textContent = data.visitorsToday;
+    document.getElementById('f-linkedin').textContent = data.linkedinVisitors;
+    document.getElementById('f-google').textContent = data.googleVisitors;
+    document.getElementById('f-trial-clicks').textContent = data.trialClicks;
+    document.getElementById('f-accounts').textContent = data.accountsCreated;
+    document.getElementById('f-quotes').textContent = data.totalQuotes;
+    document.getElementById('f-paid').textContent = data.paidCustomers;
+    document.getElementById('f-mrr').textContent = '£' + data.mrr;
+
+    renderFunnelBars(data);
+  } catch(e) {
+    document.getElementById('funnel-bars').innerHTML = '<p style="color:var(--muted);">Could not load funnel data.</p>';
+  }
+}
+
+function renderFunnelBars(data) {
+  if (!data) return;
+  const impressions = parseInt(document.getElementById('impressions-input').value) || 0;
+
+  const steps = [
+    { label: 'LinkedIn Impressions', value: impressions },
+    { label: 'Website Visitors', value: data.totalVisitors },
+    { label: 'Trial Clicks', value: data.trialClicks },
+    { label: 'Accounts Created', value: data.accountsCreated },
+    { label: 'First Quotes', value: data.firstQuotes },
+    { label: 'Paid Customers', value: data.paidCustomers }
+  ];
+
+  const maxVal = Math.max(...steps.map(s => s.value), 1);
+
+  document.getElementById('funnel-bars').innerHTML = steps.map((s, i) => {
+    const pct = (s.value / maxVal) * 100;
+    const arrow = i < steps.length - 1 ? '<div class="funnel-arrow">↓</div>' : '';
+    return `<div class="funnel-step">
+      <div class="funnel-bar-row">
+        <div class="funnel-bar-label">${s.label}</div>
+        <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:${pct}%"></div></div>
+        <div class="funnel-bar-num">${s.value.toLocaleString()}</div>
+      </div>
+      ${arrow}
+    </div>`;
+  }).join('');
 }
 
 function esc(s) {
