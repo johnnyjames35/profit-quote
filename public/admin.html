@@ -177,6 +177,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .td-quotes { font-family: var(--mono); font-size: 0.85rem; color: var(--cyan); }
 .empty-row td { text-align: center; padding: 48px; color: var(--muted); font-size: 0.875rem; }
 #loading-row td { text-align: center; padding: 48px; color: var(--muted); font-size: 0.875rem; }
+.action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .btn-delete {
   background: var(--red-dim); border: 1px solid rgba(255,71,87,0.25); color: var(--red);
   font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
@@ -184,6 +185,18 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 }
 .btn-delete:hover { background: rgba(255,71,87,0.2); }
 .btn-delete:disabled { opacity: 0.5; cursor: default; }
+.btn-paid {
+  background: var(--green-dim); border: 1px solid rgba(0,217,126,0.25); color: var(--green);
+  font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
+  cursor: pointer; font-family: var(--font); transition: all 0.2s;
+}
+.btn-paid:hover { background: rgba(0,217,126,0.2); }
+.btn-cancel {
+  background: var(--amber-dim); border: 1px solid rgba(246,201,14,0.25); color: var(--amber);
+  font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
+  cursor: pointer; font-family: var(--font); transition: all 0.2s;
+}
+.btn-cancel:hover { background: rgba(246,201,14,0.2); }
 @media (max-width: 768px) {
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .main { padding: 20px 16px; }
@@ -366,13 +379,14 @@ function renderStats(users) {
   const now = new Date();
   const weekAgo = new Date(now - 7 * 86400000);
 
+  const paying = users.filter(u => !!u.paid_at).length;
+
   const trial = users.filter(u => {
     const created = new Date(u.created_at);
     const daysSince = (now - created) / 86400000;
-    return daysSince <= 7 && u.account_status !== 'active';
+    return !u.paid_at && daysSince <= 7;
   }).length;
 
-  const paying = users.filter(u => u.account_status === 'active').length;
   const thisWeek = users.filter(u => new Date(u.created_at) >= weekAgo).length;
 
   document.getElementById('stat-total').textContent = users.length;
@@ -392,14 +406,18 @@ function renderUsers(users) {
     const created = new Date(u.created_at);
     const daysSince = (new Date() - created) / 86400000;
     let statusBadge;
-    if (u.account_status === 'active') {
-      statusBadge = '<span class="badge badge-active">Active</span>';
+    if (u.paid_at) {
+      statusBadge = '<span class="badge badge-active">Paying</span>';
     } else if (daysSince <= 7) {
       statusBadge = '<span class="badge badge-trial">Trial</span>';
     } else {
       statusBadge = '<span class="badge badge-expired">Expired</span>';
     }
     const dateStr = created.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    const safeName = esc(u.name).replace(/'/g, "\\'");
+    const actionBtn = u.paid_at
+      ? `<button class="btn-cancel" onclick="markCancelled('${u.id}', '${safeName}')">Mark Cancelled</button>`
+      : `<button class="btn-paid" onclick="markPaid('${u.id}', '${safeName}')">Mark Paid</button>`;
     return `<tr>
       <td class="td-date">${i + 1}</td>
       <td class="td-name">${esc(u.name)}</td>
@@ -408,9 +426,49 @@ function renderUsers(users) {
       <td>${statusBadge}</td>
       <td class="td-quotes">${u.quote_count || 0}</td>
       <td class="td-date">${dateStr}</td>
-      <td><button class="btn-delete" onclick="deleteUser('${u.id}', '${esc(u.name).replace(/'/g, "\\'")}')">Delete</button></td>
+      <td><div class="action-btns">${actionBtn}<button class="btn-delete" onclick="deleteUser('${u.id}', '${safeName}')">Delete</button></div></td>
     </tr>`;
   }).join('');
+}
+
+async function markPaid(id, name) {
+  const confirmed = confirm('Mark ' + name + ' as paid? This starts their subscription tracking.');
+  if (!confirmed) return;
+  try {
+    const res = await fetch(API + '/api/admin/users/' + id + '/mark-paid', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Could not mark as paid: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    loadUsers();
+  } catch(e) {
+    alert('Connection error — could not mark as paid.');
+  }
+}
+
+async function markCancelled(id, name) {
+  const confirmed = confirm('Mark ' + name + ' as cancelled? This logs the cancellation but does not remove their access.');
+  if (!confirmed) return;
+  try {
+    const res = await fetch(API + '/api/admin/users/' + id + '/mark-cancelled', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Could not mark as cancelled: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    alert(name + ' marked as cancelled. Their access has NOT been removed — do that manually when you\'re ready.');
+  } catch(e) {
+    alert('Connection error — could not mark as cancelled.');
+  }
 }
 
 async function deleteUser(id, name) {
