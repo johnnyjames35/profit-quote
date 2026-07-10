@@ -16,6 +16,13 @@ function requireAdmin(req, res, next) {
   }
 }
 
+function logEvent(pool, eventType, userId, source) {
+  return pool.query(
+    'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
+    [eventType, userId || null, source || null]
+  ).catch(e => console.error('Event log error:', e.message));
+}
+
 router.post('/login', (req, res) => {
   const { password } = req.body;
   if (!password || password !== ADMIN_PASSWORD) {
@@ -35,6 +42,7 @@ router.get('/users', requireAdmin, async (req, res) => {
         u.email,
         u.trade,
         u.created_at,
+        u.paid_at,
         COUNT(q.id)::int AS quote_count
       FROM users u
       LEFT JOIN quotes q ON q.user_id = u.id
@@ -42,6 +50,41 @@ router.get('/users', requireAdmin, async (req, res) => {
       ORDER BY u.created_at DESC
     `);
     res.json({ users: result.rows });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Mark a user as paid — admin only
+router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
+  const pool = req.app.locals.pool;
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'UPDATE users SET paid_at = NOW() WHERE id = $1 RETURNING id',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ success: true });
+    logEvent(pool, 'subscription_started', id, null);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Mark a user as cancelled — admin only (logs event, does not remove access)
+router.patch('/users/:id/mark-cancelled', requireAdmin, async (req, res) => {
+  const pool = req.app.locals.pool;
+  const { id } = req.params;
+  try {
+    const exists = await pool.query('SELECT id FROM users WHERE id=$1', [id]);
+    if (exists.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ success: true });
+    logEvent(pool, 'subscription_cancelled', id, null);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
