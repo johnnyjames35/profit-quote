@@ -55,6 +55,48 @@ router.get('/users', requireAdmin, async (req, res) => {
   }
 });
 
+// Funnel metrics — admin only
+router.get('/funnel', requireAdmin, async (req, res) => {
+  try {
+    const pool = req.app.locals.pool;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const [
+      visitorsToday, totalVisitors, linkedinVisitors, googleVisitors,
+      trialClicks, accountsCreated, firstQuotes, totalQuotes, paidCustomers
+    ] = await Promise.all([
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND created_at >= $1", [todayStart]),
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed'"),
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='linkedin'"),
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='google'"),
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='trial_click'"),
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='account_created'"),
+      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote'"),
+      pool.query("SELECT COUNT(*)::int AS c FROM quotes"),
+      pool.query("SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL")
+    ]);
+
+    const paidCount = paidCustomers.rows[0].c;
+    const mrr = paidCount * 49;
+
+    res.json({
+      visitorsToday: visitorsToday.rows[0].c,
+      totalVisitors: totalVisitors.rows[0].c,
+      linkedinVisitors: linkedinVisitors.rows[0].c,
+      googleVisitors: googleVisitors.rows[0].c,
+      trialClicks: trialClicks.rows[0].c,
+      accountsCreated: accountsCreated.rows[0].c,
+      firstQuotes: firstQuotes.rows[0].c,
+      totalQuotes: totalQuotes.rows[0].c,
+      paidCustomers: paidCount,
+      mrr
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Mark a user as paid — admin only
 router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
   const pool = req.app.locals.pool;
