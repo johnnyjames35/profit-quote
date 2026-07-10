@@ -1,6 +1,13 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 
+function logEvent(pool, eventType, userId, source) {
+  return pool.query(
+    'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
+    [eventType, userId || null, source || null]
+  ).catch(e => console.error('Event log error:', e.message));
+}
+
 router.get('/', auth, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
@@ -21,6 +28,11 @@ router.post('/', auth, async (req, res) => {
       [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]
     );
     res.json(result.rows[0]);
+
+    const priorQuotes = await pool.query('SELECT id FROM quotes WHERE user_id=$1', [req.user.id]);
+    if (priorQuotes.rows.length === 1) {
+      logEvent(pool, 'first_quote', req.user.id, null);
+    }
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
