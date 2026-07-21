@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Learn how to calculate your real profit margin (not just markup), what a healthy margin looks like in UK trades, and the five ways contractors quietly lose profit.">
+<link rel="canonical" href="https://profitquote.co.uk/how-to-calculate-profit-margin.html">
+<title>How to Calculate Your Profit Margin (UK Tradesperson Guide) | ProfitQuote</title>
+<meta property="og:title" content="How to Calculate Your Profit Margin (UK Tradesperson Guide) | ProfitQuote">
+<meta property="og:description" content="Learn how to calculate your real profit margin (not just markup), what a healthy margin looks like in UK trades, and the five ways contractors quietly lose profit.">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_GB">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#000000;
+  --dark:#1a1a1a;
+  --card:#242424;
+  --card2:#2a2a2a;
+  --border:#3a3a3a;
+  --border2:#444444;
+  --amber:#F5A623;
+  --amber-deep:#d4881a;
+  --amber-glow:rgba(245,166,35,0.10);
+  --amber-border:rgba(245,166,35,0.22);
+  --amber-border2:rgba(245,166,35,0.40);
+  --white:#ffffff;
+  --body:#c0c0c0;
+  --muted:#888888;
+  --green:#22c55e;
+  --red:#ef4444;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --radius:16px;
+  --radius-sm:10px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:#141414;color:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* NAV (matches homepage) */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(20,20,20,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;padding:0 24px;}
+.nav-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo-icon{width:34px;height:34px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--black);flex-shrink:0;}
+.nav-logo-text{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.nav-logo-text span{color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{color:var(--body);text-decoration:none;font-size:0.875rem;font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:var(--white);}
+.btn-nav{background:var(--amber) !important;color:#000000 !important;font-weight:800;font-size:0.875rem;padding:9px 20px;border-radius:8px;text-decoration:none;transition:opacity 0.2s;white-space:nowrap;}
+.btn-nav:hover{opacity:0.88;}
+@media(max-width:700px){.nav-links{display:none;}}
+
+/* SECTIONS */
+section{padding:60px 24px;}
+.wrap{max-width:820px;margin:0 auto;}
+.wrap-wide{max-width:1100px;margin:0 auto;}
+
+/* ARTICLE HERO */
+.article-hero{padding:150px 24px 50px;}
+.kc-badge{display:inline-flex;align-items:center;gap:8px;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:6px 14px;border-radius:20px;margin-bottom:24px;}
+.article-h1{font-size:clamp(1.9rem,4.5vw,2.8rem);font-weight:900;color:var(--white);letter-spacing:-0.03em;line-height:1.15;margin-bottom:18px;}
+.article-meta{font-size:0.82rem;color:var(--muted);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;margin-bottom:8px;}
+.article-meta strong{color:var(--body);font-weight:600;}
+
+/* BODY TEXT */
+.article-body{font-size:1rem;color:var(--body);}
+.article-body p{margin:16px 0;line-height:1.75;}
+.article-body h2{font-size:1.5rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;margin:44px 0 16px;}
+.article-body h3{font-size:1.1rem;font-weight:800;color:var(--white);margin:28px 0 10px;}
+.source-note{font-size:0.78rem;color:var(--muted);font-style:italic;margin:-8px 0 20px;}
+
+/* FORMULA BOX */
+.formula-box{background:var(--card);border:1px solid var(--amber-border2);border-radius:var(--radius-sm);padding:20px 22px;margin:24px 0;}
+.formula-box .label{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--amber);font-weight:800;margin-bottom:8px;}
+.formula-box .formula{font-size:1.15rem;font-weight:800;color:var(--white);}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;margin:20px 0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;font-size:0.88rem;}
+.data-table th{background:var(--amber);color:var(--black);text-align:left;padding:11px 14px;font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;}
+.data-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--body);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:nth-child(even) td{background:var(--card2);}
+.data-table td strong{color:var(--white);}
+
+/* CTA BOX */
+.cta-box{background:linear-gradient(160deg,#1a1100 0%,#161616 100%);border:2px solid var(--amber-border2);border-radius:var(--radius);padding:26px 24px;margin:32px 0;text-align:center;}
+.cta-box .cta-title{font-size:1.15rem;font-weight:900;color:var(--white);margin-bottom:8px;letter-spacing:-0.01em;}
+.cta-box .cta-sub{font-size:0.88rem;color:var(--body);margin-bottom:18px;line-height:1.6;}
+.btn-cta{display:inline-block;background:var(--amber);color:var(--black);font-weight:800;font-size:0.92rem;padding:12px 26px;border-radius:10px;text-decoration:none;transition:opacity 0.2s;}
+.btn-cta:hover{opacity:0.88;}
+
+/* FAQ (matches homepage) */
+.faq{margin-top:12px;}
+.faq-item{border-bottom:1px solid var(--border);}
+.faq-q{width:100%;background:none;border:none;color:var(--white);font-size:0.95rem;font-weight:700;font-family:var(--font);padding:16px 0;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.faq-q:hover{color:var(--amber);}
+.faq-arrow{font-size:1rem;color:var(--amber);transition:transform 0.25s;flex-shrink:0;}
+.faq-a{font-size:0.88rem;color:var(--body);line-height:1.7;padding-bottom:16px;display:none;}
+.faq-item.open .faq-a{display:block;}
+.faq-item.open .faq-arrow{transform:rotate(180deg);}
+
+/* CONTINUE LEARNING */
+.continue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px;}
+.continue-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px 18px;text-decoration:none;display:block;transition:border-color 0.2s,transform 0.2s;}
+.continue-card:hover{border-color:var(--amber-border2);transform:translateY(-2px);}
+.continue-eyebrow{font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--amber);margin-bottom:6px;}
+.continue-title{font-size:0.92rem;font-weight:700;color:var(--white);line-height:1.4;}
+
+/* BYLINE STRIP */
+.byline-strip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin:36px 0;display:flex;align-items:center;gap:16px;}
+.byline-avatar{width:44px;height:44px;background:var(--amber-glow);border:2px solid var(--amber-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.95rem;font-weight:800;color:var(--amber);flex-shrink:0;}
+.byline-name{font-size:0.88rem;color:var(--white);font-weight:700;}
+.byline-role{font-size:0.78rem;color:var(--muted);margin-top:2px;}
+
+/* FOOTER (matches homepage) */
+footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24px;}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}
+.footer-logo{display:flex;align-items:center;gap:8px;}
+.footer-logo-icon{width:28px;height:28px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--black);}
+.footer-logo-text{font-size:0.95rem;font-weight:800;color:var(--white);}
+.footer-logo-text span{color:var(--amber);}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+.footer-links a{color:var(--muted);font-size:0.8rem;text-decoration:none;cursor:pointer;}
+.footer-links a:hover{color:var(--amber);}
+.footer-legal{font-size:0.75rem;color:var(--muted);line-height:1.8;}
+
+/* KC HUB */
+.kc-hero{padding:150px 24px 60px;text-align:center;}
+.kc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:44px;}
+.kc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;text-decoration:none;display:block;transition:border-color 0.25s,transform 0.25s;}
+.kc-card:hover{border-color:var(--amber-border2);transform:translateY(-2px);}
+.kc-card-eyebrow{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--amber);margin-bottom:10px;}
+.kc-card-title{font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:8px;letter-spacing:-0.01em;}
+.kc-card-body{font-size:0.85rem;color:var(--body);line-height:1.6;}
+@media(max-width:768px){.article-hero{padding:120px 20px 40px;}.kc-hero{padding:120px 20px 40px;}section{padding:44px 20px;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">
+      <div class="nav-logo-icon">£</div>
+      <span class="nav-logo-text">Profit<span>Quote</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="/#features">Features</a>
+      <a href="/#how">How It Works</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/knowledge-centre.html">Knowledge Centre</a>
+      <a href="/dashboard">Sign In</a>
+      <a class="btn-nav" href="/#pricing">Start Free Trial</a>
+    </div>
+  </div>
+</nav>
+
+<section class="article-hero">
+  <div class="wrap">
+    <div class="kc-badge">📖 ProfitQuote Knowledge Centre</div>
+    <h1 class="article-h1">How to Calculate Your Profit Margin (And Why Most Tradespeople Get It Wrong)</h1>
+    <div class="article-meta"><strong>By John James</strong> &middot; Founder of ProfitQuote &middot; 6 min read &middot; Last updated: 21 July 2026</div>
+  </div>
+</section>
+<section style="padding-top:0;">
+  <div class="wrap article-body">
+
+<p>Ask ten tradespeople what their profit margin is, and most will tell you their markup instead. It's an easy mix-up, and it's an expensive one &mdash; because if you're pricing jobs based on the wrong number, you could be working full weeks for a fraction of the profit you think you're making.</p>
+
+<h2>What Is Profit Margin?</h2>
+<p>Profit margin is the percentage of your revenue that's left over as profit once all your costs &mdash; materials, labour, overheads &mdash; are covered. It's calculated as a percentage of the price you charged the customer, not a percentage of your costs.</p>
+
+<div class="formula-box">
+  <div class="label">Profit Margin Formula</div>
+  <div class="formula">Profit Margin % = (Revenue &minus; Total Costs) &divide; Revenue &times; 100</div>
+</div>
+
+<p>So if you invoice a customer &pound;1,000 for a job, and your materials, labour and overhead costs come to &pound;750, your profit is &pound;250. Divide that by the &pound;1,000 revenue and you get a 25% profit margin.</p>
+
+<h2>Margin vs Markup: The Distinction That Costs Tradespeople Thousands</h2>
+<p>This is the single biggest pricing mistake in the trades. Markup is the percentage you add on top of your costs to set your price. Margin is the percentage of the final price that's actually profit. They sound similar, but they are not the same number &mdash; and the gap between them gets bigger the higher the percentage.</p>
+
+<table class="data-table">
+  <tr><th>If your costs are</th><th>And you want this margin</th><th>You need this markup</th></tr>
+  <tr><td>&pound;600</td><td>20%</td><td>25%</td></tr>
+  <tr><td>&pound;600</td><td>25%</td><td>33.3%</td></tr>
+  <tr><td>&pound;600</td><td>30%</td><td>42.9%</td></tr>
+  <tr><td>&pound;600</td><td>35%</td><td>53.8%</td></tr>
+</table>
+
+<p>Notice what happens at the higher end: to actually land a 35% margin, you don't add 35% on top of your costs &mdash; you need to add nearly 54%. Tradespeople who add a flat 30% "markup" thinking that's their margin are often running closer to a 23% margin once it's worked back to a percentage of revenue.</p>
+
+<h2>What's a Healthy Profit Margin in the Trades?</h2>
+<p>Industry-wide, average net profit margins in construction and trade work sit surprisingly low &mdash; commonly quoted in the 5&ndash;10% range for the sector as a whole, largely dragged down by larger contractors operating on wafer-thin margins on big fixed-price contracts. That is not a target to aim for as an independent tradesperson or small firm.</p>
+
+<p>For a well-run sole trader or small trade business, a healthier benchmark is a gross margin in the 20&ndash;30% range once materials and direct labour are covered, aiming to keep at least 10&ndash;15% as genuine net profit after overheads, tax, and your own drawings.</p>
+<div class="source-note">Sector-wide margin figures referenced from published UK construction industry benchmarking analysis, 2025&ndash;2026.</div>
+
+<p>The thin-margin reality of the wider sector is also reflected in business failure data. Construction remained the hardest-hit sector for company insolvencies in the UK through 2025 and into 2026, accounting for around 16&ndash;17% of all company insolvencies in England and Wales &mdash; consistently the highest of any industry &mdash; despite construction firms making up only around 14% of all registered UK businesses.</p>
+<div class="source-note">Source: The Insolvency Service, Company Insolvency Statistics (published via GOV.UK), 2025&ndash;2026 releases.</div>
+
+<h2>Worked Example: Calculating Margin on a Real Job</h2>
+<p>Take a kitchen rewire quoted at &pound;1,800. Here's how the margin actually breaks down once every cost is accounted for:</p>
+
+<table class="data-table">
+  <tr><th>Item</th><th>Cost</th></tr>
+  <tr><td>Materials (cable, consumer unit, fittings)</td><td>&pound;420</td></tr>
+  <tr><td>Labour (your time, at your real hourly cost)</td><td>&pound;560</td></tr>
+  <tr><td>Van, tools, insurance, admin (allocated overhead)</td><td>&pound;180</td></tr>
+  <tr><td>Total costs</td><td>&pound;1,160</td></tr>
+  <tr><td>Revenue (quoted price)</td><td>&pound;1,800</td></tr>
+  <tr><td>Profit</td><td><strong>&pound;640</strong></td></tr>
+  <tr><td>Profit margin</td><td><strong>35.6%</strong></td></tr>
+</table>
+
+<h2>How Tradespeople Quietly Lose Margin</h2>
+<h3>1. Forgotten costs</h3>
+<p>Fuel, parking, waste disposal, small consumables, and admin time rarely make it into the quote &mdash; but they come out of the job's actual profit every time.</p>
+<h3>2. Underestimating your own labour cost</h3>
+<p>Many tradespeople price their own time far too cheaply, based on what they'd charge years ago rather than what their time genuinely costs the business today.</p>
+<h3>3. Material price creep</h3>
+<p>Quoting a job weeks before starting it, then absorbing material price increases rather than passing them on, silently eats into margin.</p>
+<h3>4. Variations done for free</h3>
+<p>Extra work agreed on-site "as a favour" that never gets invoiced is pure margin loss.</p>
+<h3>5. Chasing late payment</h3>
+<p>Every week spent chasing an invoice is unpaid admin time that was never priced into the job.</p>
+
+<div class="cta-box">
+  <div class="cta-title">Know Your Margin on Every Quote, Automatically</div>
+  <div class="cta-sub">ProfitQuote works out your real margin and markup side by side, so you always know what a job is actually worth before you send the quote.</div>
+  <a class="btn-cta" href="/#pricing">Try Free for 7 Days &rarr;</a>
+</div>
+
+<h2>Frequently Asked Questions</h2>
+<div class="faq">
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">What's the difference between gross margin and net margin? <span class="faq-arrow">&#9662;</span></button>
+    <div class="faq-a">Gross margin covers revenue minus direct job costs (materials and labour). Net margin goes further, deducting overheads, tax, and other running costs.</div>
+  </div>
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">Is a 20% profit margin good for a tradesperson? <span class="faq-arrow">&#9662;</span></button>
+    <div class="faq-a">As a gross margin, 20% is on the lower end of healthy for most small trade businesses. As a net margin (after overheads), 20% is strong.</div>
+  </div>
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">Why is my markup higher than my margin? <span class="faq-arrow">&#9662;</span></button>
+    <div class="faq-a">Markup is calculated on cost; margin is calculated on the final price. Because the final price is always larger than the cost, margin will always be a smaller percentage than markup for the same job.</div>
+  </div>
+</div>
+
+    <div class="byline-strip">
+      <div class="byline-avatar">JJ</div>
+      <div>
+        <div class="byline-name">John James</div>
+        <div class="byline-role">Founder of ProfitQuote</div>
+      </div>
+    </div>
+
+    <h2>Continue Learning</h2>
+    <div class="continue-grid">
+<a class="continue-card" href="/how-to-price-labour-correctly.html"><div class="continue-eyebrow">Knowledge Centre</div><div class="continue-title">How to Price Labour Correctly</div></a>
+<a class="continue-card" href="/how-to-calculate-construction-overheads.html"><div class="continue-eyebrow">Knowledge Centre</div><div class="continue-title">How to Calculate Construction Overheads</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <div class="footer-logo-icon">£</div>
+      <span class="footer-logo-text">Profit<span>Quote</span></span>
+    </div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/knowledge-centre.html">Knowledge Centre</a>
+      <a href="/#pricing">Pricing</a>
+    </div>
+    <div class="footer-legal">
+      ProfitQuote by Cambrian Digital &middot; Big Bulldog UK Ltd &middot; Company No. 15946705<br>
+      Trademark UK00004105275 &middot; 01639 410207 &middot; 07368 825060<br>
+      &copy; 2026 Big Bulldog UK Ltd. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+
+<script>
+function toggleFaq(btn){
+  const item=btn.closest('.faq-item');
+  const isOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+</script>
+
+</body>
+</html>
