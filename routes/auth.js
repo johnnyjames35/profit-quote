@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
 const crypto = require('crypto');
+const { sendToGA } = require('../utils/ga');
 
 const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
 
@@ -91,7 +92,8 @@ function logEvent(pool, eventType, userId, source) {
   return pool.query(
     'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
     [eventType, userId || null, source || null]
-  ).catch(e => console.error('Event log error:', e.message));
+  ).then(() => sendToGA(eventType, userId, source))
+   .catch(e => console.error('Event log error:', e.message));
 }
 
 router.post('/register', async (req, res) => {
