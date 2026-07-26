@@ -1,11 +1,13 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const { sendToGA } = require('../utils/ga');
 
 function logEvent(pool, eventType, userId, source) {
   return pool.query(
     'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
     [eventType, userId || null, source || null]
-  ).catch(e => console.error('Event log error:', e.message));
+  ).then(() => sendToGA(eventType, userId, source))
+   .catch(e => console.error('Event log error:', e.message));
 }
 
 router.get('/', auth, async (req, res) => {
