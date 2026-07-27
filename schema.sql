@@ -78,3 +78,9 @@ CREATE TABLE IF NOT EXISTS events (
   meta JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS template_downloads (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  source VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW()
+);
