@@ -106,6 +106,25 @@ section{padding:60px 24px;}
 .dl-msg.error{color:var(--red);}
 .dl-fineprint{font-size:0.72rem;color:var(--muted);margin-top:10px;}
 
+/* QUOTE BUILDER FORM */
+.builder-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;margin:20px 0;}
+.builder-box h4{font-size:0.95rem;font-weight:800;color:var(--white);margin:18px 0 10px;}
+.builder-box h4:first-child{margin-top:0;}
+.b-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.b-row.single{grid-template-columns:1fr;}
+.b-row.three{grid-template-columns:1fr 1fr 1fr;}
+.b-field label{display:block;font-size:0.72rem;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;}
+.b-field input, .b-field textarea{width:100%;background:#1a1a1a;border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--white);font-size:0.88rem;font-family:var(--font);resize:vertical;}
+.b-field textarea{min-height:52px;}
+.b-costs{background:#1a1a1a;border:1px solid var(--border2);border-radius:10px;padding:16px;margin:14px 0;}
+.b-cost-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:0.88rem;}
+.b-cost-row input{width:110px;text-align:right;background:#242424;border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--white);font-family:var(--font);}
+.b-cost-row.total{border-top:2px solid var(--amber-border2);margin-top:8px;padding-top:12px;font-weight:800;color:var(--white);}
+.b-vat-toggle{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--body);margin:8px 0 4px;}
+.btn-generate{display:block;width:100%;background:var(--amber);color:var(--black);font-weight:800;font-size:0.95rem;padding:13px;border-radius:10px;border:none;cursor:pointer;margin-top:16px;transition:opacity 0.2s;}
+.btn-generate:hover{opacity:0.88;}
+.btn-generate:disabled{opacity:0.6;cursor:default;}
+
 /* CTA BOX */
 .cta-box{background:linear-gradient(160deg,#1a1100 0%,#161616 100%);border:2px solid var(--amber-border2);border-radius:var(--radius);padding:26px 24px;margin:32px 0;text-align:center;}
 .cta-box .cta-title{font-size:1.15rem;font-weight:900;color:var(--white);margin-bottom:8px;letter-spacing:-0.01em;}
@@ -207,6 +226,55 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
   </form>
   <div id="templateMsg"></div>
   <div class="dl-fineprint">We'll only use your email to send occasional quoting tips. Unsubscribe anytime.</div>
+</div>
+
+<div class="builder-box" id="builderBox" style="display:none;">
+  <h4>Fill In Your Quote</h4>
+  <div class="b-row">
+    <div class="b-field"><label>Business Name</label><input type="text" id="f_business_name" placeholder="Jones Building & Renovations"></div>
+    <div class="b-field"><label>Quote Number</label><input type="text" id="f_quote_number" placeholder="Q-1001"></div>
+  </div>
+  <div class="b-row">
+    <div class="b-field"><label>Business Address / Phone / Email</label><textarea id="f_business_details" placeholder="12 Oak Street, Cardiff, CF10 1AA&#10;07700 900123 | hello@yourbusiness.co.uk"></textarea></div>
+    <div class="b-field"><label>Date</label><input type="date" id="f_quote_date"></div>
+  </div>
+
+  <h4>Customer &amp; Job</h4>
+  <div class="b-row">
+    <div class="b-field"><label>Customer Name / Contact</label><textarea id="f_customer_details" placeholder="Mr &amp; Mrs Davies&#10;07700 900456"></textarea></div>
+    <div class="b-field"><label>Job Address (if different)</label><textarea id="f_job_address"></textarea></div>
+  </div>
+  <div class="b-row single">
+    <div class="b-field"><label>Description of Works</label><textarea id="f_description" placeholder="Full bathroom refit including tiling, new suite, and re-plumbing."></textarea></div>
+  </div>
+
+  <h4>Costs</h4>
+  <div class="b-costs">
+    <div class="b-cost-row"><span>Materials</span><input type="number" step="0.01" id="f_materials" value="0"></div>
+    <div class="b-cost-row"><span>Labour</span><input type="number" step="0.01" id="f_labour" value="0"></div>
+    <div class="b-cost-row"><span>Waste disposal / skip</span><input type="number" step="0.01" id="f_waste" value="0"></div>
+    <div class="b-cost-row"><span>Other costs</span><input type="number" step="0.01" id="f_other" value="0"></div>
+    <div class="b-cost-row"><span>Subtotal</span><span id="f_subtotal_display">£0.00</span></div>
+    <div class="b-vat-toggle"><input type="checkbox" id="f_vat_toggle"> <label for="f_vat_toggle">Add VAT (20%)</label></div>
+    <div class="b-cost-row"><span>VAT</span><span id="f_vat_display">£0.00</span></div>
+    <div class="b-cost-row total"><span>TOTAL</span><span id="f_total_display">£0.00</span></div>
+  </div>
+
+  <h4>Terms</h4>
+  <div class="b-row single">
+    <div class="b-field"><label>What's Included</label><textarea id="f_included" placeholder="All materials, labour, waste removal, dust sheeting."></textarea></div>
+  </div>
+  <div class="b-row single">
+    <div class="b-field"><label>What's Excluded</label><textarea id="f_excluded" placeholder="Any re-boarding due to hidden damp once old tiles removed."></textarea></div>
+  </div>
+  <div class="b-row three">
+    <div class="b-field"><label>Deposit Required</label><input type="text" id="f_deposit" placeholder="40% on acceptance"></div>
+    <div class="b-field"><label>Quote Valid For</label><input type="text" id="f_valid_for" placeholder="30 days"></div>
+    <div class="b-field"><label>Payment Terms</label><input type="text" id="f_payment_terms" placeholder="Balance on completion"></div>
+  </div>
+
+  <button class="btn-generate" id="generateBtn">Generate My Quote PDF &rarr;</button>
+  <div id="generateMsg"></div>
 </div>
 
 <div class="template-box">
@@ -315,6 +383,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
 </footer>
 
 
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script>
 function toggleFaq(btn){
   const item=btn.closest('.faq-item');
@@ -341,10 +410,10 @@ if (templateForm) {
       });
       const data = await res.json();
       if (res.ok && data.downloadUrl) {
-        msg.innerHTML = '<div class="dl-msg success">Thanks! Your download is starting now.</div>';
-        window.location.href = data.downloadUrl;
-        btn.textContent = 'Download Free PDF \u2192';
-        btn.disabled = false;
+        msg.innerHTML = '<div class="dl-msg success">Thanks! Fill in your details below to generate your quote.</div>';
+        templateForm.style.display = 'none';
+        document.getElementById('builderBox').style.display = 'block';
+        document.getElementById('f_quote_date').value = new Date().toISOString().split('T')[0];
       } else {
         msg.innerHTML = '<div class="dl-msg error">' + (data.error || 'Something went wrong, please try again.') + '</div>';
         btn.textContent = 'Download Free PDF \u2192';
@@ -355,6 +424,94 @@ if (templateForm) {
       btn.textContent = 'Download Free PDF \u2192';
       btn.disabled = false;
     }
+  });
+}
+
+// Live cost totals
+function recalcTotals(){
+  const materials = parseFloat(document.getElementById('f_materials').value) || 0;
+  const labour = parseFloat(document.getElementById('f_labour').value) || 0;
+  const waste = parseFloat(document.getElementById('f_waste').value) || 0;
+  const other = parseFloat(document.getElementById('f_other').value) || 0;
+  const subtotal = materials + labour + waste + other;
+  const vatOn = document.getElementById('f_vat_toggle').checked;
+  const vat = vatOn ? subtotal * 0.2 : 0;
+  const total = subtotal + vat;
+  document.getElementById('f_subtotal_display').textContent = '£' + subtotal.toFixed(2);
+  document.getElementById('f_vat_display').textContent = '£' + vat.toFixed(2);
+  document.getElementById('f_total_display').textContent = '£' + total.toFixed(2);
+  return { subtotal, vat, total };
+}
+['f_materials','f_labour','f_waste','f_other','f_vat_toggle'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', recalcTotals);
+});
+
+// Generate the filled PDF
+const generateBtn = document.getElementById('generateBtn');
+if (generateBtn) {
+  generateBtn.addEventListener('click', async function(){
+    const generateMsg = document.getElementById('generateMsg');
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
+    generateMsg.innerHTML = '';
+    try {
+      const { subtotal, vat, total } = recalcTotals();
+      const fmtDate = document.getElementById('f_quote_date').value;
+      const [yy, mm, dd] = fmtDate ? fmtDate.split('-') : ['', '', ''];
+      const displayDate = (dd && mm && yy) ? `${dd}/${mm}/${yy}` : '';
+
+      const values = {
+        business_name: document.getElementById('f_business_name').value,
+        business_details: document.getElementById('f_business_details').value,
+        quote_number: document.getElementById('f_quote_number').value,
+        quote_date: displayDate,
+        customer_details: document.getElementById('f_customer_details').value,
+        job_address: document.getElementById('f_job_address').value,
+        description: document.getElementById('f_description').value,
+        materials_cost: parseFloat(document.getElementById('f_materials').value || 0).toFixed(2),
+        labour_cost: parseFloat(document.getElementById('f_labour').value || 0).toFixed(2),
+        waste_cost: parseFloat(document.getElementById('f_waste').value || 0).toFixed(2),
+        other_cost: parseFloat(document.getElementById('f_other').value || 0).toFixed(2),
+        subtotal: subtotal.toFixed(2),
+        vat: vat.toFixed(2),
+        total: total.toFixed(2),
+        included: document.getElementById('f_included').value,
+        excluded: document.getElementById('f_excluded').value,
+        deposit: document.getElementById('f_deposit').value,
+        valid_for: document.getElementById('f_valid_for').value,
+        payment_terms: document.getElementById('f_payment_terms').value
+      };
+
+      const existingPdfBytes = await fetch('/builder-quote-template.pdf').then(r => r.arrayBuffer());
+      const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+      const form = pdfDoc.getForm();
+      Object.entries(values).forEach(([name, val]) => {
+        try {
+          form.getTextField(name).setText(String(val || ''));
+        } catch(fieldErr) {
+          console.error('Field error:', name, fieldErr.message);
+        }
+      });
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = (values.business_name || 'quote').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+      a.download = `quote-${safeName}-${values.quote_number || 'draft'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      generateMsg.innerHTML = '<div class="dl-msg success">Your completed quote PDF has downloaded.</div>';
+    } catch(err) {
+      console.error(err);
+      generateMsg.innerHTML = '<div class="dl-msg error">Something went wrong generating your PDF. Please try again.</div>';
+    }
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Generate My Quote PDF \u2192';
   });
 }
 </script>
