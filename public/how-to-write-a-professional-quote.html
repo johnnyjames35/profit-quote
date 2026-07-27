@@ -275,6 +275,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
 
   <button class="btn-generate" id="generateBtn">Generate My Quote PDF &rarr;</button>
   <div id="generateMsg"></div>
+  <div class="dl-fineprint" id="draftStatus" style="text-align:center;margin-top:10px;">Your progress is saved automatically as you type. <a href="#" id="clearDraftLink" style="color:var(--amber);">Clear form</a></div>
 </div>
 
 <div class="template-box">
@@ -391,6 +392,70 @@ function toggleFaq(btn){
   document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
   if(!isOpen) item.classList.add('open');
 }
+
+// ---- Draft autosave (so accidental navigation never loses progress) ----
+const DRAFT_KEY = 'pq_quote_draft_v1';
+const BUILDER_FIELD_IDS = ['f_business_name','f_quote_number','f_business_details','f_quote_date',
+  'f_customer_details','f_job_address','f_description','f_materials','f_labour','f_waste','f_other',
+  'f_vat_toggle','f_included','f_excluded','f_deposit','f_valid_for','f_payment_terms'];
+
+function saveDraft(){
+  const draft = {};
+  BUILDER_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    draft[id] = (el.type === 'checkbox') ? el.checked : el.value;
+  });
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
+}
+
+function restoreDraft(){
+  let raw;
+  try { raw = localStorage.getItem(DRAFT_KEY); } catch(e) { return false; }
+  if (!raw) return false;
+  try {
+    const draft = JSON.parse(raw);
+    let hasContent = false;
+    BUILDER_FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el || !(id in draft)) return;
+      if (el.type === 'checkbox') { el.checked = draft[id]; }
+      else { el.value = draft[id]; if (draft[id]) hasContent = true; }
+    });
+    return hasContent;
+  } catch(e) { return false; }
+}
+
+function clearDraft(){
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+  BUILDER_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = false;
+    else el.value = '';
+  });
+  recalcTotals();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  const hadDraft = restoreDraft();
+  if (hadDraft) {
+    document.getElementById('templateForm').style.display = 'none';
+    document.getElementById('builderBox').style.display = 'block';
+    recalcTotals();
+  }
+  BUILDER_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', saveDraft);
+  });
+  const clearLink = document.getElementById('clearDraftLink');
+  if (clearLink) {
+    clearLink.addEventListener('click', function(e){
+      e.preventDefault();
+      if (confirm('Clear everything you\'ve entered on this quote?')) clearDraft();
+    });
+  }
+});
 
 const templateForm = document.getElementById('templateForm');
 if (templateForm) {
