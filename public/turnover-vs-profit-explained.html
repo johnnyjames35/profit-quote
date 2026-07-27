@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="More turnover doesn't always mean more profit. Learn why busy builders often earn less, the hidden costs quietly eating your margin, and how to fix it.">
+<link rel="canonical" href="https://profitquote.co.uk/turnover-vs-profit-explained.html">
+<title>Turnover vs Profit: Why Being Busy Isn't Profitable | ProfitQuote</title>
+<meta property="og:title" content="Turnover vs Profit: Why Being Busy Isn't Profitable | ProfitQuote">
+<meta property="og:description" content="More turnover doesn't always mean more profit. Learn why busy builders often earn less, the hidden costs quietly eating your margin, and how to fix it.">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_GB">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#000000;
+  --dark:#1a1a1a;
+  --card:#242424;
+  --card2:#2a2a2a;
+  --border:#3a3a3a;
+  --border2:#444444;
+  --amber:#F5A623;
+  --amber-deep:#d4881a;
+  --amber-glow:rgba(245,166,35,0.10);
+  --amber-border:rgba(245,166,35,0.22);
+  --amber-border2:rgba(245,166,35,0.40);
+  --white:#ffffff;
+  --body:#c0c0c0;
+  --muted:#888888;
+  --green:#22c55e;
+  --red:#ef4444;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --radius:16px;
+  --radius-sm:10px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:#141414;color:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* NAV (matches homepage) */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(20,20,20,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;padding:0 24px;}
+.nav-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo-icon{width:34px;height:34px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--black);flex-shrink:0;}
+.nav-logo-text{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
+.nav-logo-text span{color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{color:var(--body);text-decoration:none;font-size:0.875rem;font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:var(--white);}
+.btn-nav{background:var(--amber) !important;color:#000000 !important;font-weight:800;font-size:0.875rem;padding:9px 20px;border-radius:8px;text-decoration:none;transition:opacity 0.2s;white-space:nowrap;}
+.btn-nav:hover{opacity:0.88;}
+@media(max-width:700px){.nav-links{display:none;}}
+
+/* SECTIONS */
+section{padding:60px 24px;}
+.wrap{max-width:820px;margin:0 auto;}
+.wrap-wide{max-width:1100px;margin:0 auto;}
+
+/* ARTICLE HERO */
+.article-hero{padding:150px 24px 50px;}
+.kc-badge{display:inline-flex;align-items:center;gap:8px;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:6px 14px;border-radius:20px;margin-bottom:24px;}
+.article-h1{font-size:clamp(1.9rem,4.5vw,2.8rem);font-weight:900;color:var(--white);letter-spacing:-0.03em;line-height:1.15;margin-bottom:18px;}
+.article-meta{font-size:0.82rem;color:var(--muted);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;margin-bottom:8px;}
+.article-meta strong{color:var(--body);font-weight:600;}
+
+/* BODY TEXT */
+.article-body{font-size:1rem;color:var(--body);}
+.article-body p{margin:16px 0;line-height:1.75;}
+.article-body h2{font-size:1.5rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;margin:44px 0 16px;}
+.article-body h3{font-size:1.1rem;font-weight:800;color:var(--white);margin:28px 0 10px;}
+.article-body ul{margin:16px 0;padding-left:22px;}
+.article-body li{margin:8px 0;line-height:1.7;}
+.source-note{font-size:0.78rem;color:var(--muted);font-style:italic;margin:-8px 0 20px;}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;margin:20px 0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;font-size:0.88rem;}
+.data-table th{background:var(--amber);color:var(--black);text-align:left;padding:11px 14px;font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;}
+.data-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--body);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:nth-child(even) td{background:var(--card2);}
+.data-table td strong{color:var(--white);}
+
+/* CTA BOX */
+.cta-box{background:linear-gradient(160deg,#1a1100 0%,#161616 100%);border:2px solid var(--amber-border2);border-radius:var(--radius);padding:26px 24px;margin:32px 0;text-align:center;}
+.cta-box .cta-title{font-size:1.15rem;font-weight:900;color:var(--white);margin-bottom:8px;letter-spacing:-0.01em;}
+.cta-box .cta-sub{font-size:0.88rem;color:var(--body);margin-bottom:18px;line-height:1.6;}
+.btn-cta{display:inline-block;background:var(--amber);color:var(--black);font-weight:800;font-size:0.92rem;padding:12px 26px;border-radius:10px;text-decoration:none;transition:opacity 0.2s;}
+.btn-cta:hover{opacity:0.88;}
+
+/* FAQ (matches homepage) */
+.faq{margin-top:12px;}
+.faq-item{border-bottom:1px solid var(--border);}
+.faq-q{width:100%;background:none;border:none;color:var(--white);font-size:0.95rem;font-weight:700;font-family:var(--font);padding:16px 0;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.faq-q:hover{color:var(--amber);}
+.faq-arrow{font-size:1rem;color:var(--amber);transition:transform 0.25s;flex-shrink:0;}
+.faq-a{font-size:0.88rem;color:var(--body);line-height:1.7;padding-bottom:16px;display:none;}
+.faq-item.open .faq-a{display:block;}
+.faq-item.open .faq-arrow{transform:rotate(180deg);}
+
+/* CONTINUE LEARNING */
+.continue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px;}
+.continue-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px 18px;text-decoration:none;display:block;transition:border-color 0.2s,transform 0.2s;}
+.continue-card:hover{border-color:var(--amber-border2);transform:translateY(-2px);}
+.continue-eyebrow{font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--amber);margin-bottom:6px;}
+.continue-title{font-size:0.92rem;font-weight:700;color:var(--white);line-height:1.4;}
+
+/* BYLINE STRIP */
+.byline-strip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin:36px 0;display:flex;align-items:center;gap:16px;}
+.byline-avatar{width:44px;height:44px;background:var(--amber-glow);border:2px solid var(--amber-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.95rem;font-weight:800;color:var(--amber);flex-shrink:0;}
+.byline-name{font-size:0.88rem;color:var(--white);font-weight:700;}
+.byline-role{font-size:0.78rem;color:var(--muted);margin-top:2px;}
+
+/* FOOTER (matches homepage) */
+footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24px;}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}
+.footer-logo{display:flex;align-items:center;gap:8px;}
+.footer-logo-icon{width:28px;height:28px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--black);}
+.footer-logo-text{font-size:0.95rem;font-weight:800;color:var(--white);}
+.footer-logo-text span{color:var(--amber);}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+.footer-links a{color:var(--muted);font-size:0.8rem;text-decoration:none;cursor:pointer;}
+.footer-links a:hover{color:var(--amber);}
+.footer-legal{font-size:0.75rem;color:var(--muted);line-height:1.8;}
+@media(max-width:768px){.article-hero{padding:120px 20px 40px;}section{padding:44px 20px;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">
+      <div class="nav-logo-icon">£</div>
+      <span class="nav-logo-text">Profit<span>Quote</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="/#features">Features</a>
+      <a href="/#how">How It Works</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/knowledge-centre.html">Knowledge Centre</a>
+      <a href="/dashboard">Sign In</a>
+      <a class="btn-nav" href="/#pricing">Start Free Trial</a>
+    </div>
+  </div>
+</nav>
+
+<section class="article-hero">
+  <div class="wrap">
+    <div class="kc-badge">📖 ProfitQuote Knowledge Centre</div>
+    <h1 class="article-h1">Turnover vs Profit: Why Being Busy Isn't the Same as Being Profitable</h1>
+    <div class="article-meta"><strong>By John James</strong> &middot; Founder of ProfitQuote &middot; 5 min read &middot; Last updated: 27 July 2026</div>
+  </div>
+</section>
+<section style="padding-top:0;">
+  <div class="wrap article-body">
+
+<p>Winning more work feels like progress. A fuller diary, more vans on the road, more invoices going out &mdash; it looks like a business is growing. But turnover and profit are not the same thing, and plenty of busy trade businesses are quietly earning less than a much quieter competitor down the road.</p>
+
+<h2>Two Builders, Same Trade, Very Different Businesses</h2>
+<p>Take two building companies working in the same area, doing similar work:</p>
+
+<table class="data-table">
+  <tr><th></th><th>Annual Sales</th><th>Annual Profit</th></tr>
+  <tr><td><strong>Builder A</strong></td><td>&pound;400,000</td><td>&pound;20,000</td></tr>
+  <tr><td><strong>Builder B</strong></td><td>&pound;250,000</td><td>&pound;50,000</td></tr>
+</table>
+
+<p>Builder A is turning over 60% more than Builder B, but taking home less than half the profit. On paper, Builder A looks like the bigger, more successful business. In reality, Builder B is running the healthier operation &mdash; less stressed, less exposed, and keeping far more of every pound that comes in.</p>
+
+<p>This is one of the most common traps in the trades: chasing turnover because it feels like success, while the actual profit &mdash; the number that pays your wages, your tax bill and your future &mdash; goes in the wrong direction.</p>
+
+<h2>Where the Extra Turnover Actually Goes</h2>
+<p>When a business grows in sales but not in profit, the gap is almost always explained by a mix of underpricing and costs that never made it into the quote in the first place. Common culprits include:</p>
+
+<ul>
+  <li>Fuel and vehicle running costs</li>
+  <li>Parking and congestion charges</li>
+  <li>Waste disposal and skip permits</li>
+  <li>Small fixings and consumables</li>
+  <li>PPE and tool wear and replacement</li>
+  <li>Insurance and accountancy fees</li>
+  <li>Credit card and payment processing fees</li>
+  <li>Unpaid time spent quoting and chasing invoices</li>
+</ul>
+
+<p>Individually these look small. Missed across dozens of jobs a year, they can be the entire difference between Builder A's margin and Builder B's.</p>
+
+<h2>What's a Realistic Profit Margin to Aim For?</h2>
+<p>There's no single number that fits every trade business &mdash; a solo plumber and a ten-person building firm carry very different overheads. As a rough guide, many profitable UK trade businesses aim for:</p>
+
+<table class="data-table">
+  <tr><th>Business Type</th><th>Typical Net Profit Margin</th></tr>
+  <tr><td>Sole Trader</td><td>10&ndash;20%</td></tr>
+  <tr><td>Small Trade Business</td><td>10&ndash;15%</td></tr>
+  <tr><td>Established Building Company</td><td>8&ndash;15%</td></tr>
+  <tr><td>Specialist Contractors</td><td>15&ndash;25%</td></tr>
+</table>
+
+<p>The goal isn't to chase the highest possible number &mdash; it's consistency, job after job. For the full breakdown of how to calculate your own margin correctly (and why it's not the same as markup), see our <a href="/how-to-calculate-profit-margin.html" style="color:var(--amber);">guide to calculating profit margin</a>.</p>
+
+<h2>Don't Compete on Price Alone</h2>
+<p>One of the fastest ways to end up like Builder A is dropping prices simply to win the job. But price isn't always the deciding factor for customers. Many homeowners choose a tradesperson based on:</p>
+
+<ul>
+  <li>Clear, professional-looking quotations</li>
+  <li>Good communication throughout the job</li>
+  <li>Realistic, reliable timescales</li>
+  <li>Confidence the work will be done properly</li>
+</ul>
+
+<p>A well-presented quote that protects your margin often wins the job over the cheapest one on the table &mdash; and it's far better for your business than winning everything and profiting from nothing.</p>
+
+<div class="cta-box">
+  <div class="cta-title">Quote for Profit, Not Just for Turnover</div>
+  <div class="cta-sub">ProfitQuote builds every forgotten cost and a realistic margin into your quotes automatically, so growth in sales actually means growth in profit.</div>
+  <a class="btn-cta" href="/#pricing">Try Free for 7 Days &rarr;</a>
+</div>
+
+<h2>Frequently Asked Questions</h2>
+<div class="faq">
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">Does more turnover always mean more profit? <span class="faq-arrow">&#9662;</span></button>
+    <div class="faq-a">No. Turnover only tells you how much work you've done, not how much of it you've kept. A business can grow its sales significantly while its profit shrinks, if pricing and forgotten costs aren't under control.</div>
+  </div>
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">What profit margin should a builder make? <span class="faq-arrow">&#9662;</span></button>
+    <div class="faq-a">Many profitable builders aim for a net profit margin somewhere between 10% and 20%, depending on business size, overheads and the type of work undertaken.</div>
+  </div>
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">Why do builders end up underquoting jobs? <span class="faq-arrow">&#9662;</span></button>
+    <div class="faq-a">Common reasons include forgetting overheads, underestimating labour, missing material costs, leaving out contingency, and competing purely on price rather than value.</div>
+  </div>
+</div>
+
+    <div class="byline-strip">
+      <div class="byline-avatar">JJ</div>
+      <div>
+        <div class="byline-name">John James</div>
+        <div class="byline-role">Founder of ProfitQuote</div>
+      </div>
+    </div>
+
+    <h2>Continue Learning</h2>
+    <div class="continue-grid">
+<a class="continue-card" href="/how-to-calculate-profit-margin.html"><div class="continue-eyebrow">Knowledge Centre</div><div class="continue-title">How to Calculate Your Profit Margin</div></a>
+<a class="continue-card" href="/stop-underquoting-jobs.html"><div class="continue-eyebrow">Knowledge Centre</div><div class="continue-title">Why Tradespeople Underquote Jobs (And How to Stop)</div></a>
+<a class="continue-card" href="/25-costs-tradespeople-forget.html"><div class="continue-eyebrow">Knowledge Centre</div><div class="continue-title">25 Costs Tradespeople Forget to Include in Their Quotes</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <div class="footer-logo-icon">£</div>
+      <span class="footer-logo-text">Profit<span>Quote</span></span>
+    </div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/knowledge-centre.html">Knowledge Centre</a>
+      <a href="/#pricing">Pricing</a>
+    </div>
+    <div class="footer-legal">
+      ProfitQuote by Cambrian Digital &middot; Big Bulldog UK Ltd &middot; Company No. 15946705<br>
+      Trademark UK00004105275 &middot; 01639 410207 &middot; 07368 825060<br>
+      &copy; 2026 Big Bulldog UK Ltd. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+
+<script>
+function toggleFaq(btn){
+  const item=btn.closest('.faq-item');
+  const isOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+</script>
+
+</body>
+</html>
