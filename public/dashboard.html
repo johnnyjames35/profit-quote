@@ -771,6 +771,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <span class="builder-title" id="builder-title">New Quote</span>
         <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;">Your progress is saved automatically. <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')){ clearBuilderDraft(); resetBuilder(); }" style="color:var(--amber);">Clear &amp; start over</a></div>
       <div class="step-dots">
         <div class="dot active" id="dot-1"></div>
         <div class="dot" id="dot-2"></div>
@@ -1235,12 +1236,54 @@ let currentQuoteData = null;
 let needsSkip = true;
 let needsScaffold = false;
 let editingQuoteId = null; // null = new quote, number = editing existing
+let currentBuilderStep = 1;
+const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
+const BUILDER_STEP_FIELDS = ['q-desc','q-customer','q-email','q-postcode',
+  'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
+  'q-days','q-day-rate','q-materials','q-markup','q-skip-size','q-skip-cost','q-scaffold-cost',
+  'q-contingency','q-profit-target'];
+
+function saveBuilderDraft(){
+  if(editingQuoteId) return; // don't autosave over an existing quote being edited
+  const draft = { step: currentBuilderStep, needsSkip, needsScaffold, selectedRisk, fields: {} };
+  BUILDER_STEP_FIELDS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) draft.fields[id] = el.value;
+  });
+  try{ localStorage.setItem(BUILDER_DRAFT_KEY, JSON.stringify(draft)); }catch(e){}
+}
+
+function restoreBuilderDraft(){
+  if(editingQuoteId) return false;
+  let raw;
+  try{ raw = localStorage.getItem(BUILDER_DRAFT_KEY); }catch(e){ return false; }
+  if(!raw) return false;
+  try{
+    const draft = JSON.parse(raw);
+    let hasContent = false;
+    Object.entries(draft.fields||{}).forEach(([id, val])=>{
+      const el = document.getElementById(id);
+      if(el && val){ el.value = val; hasContent = true; }
+    });
+    if(!hasContent) return false;
+    if(typeof draft.needsSkip==='boolean') setSkip(draft.needsSkip);
+    if(typeof draft.needsScaffold==='boolean') setScaffold(draft.needsScaffold);
+    if(draft.selectedRisk) setRisk(draft.selectedRisk);
+    nextStep(Math.min(draft.step || 1, 5));
+    return true;
+  }catch(e){ return false; }
+}
+
+function clearBuilderDraft(){
+  try{ localStorage.removeItem(BUILDER_DRAFT_KEY); }catch(e){}
+}
 
 function setSkip(val){
   needsSkip = val;
   document.getElementById('skip-yes').className = val ? 'risk-btn active-low' : 'risk-btn';
   document.getElementById('skip-no').className = val ? 'risk-btn' : 'risk-btn active-low';
   document.getElementById('skip-fields').style.display = val ? 'block' : 'none';
+  saveBuilderDraft();
 }
 
 function setScaffold(val){
@@ -1248,6 +1291,7 @@ function setScaffold(val){
   document.getElementById('scaffold-yes').className = val ? 'risk-btn active-low' : 'risk-btn';
   document.getElementById('scaffold-no').className = val ? 'risk-btn' : 'risk-btn active-low';
   document.getElementById('scaffold-fields').style.display = val ? 'block' : 'none';
+  saveBuilderDraft();
 }
 
 function updateSkipCost(){
@@ -1381,6 +1425,10 @@ async function initApp(){
   document.getElementById('app-screen').style.display='flex';
   populateUserUI();
   loadQuotes();
+  BUILDER_STEP_FIELDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input', saveBuilderDraft);
+  });
 }
 
 function doLogout(){
@@ -1436,6 +1484,7 @@ function switchTab(tab){
     document.getElementById('builder-title').textContent='New Quote';
     document.getElementById('edit-badge').style.display='none';
     document.getElementById('btn-save-quote').textContent='💾 Save';
+    restoreBuilderDraft();
   }
 }
 
@@ -1871,19 +1920,23 @@ function setRisk(r){
   selectedRisk=r;
   ['low','med','high'].forEach(x=>{ document.getElementById('risk-'+x).className='risk-btn'; });
   document.getElementById('risk-'+r).classList.add('active-'+r);
+  saveBuilderDraft();
 }
 
 function nextStep(n){
+  currentBuilderStep = n;
   for(let i=1;i<=6;i++) document.getElementById('step-'+i).style.display=(i===n)?'block':'none';
   for(let i=1;i<=6;i++){
     const d=document.getElementById('dot-'+i);
     if(d) d.className='dot'+(i<n?' done':i===n?' active':'');
   }
   document.querySelector('.page').scrollTop=0;
+  saveBuilderDraft();
   if(n===6) generateQuote();
 }
 
 function resetBuilder(){
+  clearBuilderDraft();
   editingQuoteId=null;
   ['q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   needsSkip=true; needsScaffold=false;
@@ -2107,6 +2160,7 @@ async function saveQuote(){
     }
     if(res.ok){
       showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
+      clearBuilderDraft();
       // Flash profit on hero for new quotes only
       if(!editingQuoteId && currentQuoteData?.quote_data?.profit){
         flashProfitHero(currentQuoteData.quote_data.profit);
