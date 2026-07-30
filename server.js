@@ -25,6 +25,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/photos', require('./routes/photos'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/leads', require('./routes/leads'));
+app.use('/webhook', require('./routes/stripe-webhook'));
 
 // Trial / payment check middleware
 async function trialCheck(req, res, next) {
