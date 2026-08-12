@@ -24,19 +24,19 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  --navy: #0B1628;
-  --navy2: #111f35;
-  --navy3: #1a2d47;
-  --cyan: #00c2e0;
-  --cyan-dim: rgba(0,194,224,0.12);
-  --cyan-border: rgba(0,194,224,0.25);
-  --white: #f0f4f8;
-  --muted: #6a7f96;
+  --navy: #10202B;
+  --navy2: #12232E;
+  --navy3: #263844;
+  --cyan: #FFC20A;
+  --cyan-dim: rgba(255,194,10,0.12);
+  --cyan-border: rgba(255,194,10,0.25);
+  --white: #FFFFFF;
+  --muted: #94A4AD;
   --border: rgba(255,255,255,0.07);
   --green: #00d97e;
   --green-dim: rgba(0,217,126,0.12);
-  --amber: #f6c90e;
-  --amber-dim: rgba(246,201,14,0.12);
+  --amber: #FFC20A;
+  --amber-dim: rgba(255,194,10,0.12);
   --red: #ff4757;
   --red-dim: rgba(255,71,87,0.12);
   --font: 'IBM Plex Sans', sans-serif;
@@ -59,8 +59,8 @@ body {
   min-height: 100vh;
   padding: 20px;
   background: var(--navy);
-  background-image: radial-gradient(ellipse at 20% 50%, rgba(0,194,224,0.06) 0%, transparent 60%),
-                    radial-gradient(ellipse at 80% 20%, rgba(0,194,224,0.04) 0%, transparent 50%);
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(255,194,10,0.06) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 20%, rgba(255,194,10,0.04) 0%, transparent 50%);
 }
 
 .login-card { width: 100%; max-width: 380px; }
@@ -181,7 +181,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
   display: inline-block; padding: 3px 10px; border-radius: 20px;
   font-size: 0.72rem; font-weight: 600; font-family: var(--mono);
 }
-.badge-trial { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(246,201,14,0.25); }
+.badge-trial { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,194,10,0.25); }
 .badge-active { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,217,126,0.25); }
 .badge-expired { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.25); }
 .td-quotes { font-family: var(--mono); font-size: 0.85rem; color: var(--cyan); }
@@ -202,11 +202,11 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 }
 .btn-paid:hover { background: rgba(0,217,126,0.2); }
 .btn-cancel {
-  background: var(--amber-dim); border: 1px solid rgba(246,201,14,0.25); color: var(--amber);
+  background: var(--amber-dim); border: 1px solid rgba(255,194,10,0.25); color: var(--amber);
   font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
   cursor: pointer; font-family: var(--font); transition: all 0.2s;
 }
-.btn-cancel:hover { background: rgba(246,201,14,0.2); }
+.btn-cancel:hover { background: rgba(255,194,10,0.2); }
 
 .funnel-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 .impressions-card {
