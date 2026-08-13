@@ -82,9 +82,10 @@ app.get('/dashboard', (req, res) => {
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
-// Serve app for all non-API routes
+// Serve the homepage only for genuine visits to "/" —
+// anything else that reaches here didn't match a real page, so it's a true 404
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.status(404).send('<h1>Page not found</h1><p>The page you are looking for does not exist. <a href="/">Return to homepage</a></p>');
 });
 
 async function init() {
