@@ -17,3 +17,10 @@ AI Quote Builder for UK Tradespeople — by Cambrian Digital / Big Bulldog UK Lt
 - `DATABASE_URL` — PostgreSQL connection string (Railway provides this)
 - `JWT_SECRET` — any long random string
 - `PORT` — Railway sets this automatically
+- `GOOGLE_SERVICE_ACCOUNT_JSON` — service-account JSON stored only in Railway; never commit a real credential
+- `GA4_PROPERTY_ID` — GA4 property ID (ProfitQuote: `532416392`)
+- `SEARCH_CONSOLE_SITE_URL` — exact Search Console property URL
+
+## Daily traffic reporting
+
+Authenticated administrators can request `GET /api/admin/reporting/daily`. It defaults to yesterday; use `?date=YYYY-MM-DD` for a specific day. The endpoint reads GA4 users, sessions, channels and landing pages plus Search Console clicks, impressions, CTR, average position, top queries and top pages. It requests Google's read-only scopes and does not persist reporting data or credentials.

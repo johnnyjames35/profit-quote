@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
+const { getDailyTrafficReport } = require('../utils/google-reporting');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
 const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.JWT_SECRET + '_admin';
@@ -149,6 +150,19 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
   } catch(e) {
     await pool.query('ROLLBACK');
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Read-only Google traffic report — admin only. Defaults to yesterday for complete data.
+router.get('/reporting/daily', requireAdmin, async (req, res) => {
+  try {
+    const report = await getDailyTrafficReport({ date: req.query.date });
+    res.set('Cache-Control', 'private, no-store');
+    res.json(report);
+  } catch (error) {
+    const isInputError = error.message.startsWith('date must');
+    console.error('Daily reporting error:', error.message);
+    res.status(isInputError ? 400 : 502).json({ error: isInputError ? error.message : 'Unable to retrieve Google reporting data' });
   }
 });
 
