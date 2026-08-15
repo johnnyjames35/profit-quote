@@ -469,7 +469,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
     <div class="auth-left-footer">
       <div class="auth-left-footer-item"><div class="icon">🔒</div><strong>Secure &amp; Private</strong><span>Always protected</span></div>
       <div class="auth-left-footer-item"><div class="icon">🇬🇧</div><strong>UK Based Support</strong><span>Here when you need us</span></div>
-      <div class="auth-left-footer-item"><div class="icon">🛡️</div><strong>Trusted by Trades</strong><span>Built for tradespeople</span></div>
+      <div class="auth-left-footer-item"><div class="icon">🛡️</div><strong>No card required</strong><span>Built for tradespeople</span></div>
     </div>
   </div>
   <!-- RIGHT PANEL -->
@@ -485,7 +485,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
       <div class="auth-divider">or</div>
       <div class="login-switch" style="margin-top:0;">No account yet?</div>
-      <button class="btn-trial" onclick="showRegister()">Start your 7-day free trial</button>
+      <button class="btn-trial" onclick="showRegister()">Create your free account</button>
       <div class="auth-trial-note">No card. No commitment. Cancel anytime.</div>
     </div>
   </div>
@@ -500,7 +500,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <span class="auth-left-logo-text">Profit<span>Quote</span></span>
     </div>
     <div class="auth-left-headline">Start quoting smarter<br>in <span>minutes.</span></div>
-    <div class="auth-left-sub">Join tradespeople across the UK who use ProfitQuote to win better work and protect their margins.</div>
+    <div class="auth-left-sub">Create an account to save your quotes, add your business details and manage every job in one place.</div>
     <div class="auth-benefit">
       <div class="auth-benefit-icon">⚡</div>
       <div class="auth-benefit-text"><strong>Up and running in minutes</strong><span>No training needed. Built for busy tradespeople.</span></div>
@@ -515,7 +515,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
     </div>
     <div class="auth-benefit">
       <div class="auth-benefit-icon">🎯</div>
-      <div class="auth-benefit-text"><strong>7 days completely free</strong><span>No card needed. No commitment. Cancel anytime.</span></div>
+      <div class="auth-benefit-text"><strong>Your first 3 quotes stay with you</strong><span>No card needed. No commitment. Cancel anytime.</span></div>
     </div>
     <div class="auth-left-footer">
       <div class="auth-left-footer-item"><div class="icon">🔒</div><strong>Secure &amp; Private</strong><span>Always protected</span></div>
@@ -1228,7 +1228,36 @@ textarea.field-input{resize:vertical;min-height:80px;}
 <script>
 const API = '';
 let token = localStorage.getItem('pq_token');
+let guestToken = localStorage.getItem('pq_guest_token');
 let currentUser = null;
+
+function getBrowserId(){
+  let id=localStorage.getItem('pq_browser_id');
+  if(!id){ id=(crypto.randomUUID?crypto.randomUUID():'browser-'+Date.now()+'-'+Math.random().toString(36).slice(2)); localStorage.setItem('pq_browser_id',id); }
+  return id;
+}
+
+async function startGuest(){
+  try{
+    const res=await fetch(API+'/api/guest/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({browser_id:getBrowserId()})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Could not start');
+    token=data.token; guestToken=data.token;
+    localStorage.setItem('pq_token',token); localStorage.setItem('pq_guest_token',guestToken);
+    initApp(true);
+  }catch(e){ showLogin(); alert('We could not start the free quote. Please try again.'); }
+}
+
+function showGuestSignup(){
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('register-screen').style.display='flex';
+  const h=document.querySelector('#register-screen .auth-left-headline');
+  const sub=document.querySelector('#register-screen .auth-left-sub');
+  if(h) h.innerHTML='Keep your quotes.<br><span>Create your account.</span>';
+  if(sub) sub.textContent='You have tried ProfitQuote. Create your account now and your saved quotes will come with you.';
+  const btn=document.getElementById('reg-btn'); if(btn) btn.textContent='Create Account & Keep My Quotes →';
+}
 let quotes = [];
 let filteredQuotes = [];
 let selectedRisk = 'low';
@@ -1307,7 +1336,7 @@ if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; wind
 const resetTokenFromUrl = urlParams.get('reset');
 
 if(resetTokenFromUrl){ showReset(resetTokenFromUrl); }
-else if(token){ initApp(); } else { showLogin(); }
+else if(token){ initApp(urlParams.get('try')==='1'); } else if(urlParams.get('try')==='1'){ startGuest(); } else { showLogin(); }
 
 function showLogin(){
   document.getElementById('login-screen').style.display='flex';
@@ -1390,7 +1419,7 @@ async function doLogin(){
     const res=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
     const data=await res.json();
     if(!res.ok){ err.textContent=data.error||'Login failed.'; err.style.display='block'; btn.textContent='Sign In →'; btn.disabled=false; return; }
-    token=data.token; localStorage.setItem('pq_token',token); initApp();
+    token=data.token; localStorage.setItem('pq_token',token); localStorage.removeItem('pq_guest_token'); guestToken=null; initApp();
   }catch(e){ err.textContent='Connection error.'; err.style.display='block'; btn.textContent='Sign In →'; btn.disabled=false; }
 }
 
@@ -1405,14 +1434,14 @@ async function doRegister(){
   if(!name||!email||!password){ err.textContent='Please fill in all fields.'; err.style.display='block'; return; }
   btn.textContent='Creating account...'; btn.disabled=true;
   try{
-    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade})});
+    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade,guest_token:localStorage.getItem('pq_guest_token')})});
     const data=await res.json();
     if(!res.ok){ err.textContent=data.error||'Registration failed.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; return; }
     token=data.token; localStorage.setItem('pq_token',token); initApp();
   }catch(e){ err.textContent='Connection error.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; }
 }
 
-async function initApp(){
+async function initApp(startInBuilder=false){
   try{
     const res=await fetch(API+'/api/auth/me',{headers:{Authorization:'Bearer '+token}});
     if(!res.ok){ doLogout(); return; }
@@ -1424,7 +1453,15 @@ async function initApp(){
   document.getElementById('reset-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   populateUserUI();
-  loadQuotes();
+  await loadQuotes();
+  if(currentUser.guest){
+    document.body.classList.add('guest-mode');
+    ['nav-issues','nav-setup'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='none';
+    const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
+    const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent='Build your first professional quote — no signup needed';
+    if(startInBuilder || quotes.length===0) switchTab('builder');
+  }
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.addEventListener('input', saveBuilderDraft);
@@ -1433,12 +1470,13 @@ async function initApp(){
 
 function doLogout(){
   localStorage.removeItem('pq_token');
+  localStorage.removeItem('pq_guest_token');
   token=null; currentUser=null; showLogin();
 }
 
 function populateUserUI(){
   if(!currentUser) return;
-  const initials=(currentUser.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const initials=(currentUser.name||'Guest').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('user-initials').textContent=initials;
   document.getElementById('setup-avatar').textContent=initials;
   document.getElementById('setup-name').textContent=currentUser.name||'';
@@ -1456,6 +1494,11 @@ function populateUserUI(){
   document.getElementById('q-profit-target').value=currentUser.profit_target||30;
   const h=new Date().getHours();
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
+  if(currentUser.guest){
+    const pill=document.getElementById('trial-pill');
+    if(pill) pill.textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
+    return;
+  }
   // Trial pill — days remaining
   const pillEl=document.getElementById('trial-pill');
   if(pillEl&&currentUser.trial_started_at&&!currentUser.paid_at){
@@ -1537,11 +1580,12 @@ function renderQuotes(){
         </div>
       </div>
       <div class="quote-card-actions">
+        ${currentUser?.guest ? '<button class="btn-edit" onclick="showGuestSignup()">Create account to manage quotes →</button>' : `
         <button class="btn-won ${wonActive}" onclick="setQuoteStatus(${q.id},'${status==='won'?'draft':'won'}')">✓ Won</button>
         <button class="btn-lost ${lostActive}" onclick="setQuoteStatus(${q.id},'${status==='lost'?'draft':'lost'}')">✗ Lost</button>
-       <button class="btn-edit" onclick="editQuote(${q.id})">✏️ Edit</button>
+        <button class="btn-edit" onclick="editQuote(${q.id})">✏️ Edit</button>
         <button class="btn-photos" onclick="openPhotoGallery(${q.id})">📷 Photos</button>
-        <button class="btn-delete" onclick="deleteQuote(${q.id})">Delete</button>
+        <button class="btn-delete" onclick="deleteQuote(${q.id})">Delete</button>`}
       </div>
     </div>`;
   }).join('');
@@ -2159,7 +2203,12 @@ async function saveQuote(){
       });
     }
     if(res.ok){
-      showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
+      const saved=await res.json();
+      if(currentUser?.guest && typeof saved.remaining==='number'){
+        currentUser.guest_quotes_remaining=saved.remaining;
+        const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='3 free quotes · '+saved.remaining+' remaining';
+        showToast(saved.remaining ? 'Quote saved — '+saved.remaining+' free remaining' : 'Third quote saved — create your account to keep going');
+      } else showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
       clearBuilderDraft();
       // Flash profit on hero for new quotes only
       if(!editingQuoteId && currentQuoteData?.quote_data?.profit){
@@ -2173,9 +2222,10 @@ async function saveQuote(){
       document.getElementById('btn-save-quote').textContent='💾 Save';
       loadQuotes();
       switchTab('quotes');
+      if(currentUser?.guest && currentUser.guest_quotes_remaining===0) setTimeout(showGuestSignup,1200);
     } else {
       const err=await res.json();
-      showToast('Error: '+(err.error||'Could not save'));
+      if(err.code==='guest_limit') showGuestSignup(); else showToast('Error: '+(err.error||'Could not save'));
     }
   }catch(e){ showToast('Connection error'); }
 }
