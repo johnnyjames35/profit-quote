@@ -1586,7 +1586,7 @@ function renderQuotes(){
         </div>
       </div>
       <div class="quote-card-actions">
-        ${currentUser?.guest ? '<button class="btn-edit" onclick="showGuestSignup()">Create account to manage quotes →</button>' : `
+        ${currentUser?.guest ? '<button class="btn-edit" onclick="editQuote('+q.id+')">✏️ Edit quote</button><button class="btn-photos" onclick="showGuestSignup()">Create account to unlock everything →</button>' : `
         <button class="btn-won ${wonActive}" onclick="setQuoteStatus(${q.id},'${status==='won'?'draft':'won'}')">✓ Won</button>
         <button class="btn-lost ${lostActive}" onclick="setQuoteStatus(${q.id},'${status==='lost'?'draft':'lost'}')">✗ Lost</button>
         <button class="btn-edit" onclick="editQuote(${q.id})">✏️ Edit</button>
