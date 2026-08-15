@@ -44,6 +44,8 @@ router.get('/users', requireAdmin, async (req, res) => {
         u.trade,
         u.created_at,
         u.paid_at,
+        u.first_login_at,
+        u.last_active_at,
         COUNT(q.id)::int AS quote_count
       FROM users u
       LEFT JOIN quotes q ON q.user_id = u.id
