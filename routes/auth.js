@@ -97,7 +97,7 @@ function logEvent(pool, eventType, userId, source) {
 }
 
 router.post('/register', async (req, res) => {
-  const { name, email, password, trade, source } = req.body;
+  const { name, email, password, trade, source, guest_token } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
   try {
     const pool = req.app.locals.pool;
@@ -111,6 +111,16 @@ router.post('/register', async (req, res) => {
       [name, email.toLowerCase(), hash, trade || '']
     );
     const user = result.rows[0];
+    if (guest_token) {
+      try {
+        const guest = jwt.verify(guest_token, process.env.JWT_SECRET);
+        if (guest.guest && guest.id) {
+          await pool.query('UPDATE quotes SET user_id=$1,guest_id=NULL WHERE guest_id=$2', [user.id, guest.id]);
+          await pool.query('UPDATE guest_sessions SET converted_user_id=$1,last_active_at=NOW() WHERE id=$2 AND converted_user_id IS NULL', [user.id, guest.id]);
+          await pool.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('guest_converted',$1,'guest',jsonb_build_object('guest_id',$2::text))", [user.id, guest.id]);
+        }
+      } catch(e) { console.warn('Guest transfer skipped:', e.message); }
+    }
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     res.json({ token, user });
@@ -209,6 +219,12 @@ router.post('/reset-password', async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
+    if (req.user.guest) {
+      const result = await pool.query('SELECT quote_count FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL', [req.user.id]);
+      if (!result.rows.length) return res.status(401).json({ error: 'Guest session expired' });
+      const used = result.rows[0].quote_count;
+      return res.json({ id:req.user.id,name:'Guest',trade:'',plan:'guest',day_rate:250,hourly_rate:35,markup_percent:20,profit_target:30,business_name:'',phone:'',contact_email:'',town:'',is_guest:true,guest_quotes_used:used,guest_quotes_remaining:Math.max(0,3-used) });
+    }
     const result = await pool.query(
       `SELECT ${USER_FIELDS} FROM users WHERE id=$1`,
       [req.user.id]
