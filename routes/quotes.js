@@ -13,8 +13,9 @@ function logEvent(pool, eventType, userId, source) {
 router.get('/', auth, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
+    const field = req.user.guest ? 'guest_id' : 'user_id';
     const result = await pool.query(
-      'SELECT id,customer_name,trade,job_description,total,profit_percent,status,created_at FROM quotes WHERE user_id=$1 ORDER BY created_at DESC',
+      `SELECT id,customer_name,trade,job_description,total,profit_percent,status,created_at FROM quotes WHERE ${field}=$1 ORDER BY created_at DESC`,
       [req.user.id]
     );
     res.json(result.rows);
@@ -25,6 +26,15 @@ router.post('/', auth, async (req, res) => {
   const { customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, quote_data, total, profit_percent } = req.body;
   try {
     const pool = req.app.locals.pool;
+    if (req.user.guest) {
+      const claim = await pool.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL AND quote_count<3 RETURNING quote_count', [req.user.id]);
+      if (!claim.rows.length) return res.status(402).json({ error:'guest_limit', message:'You have completed your 3 free quotes. Create an account to keep them and continue.' });
+      const guestResult = await pool.query('INSERT INTO quotes (guest_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *', [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]);
+      const used = claim.rows[0].quote_count;
+      await pool.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_number',$2::int,'total',$3::numeric))", [req.user.id, used, Number(total)||0]);
+      sendToGA('guest_quote_completed', null, 'guest').catch(() => {});
+      return res.json({ ...guestResult.rows[0], guest_quotes_used:used, guest_quotes_remaining:3-used });
+    }
     const result = await pool.query(
       'INSERT INTO quotes (user_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *',
       [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]
@@ -39,6 +49,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 router.patch('/:id/status', auth, async (req, res) => {
+  if (req.user.guest) return res.status(403).json({ error: 'Create an account to edit or manage saved quotes.' });
   const { status } = req.body;
   if (!['won', 'lost', 'draft'].includes(status)) {
     return res.status(400).json({ error: 'Invalid status' });
@@ -54,6 +65,7 @@ router.patch('/:id/status', auth, async (req, res) => {
 });
 
 router.patch('/:id', auth, async (req, res) => {
+  if (req.user.guest) return res.status(403).json({ error: 'Create an account to edit or manage saved quotes.' });
   const { customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, quote_data, total, profit_percent } = req.body;
   try {
     const pool = req.app.locals.pool;
@@ -66,6 +78,7 @@ router.patch('/:id', auth, async (req, res) => {
 });
 
 router.delete('/:id', auth, async (req, res) => {
+  if (req.user.guest) return res.status(403).json({ error: 'Create an account to edit or manage saved quotes.' });
   try {
     const pool = req.app.locals.pool;
     await pool.query('DELETE FROM quotes WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
