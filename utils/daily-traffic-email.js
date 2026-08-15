@@ -1,101 +1,78 @@
 const https = require('https');
 const { getDailyTrafficReport } = require('./google-reporting');
-
 const TIME_ZONE = 'Europe/London';
 const CHECK_INTERVAL_MS = 60 * 1000;
 
 function londonParts(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: TIME_ZONE,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
-  }).formatToParts(now);
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
   return Object.fromEntries(parts.map(({ type, value }) => [type, value]));
 }
+function shiftDate(date, days) { const value = new Date(`${date}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + days); return value.toISOString().slice(0, 10); }
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function pct(current, baseline) { if (!baseline) return current ? 'new' : '0%'; const value = ((current - baseline) / baseline) * 100; return `${value >= 0 ? '+' : ''}${value.toFixed(0)}%`; }
+function rate(value, total) { return total ? `${((value / total) * 100).toFixed(1)}%` : '0%'; }
+function rows(items, label, value) { return items.length ? items.slice(0, 5).map((item) => `<tr><td>${escapeHtml(item[label])}</td><td>${escapeHtml(item[value])}</td></tr>`).join('') : '<tr><td colspan="2">None</td></tr>'; }
 
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  })[character]);
+async function funnelForDate(pool, date) {
+  const result = await pool.query(`SELECT event_type, COUNT(*)::int AS count FROM events WHERE created_at >= $1::date AND created_at < $1::date + INTERVAL '1 day' AND event_type = ANY($2) GROUP BY event_type`, [date, ['page_viewed', 'trial_click', 'account_created', 'first_quote', 'subscription_started']]);
+  const values = { visitors: 0, trialClicks: 0, accounts: 0, firstQuotes: 0, paid: 0 };
+  const map = { page_viewed: 'visitors', trial_click: 'trialClicks', account_created: 'accounts', first_quote: 'firstQuotes', subscription_started: 'paid' };
+  for (const row of result.rows) values[map[row.event_type]] = row.count;
+  return values;
 }
-
-function rows(items, label, value) {
-  if (!items.length) return '<tr><td colspan="2">None</td></tr>';
-  return items.slice(0, 5).map((item) =>
-    `<tr><td>${escapeHtml(item[label])}</td><td>${escapeHtml(item[value])}</td></tr>`
-  ).join('');
+function alertsFor(report, previous, weekAgo, funnel) {
+  const alerts = [];
+  if (weekAgo.ga4.sessions && report.ga4.sessions < weekAgo.ga4.sessions * 0.7) alerts.push(`Sessions are down ${pct(report.ga4.sessions, weekAgo.ga4.sessions)} versus the same day last week.`);
+  const unassigned = report.ga4.trafficSources.find((row) => row.source === 'Unassigned')?.sessions || 0;
+  if (report.ga4.sessions && unassigned / report.ga4.sessions >= 0.25) alerts.push(`${rate(unassigned, report.ga4.sessions)} of sessions are Unassigned; review campaign tagging.`);
+  const notSet = report.ga4.landingPages.find((row) => row.page === '(not set)')?.sessions || 0;
+  if (report.ga4.sessions && notSet / report.ga4.sessions >= 0.25) alerts.push(`${rate(notSet, report.ga4.sessions)} of sessions have no landing page.`);
+  if (previous.searchConsole.impressions && !report.searchConsole.impressions) alerts.push('Search Console impressions fell to zero versus the prior comparison day.');
+  if (funnel.visitors && !funnel.accounts) alerts.push('Traffic was recorded but no accounts were created.');
+  return alerts;
 }
-
-function reportHtml(report) {
-  return `
-    <h2>ProfitQuote daily traffic brief — ${escapeHtml(report.date)}</h2>
-    <p><strong>GA4:</strong> ${report.ga4.users} users · ${report.ga4.sessions} sessions</p>
-    <p><strong>Search Console:</strong> ${report.searchConsole.clicks} clicks · ${report.searchConsole.impressions} impressions · average position ${report.searchConsole.averagePosition}</p>
-    <h3>Traffic sources</h3><table cellpadding="6"><tr><th align="left">Source</th><th align="left">Sessions</th></tr>${rows(report.ga4.trafficSources, 'source', 'sessions')}</table>
-    <h3>Landing pages</h3><table cellpadding="6"><tr><th align="left">Page</th><th align="left">Sessions</th></tr>${rows(report.ga4.landingPages, 'page', 'sessions')}</table>
-    <h3>Top search queries</h3><table cellpadding="6"><tr><th align="left">Query</th><th align="left">Clicks</th></tr>${rows(report.searchConsole.topQueries, 'query', 'clicks')}</table>
-    <p style="color:#666">Generated automatically at 8:00 AM UK time.</p>`;
+function reportHtml({ report, previous, weekAgo, funnel, previousFunnel, weekFunnel, alerts }) {
+  const alertHtml = alerts.length ? `<h3>Needs attention</h3><ul>${alerts.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}</ul>` : '<p><strong>No threshold alerts triggered.</strong></p>';
+  return `<h2>ProfitQuote daily performance brief</h2>
+    <p><strong>GA4 ${report.ga4.date} (provisional):</strong> ${report.ga4.users} users · ${report.ga4.sessions} sessions (${pct(report.ga4.sessions, previous.ga4.sessions)} day-on-day; ${pct(report.ga4.sessions, weekAgo.ga4.sessions)} vs same day last week)</p>
+    <p><strong>Search Console ${report.searchConsole.date}:</strong> ${report.searchConsole.clicks} clicks · ${report.searchConsole.impressions} impressions (${pct(report.searchConsole.impressions, previous.searchConsole.impressions)} vs prior day; ${pct(report.searchConsole.impressions, weekAgo.searchConsole.impressions)} vs same day last week)</p>
+    ${alertHtml}<h3>ProfitQuote funnel — ${report.ga4.date}</h3>
+    <table cellpadding="6"><tr><th>Stage</th><th>Count</th><th>Day change</th><th>Week change</th></tr>
+    <tr><td>Visitors</td><td>${funnel.visitors}</td><td>${pct(funnel.visitors, previousFunnel.visitors)}</td><td>${pct(funnel.visitors, weekFunnel.visitors)}</td></tr>
+    <tr><td>Trial clicks</td><td>${funnel.trialClicks}</td><td>${pct(funnel.trialClicks, previousFunnel.trialClicks)}</td><td>${pct(funnel.trialClicks, weekFunnel.trialClicks)}</td></tr>
+    <tr><td>Accounts</td><td>${funnel.accounts}</td><td>${pct(funnel.accounts, previousFunnel.accounts)}</td><td>${pct(funnel.accounts, weekFunnel.accounts)}</td></tr>
+    <tr><td>First quotes</td><td>${funnel.firstQuotes}</td><td>${pct(funnel.firstQuotes, previousFunnel.firstQuotes)}</td><td>${pct(funnel.firstQuotes, weekFunnel.firstQuotes)}</td></tr>
+    <tr><td>Paid</td><td>${funnel.paid}</td><td>${pct(funnel.paid, previousFunnel.paid)}</td><td>${pct(funnel.paid, weekFunnel.paid)}</td></tr></table>
+    <p><strong>Visitor → account:</strong> ${rate(funnel.accounts, funnel.visitors)} · <strong>Account → first quote:</strong> ${rate(funnel.firstQuotes, funnel.accounts)} · <strong>Account → paid:</strong> ${rate(funnel.paid, funnel.accounts)}</p>
+    <h3>Traffic sources</h3><table cellpadding="6"><tr><th>Source</th><th>Sessions</th></tr>${rows(report.ga4.trafficSources, 'source', 'sessions')}</table>
+    <h3>Landing pages</h3><table cellpadding="6"><tr><th>Page</th><th>Sessions</th></tr>${rows(report.ga4.landingPages, 'page', 'sessions')}</table>
+    <h3>Top search queries</h3><table cellpadding="6"><tr><th>Query</th><th>Clicks</th></tr>${rows(report.searchConsole.topQueries, 'query', 'clicks')}</table>
+    <p style="color:#666">GA4 data may continue processing. Search Console uses data three days old for completeness. Generated automatically at 8:00 AM UK time.</p>`;
 }
-
-function sendBrevoEmail(to, subject, htmlContent) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify({
-      sender: { name: 'ProfitQuote', email: 'hello@profitquote.co.uk' },
-      to: [{ email: to }], subject, htmlContent
-    });
-    const request = https.request({
-      hostname: 'api.brevo.com', path: '/v3/smtp/email', method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_API_KEY }
-    }, (response) => {
-      let body = '';
-      response.on('data', (chunk) => { body += chunk; });
-      response.on('end', () => {
-        if (response.statusCode >= 200 && response.statusCode < 300) return resolve();
-        reject(new Error(`Brevo request failed (${response.statusCode})`));
-      });
-    });
-    request.on('error', reject);
-    request.write(data);
-    request.end();
-  });
-}
+function sendBrevoEmail(to, subject, htmlContent) { return new Promise((resolve, reject) => { const data = JSON.stringify({ sender: { name: 'ProfitQuote', email: 'hello@profitquote.co.uk' }, to: [{ email: to }], subject, htmlContent }); const request = https.request({ hostname: 'api.brevo.com', path: '/v3/smtp/email', method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_API_KEY } }, (response) => { response.resume(); response.on('end', () => response.statusCode >= 200 && response.statusCode < 300 ? resolve() : reject(new Error(`Brevo request failed (${response.statusCode})`))); }); request.on('error', reject); request.write(data); request.end(); }); }
 
 async function runDailyBrief(pool, date) {
-  await pool.query(`CREATE TABLE IF NOT EXISTS daily_reporting_runs (
-    report_date DATE PRIMARY KEY,
-    sent_at TIMESTAMPTZ
-  )`);
-  const claim = await pool.query(
-    'INSERT INTO daily_reporting_runs (report_date) VALUES ($1) ON CONFLICT DO NOTHING RETURNING report_date',
-    [date]
-  );
+  await pool.query(`CREATE TABLE IF NOT EXISTS daily_reporting_runs (report_date DATE PRIMARY KEY, started_at TIMESTAMPTZ DEFAULT NOW(), sent_at TIMESTAMPTZ)`);
+  await pool.query('ALTER TABLE daily_reporting_runs ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ DEFAULT NOW()');
+  const claim = await pool.query(`INSERT INTO daily_reporting_runs (report_date, started_at) VALUES ($1, NOW()) ON CONFLICT (report_date) DO UPDATE SET started_at=NOW() WHERE daily_reporting_runs.sent_at IS NULL AND daily_reporting_runs.started_at < NOW() - INTERVAL '15 minutes' RETURNING report_date`, [date]);
   if (!claim.rows.length) return;
   try {
-    const report = await getDailyTrafficReport({ date });
-    const recipient = process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk';
-    await sendBrevoEmail(recipient, `ProfitQuote traffic brief — ${date}`, reportHtml(report));
+    const previousDate = shiftDate(date, -1), weekDate = shiftDate(date, -7);
+    const [report, previous, weekAgo, funnel, previousFunnel, weekFunnel] = await Promise.all([
+      getDailyTrafficReport({ date, searchConsoleDate: shiftDate(date, -2) }),
+      getDailyTrafficReport({ date: previousDate, searchConsoleDate: shiftDate(date, -3) }),
+      getDailyTrafficReport({ date: weekDate, searchConsoleDate: shiftDate(date, -9) }),
+      funnelForDate(pool, date), funnelForDate(pool, previousDate), funnelForDate(pool, weekDate)
+    ]);
+    const alerts = alertsFor(report, previous, weekAgo, funnel);
+    const html = reportHtml({ report, previous, weekAgo, funnel, previousFunnel, weekFunnel, alerts });
+    await sendBrevoEmail(process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk', `ProfitQuote performance brief — ${date}${alerts.length ? ` (${alerts.length} alert${alerts.length === 1 ? '' : 's'})` : ''}`, html);
     await pool.query('UPDATE daily_reporting_runs SET sent_at=NOW() WHERE report_date=$1', [date]);
     console.log(`Daily traffic brief sent for ${date}`);
-  } catch (error) {
-    await pool.query('DELETE FROM daily_reporting_runs WHERE report_date=$1 AND sent_at IS NULL', [date]);
-    throw error;
-  }
+  } catch (error) { await pool.query('DELETE FROM daily_reporting_runs WHERE report_date=$1 AND sent_at IS NULL', [date]); throw error; }
 }
-
 function startDailyTrafficEmailScheduler(pool) {
-  async function check() {
-    const parts = londonParts();
-    if (parts.hour !== '08' || Number(parts.minute) > 9) return;
-    const today = `${parts.year}-${parts.month}-${parts.day}`;
-    const reportDate = new Date(`${today}T12:00:00Z`);
-    reportDate.setUTCDate(reportDate.getUTCDate() - 1);
-    try { await runDailyBrief(pool, reportDate.toISOString().slice(0, 10)); }
-    catch (error) { console.error('Daily traffic email error:', error.message); }
-  }
-  check();
-  const timer = setInterval(check, CHECK_INTERVAL_MS);
-  timer.unref?.();
-  console.log('Daily traffic email scheduled for 08:00 Europe/London');
+  async function check() { const parts = londonParts(); if (Number(parts.hour) < 8 || Number(parts.hour) >= 12) return; const today = `${parts.year}-${parts.month}-${parts.day}`; try { await runDailyBrief(pool, shiftDate(today, -1)); } catch (error) { console.error('Daily traffic email error:', error.message); } }
+  check(); const timer = setInterval(check, CHECK_INTERVAL_MS); timer.unref?.(); console.log('Daily traffic email scheduled for 08:00 Europe/London with morning catch-up');
 }
-
-module.exports = { startDailyTrafficEmailScheduler, londonParts, reportHtml };
+module.exports = { startDailyTrafficEmailScheduler, londonParts, reportHtml, shiftDate, alertsFor };
