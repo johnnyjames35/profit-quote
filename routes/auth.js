@@ -144,6 +144,13 @@ router.post('/login', async (req, res) => {
       }
     }
 
+    await pool.query(
+      'UPDATE users SET first_login_at=COALESCE(first_login_at,NOW()), last_active_at=NOW() WHERE id=$1',
+      [user.id]
+    );
+    user.first_login_at = user.first_login_at || new Date();
+    user.last_active_at = new Date();
+
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' });
     delete user.password_hash;
     res.json({ token, user });
