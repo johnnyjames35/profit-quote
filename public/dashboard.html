@@ -1289,12 +1289,18 @@ function restoreBuilderDraft(){
   if(!raw) return false;
   try{
     const draft = JSON.parse(raw);
-    let hasContent = false;
+    // Rates and defaults are saved automatically, but they do not make a real draft.
+    // Only resume a later page when the visitor has actually described a job.
+    const jobDescription = String(draft.fields?.['q-desc'] || '').trim();
+    if(!jobDescription){
+      clearBuilderDraft();
+      nextStep(1);
+      return false;
+    }
     Object.entries(draft.fields||{}).forEach(([id, val])=>{
       const el = document.getElementById(id);
-      if(el && val){ el.value = val; hasContent = true; }
+      if(el && val) el.value = val;
     });
-    if(!hasContent) return false;
     if(typeof draft.needsSkip==='boolean') setSkip(draft.needsSkip);
     if(typeof draft.needsScaffold==='boolean') setScaffold(draft.needsScaffold);
     if(draft.selectedRisk) setRisk(draft.selectedRisk);
