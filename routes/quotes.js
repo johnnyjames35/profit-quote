@@ -15,7 +15,7 @@ router.get('/', auth, async (req, res) => {
     const pool = req.app.locals.pool;
     const field = req.user.guest ? 'guest_id' : 'user_id';
     const result = await pool.query(
-      `SELECT id,customer_name,trade,job_description,total,profit_percent,status,created_at FROM quotes WHERE ${field}=$1 ORDER BY created_at DESC`,
+      `SELECT * FROM quotes WHERE ${field}=$1 ORDER BY created_at DESC`,
       [req.user.id]
     );
     res.json(result.rows);
@@ -65,14 +65,18 @@ router.patch('/:id/status', auth, async (req, res) => {
 });
 
 router.patch('/:id', auth, async (req, res) => {
-  if (req.user.guest) return res.status(403).json({ error: 'Create an account to edit or manage saved quotes.' });
   const { customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, quote_data, total, profit_percent } = req.body;
   try {
     const pool = req.app.locals.pool;
-    await pool.query(
-      'UPDATE quotes SET customer_name=$1,trade=$2,job_description=$3,spec_level=$4,skip_type=$5,skip_cost=$6,day_rate=$7,days=$8,markup_percent=$9,profit_target=$10,other_costs=$11,quote_data=$12,total=$13,profit_percent=$14 WHERE id=$15 AND user_id=$16',
+    const ownerField = req.user.guest ? 'guest_id' : 'user_id';
+    const result = await pool.query(
+      `UPDATE quotes SET customer_name=$1,trade=$2,job_description=$3,spec_level=$4,skip_type=$5,skip_cost=$6,day_rate=$7,days=$8,markup_percent=$9,profit_target=$10,other_costs=$11,quote_data=$12,total=$13,profit_percent=$14 WHERE id=$15 AND ${ownerField}=$16 RETURNING id`,
       [customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent, req.params.id, req.user.id]
     );
+    if (!result.rows.length) return res.status(404).json({ error: 'Quote not found' });
+    if (req.user.guest) {
+      pool.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_updated','guest',jsonb_build_object('guest_id',$1::text,'quote_id',$2::int))", [req.user.id, Number(req.params.id)]).catch(()=>{});
+    }
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
