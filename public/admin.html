@@ -352,6 +352,18 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-visitors-today">—</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Free Quote Visitors</div>
+          <div class="stat-val amber" id="f-guest-starts">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Free Quotes Saved</div>
+          <div class="stat-val amber" id="f-guest-quotes">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Free → Account</div>
+          <div class="stat-val green" id="f-guest-conversions">—</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">LinkedIn Visitors</div>
           <div class="stat-val cyan" id="f-linkedin">—</div>
         </div>
@@ -622,6 +634,9 @@ async function loadFunnel() {
     window.lastFunnelData = data;
 
     document.getElementById('f-visitors-today').textContent = data.visitorsToday;
+    document.getElementById('f-guest-starts').textContent = data.guestStarts;
+    document.getElementById('f-guest-quotes').textContent = data.guestQuotes;
+    document.getElementById('f-guest-conversions').textContent = data.guestConversions;
     document.getElementById('f-linkedin').textContent = data.linkedinVisitors;
     document.getElementById('f-google').textContent = data.googleVisitors;
     document.getElementById('f-trial-clicks').textContent = data.trialClicks;
@@ -643,6 +658,8 @@ function renderFunnelBars(data) {
   const steps = [
     { label: 'LinkedIn Impressions', value: impressions },
     { label: 'Website Visitors', value: data.totalVisitors },
+    { label: 'Started Free Quote', value: data.guestStarts },
+    { label: 'Free Quotes Saved', value: data.guestQuotes },
     { label: 'Trial Clicks', value: data.trialClicks },
     { label: 'Accounts Created', value: data.accountsCreated },
     { label: 'First Quotes', value: data.firstQuotes },
