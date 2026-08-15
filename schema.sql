@@ -27,6 +27,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS town VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_login_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS quotes (
   id SERIAL PRIMARY KEY,
@@ -79,6 +81,18 @@ CREATE TABLE IF NOT EXISTS events (
   meta JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
+UPDATE users u
+SET first_login_at = COALESCE(u.first_login_at, first_logins.created_at),
+    last_active_at = COALESCE(u.last_active_at, first_logins.created_at)
+FROM (
+  SELECT user_id, MIN(created_at) AS created_at
+  FROM events
+  WHERE event_type = 'first_login' AND user_id IS NOT NULL
+  GROUP BY user_id
+) first_logins
+WHERE u.id = first_logins.user_id
+  AND (u.first_login_at IS NULL OR u.last_active_at IS NULL);
+
 CREATE TABLE IF NOT EXISTS template_downloads (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) NOT NULL,
