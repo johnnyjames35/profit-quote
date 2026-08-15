@@ -30,6 +30,19 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS first_login_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ;
 
+CREATE TABLE IF NOT EXISTS guest_sessions (
+  id UUID PRIMARY KEY,
+  browser_hash VARCHAR(64) UNIQUE NOT NULL,
+  ip_hash VARCHAR(64) NOT NULL,
+  quote_count INTEGER NOT NULL DEFAULT 0,
+  ai_requests INTEGER NOT NULL DEFAULT 0,
+  converted_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '30 days'
+);
+CREATE INDEX IF NOT EXISTS guest_sessions_ip_created_idx ON guest_sessions(ip_hash, created_at);
+
 CREATE TABLE IF NOT EXISTS quotes (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -50,6 +63,9 @@ CREATE TABLE IF NOT EXISTS quotes (
   status VARCHAR(20) DEFAULT 'draft',
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS guest_id UUID REFERENCES guest_sessions(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS quotes_guest_id_idx ON quotes(guest_id);
 
 CREATE TABLE IF NOT EXISTS issues (
   id SERIAL PRIMARY KEY,
