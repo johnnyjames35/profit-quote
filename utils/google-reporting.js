@@ -45,11 +45,13 @@ async function googlePost(url, body, token, fetchImpl) {
 function metric(row, index) { return Number(row?.metricValues?.[index]?.value || 0); }
 function searchMetric(row, index) { return Number(row?.[['clicks', 'impressions', 'ctr', 'position'][index]] || 0); }
 
-async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, env = process.env, fetchImpl = fetch } = {}) {
+async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, hostname: hostnameOverride, siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date); validateDate(searchConsoleDate);
-  const { credentials, propertyId, siteUrl, hostname } = loadConfig(env);
-  const token = await getAccessToken(credentials, fetchImpl);
-  const gaUrl = `${GA4_API_BASE}/properties/${encodeURIComponent(propertyId)}:runReport`;
+  const config = loadConfig(env);
+  const hostname = hostnameOverride || config.hostname;
+  const siteUrl = siteUrlOverride || config.siteUrl;
+  const token = await getAccessToken(config.credentials, fetchImpl);
+  const gaUrl = `${GA4_API_BASE}/properties/${encodeURIComponent(config.propertyId)}:runReport`;
   const scUrl = `${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
   const gaRange = { startDate: date, endDate: date };
   const scRange = { startDate: searchConsoleDate, endDate: searchConsoleDate };
