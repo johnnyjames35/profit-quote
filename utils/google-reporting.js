@@ -15,7 +15,7 @@ function loadConfig(env = process.env) {
   try { credentials = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON); }
   catch { throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON'); }
   if (credentials.type !== 'service_account' || !credentials.client_email || !credentials.private_key) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not a valid service account credential');
-  return { credentials: { ...credentials, private_key: credentials.private_key.replace(/\\n/g, '\n') }, propertyId: env.GA4_PROPERTY_ID, siteUrl: env.SEARCH_CONSOLE_SITE_URL };
+  return { credentials: { ...credentials, private_key: credentials.private_key.replace(/\\n/g, '\n') }, propertyId: env.GA4_PROPERTY_ID, siteUrl: env.SEARCH_CONSOLE_SITE_URL, hostname: env.GA4_HOSTNAME || 'profitquote.co.uk' };
 }
 function validateDate(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) throw new Error('date must use YYYY-MM-DD');
@@ -47,16 +47,17 @@ function searchMetric(row, index) { return Number(row?.[['clicks', 'impressions'
 
 async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date); validateDate(searchConsoleDate);
-  const { credentials, propertyId, siteUrl } = loadConfig(env);
+  const { credentials, propertyId, siteUrl, hostname } = loadConfig(env);
   const token = await getAccessToken(credentials, fetchImpl);
   const gaUrl = `${GA4_API_BASE}/properties/${encodeURIComponent(propertyId)}:runReport`;
   const scUrl = `${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
   const gaRange = { startDate: date, endDate: date };
   const scRange = { startDate: searchConsoleDate, endDate: searchConsoleDate };
+  const dimensionFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } };
   const [gaTotals, gaSources, gaPages, scTotals, scQueries, scPages] = await Promise.all([
-    googlePost(gaUrl, { dateRanges: [gaRange], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl),
-    googlePost(gaUrl, { dateRanges: [gaRange], dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
-    googlePost(gaUrl, { dateRanges: [gaRange], dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
+    googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl),
+    googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
+    googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
     googlePost(scUrl, scRange, token, fetchImpl),
     googlePost(scUrl, { ...scRange, dimensions: ['query'], rowLimit: 10 }, token, fetchImpl),
     googlePost(scUrl, { ...scRange, dimensions: ['page'], rowLimit: 10 }, token, fetchImpl)
