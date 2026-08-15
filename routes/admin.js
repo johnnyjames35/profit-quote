@@ -67,7 +67,8 @@ router.get('/funnel', requireAdmin, async (req, res) => {
 
     const [
       visitorsToday, totalVisitors, linkedinVisitors, googleVisitors,
-      trialClicks, accountsCreated, firstQuotes, totalQuotes, paidCustomers
+      trialClicks, accountsCreated, firstQuotes, totalQuotes, paidCustomers,
+      guestStarts, guestQuotes, guestConversions
     ] = await Promise.all([
       pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND created_at >= $1", [todayStart]),
       pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed'"),
@@ -77,7 +78,10 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='account_created'"),
       pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote'"),
       pool.query("SELECT COUNT(*)::int AS c FROM quotes"),
-      pool.query("SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL")
+      pool.query("SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL"),
+      pool.query("SELECT COUNT(*)::int AS c FROM guest_sessions"),
+      pool.query("SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL"),
+      pool.query("SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL")
     ]);
 
     const paidCount = paidCustomers.rows[0].c;
@@ -93,6 +97,9 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       firstQuotes: firstQuotes.rows[0].c,
       totalQuotes: totalQuotes.rows[0].c,
       paidCustomers: paidCount,
+      guestStarts: guestStarts.rows[0].c,
+      guestQuotes: guestQuotes.rows[0].c,
+      guestConversions: guestConversions.rows[0].c,
       mrr
     });
   } catch(e) {
