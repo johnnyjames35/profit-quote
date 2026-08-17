@@ -230,8 +230,49 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .funnel-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--green)); border-radius: 6px; transition: width 0.4s; }
 .funnel-bar-num { width: 70px; text-align: right; font-family: var(--mono); font-weight: 700; color: var(--white); flex-shrink: 0; }
 .funnel-arrow { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 2px 0; font-family: var(--mono); }
+.report-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--navy2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 20px; margin-bottom: 24px;
+}
+.report-date { font-size: 0.8rem; color: var(--muted); }
+.report-date strong { color: var(--white); font-family: var(--mono); }
+.report-message {
+  background: var(--navy2); border: 1px solid var(--border); border-radius: 12px;
+  color: var(--muted); padding: 32px; text-align: center;
+}
+.report-message.error { color: var(--red); border-color: rgba(255,71,87,0.25); }
+.report-section { margin-top: 28px; }
+.report-heading { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; }
+.comparison-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.comparison-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.comparison-title { padding: 16px 20px; font-weight: 600; border-bottom: 1px solid var(--border); }
+.comparison-row {
+  display: grid; grid-template-columns: 1.3fr repeat(3, 1fr); gap: 10px;
+  padding: 10px 20px; border-bottom: 1px solid var(--border); align-items: center;
+}
+.comparison-row:last-child { border-bottom: none; }
+.comparison-row.header { color: var(--muted); font-family: var(--mono); font-size: 0.65rem; text-transform: uppercase; }
+.comparison-label { color: var(--muted); font-size: 0.78rem; }
+.comparison-value { font-family: var(--mono); font-size: 0.8rem; text-align: right; }
+.change-up { color: var(--green); }
+.change-down { color: var(--red); }
+.change-flat { color: var(--muted); }
+.report-tables { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.report-table-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.report-table-card .table-title { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.report-list { list-style: none; }
+.report-list li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
+  padding: 11px 18px; border-bottom: 1px solid var(--border); align-items: center;
+}
+.report-list li:last-child { border-bottom: none; }
+.report-list-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 0.78rem; }
+.report-list-value { color: var(--cyan); font-family: var(--mono); font-size: 0.78rem; }
 @media (max-width: 768px) {
   .stats-row, .funnel-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .comparison-grid, .report-tables { grid-template-columns: 1fr; }
+  .report-toolbar { align-items: flex-start; flex-direction: column; }
   .main { padding: 20px 16px; }
   .topbar { padding: 0 16px; }
   .funnel-bar-label { width: 100px; font-size: 0.72rem; }
@@ -278,6 +319,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
     <div class="tabs">
       <button class="tab-btn active" id="tab-users-btn" onclick="showTab('users')">Registered Users</button>
       <button class="tab-btn" id="tab-funnel-btn" onclick="showTab('funnel')">Sales Funnel</button>
+      <button class="tab-btn" id="tab-reporting-btn" onclick="showTab('reporting')">Traffic Reporting</button>
     </div>
 
     <div id="view-users">
@@ -400,6 +442,38 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
     </div>
 
+    <div id="view-reporting" style="display:none;">
+      <div class="report-toolbar">
+        <div class="report-date">Report date: <strong id="report-date">—</strong></div>
+        <button class="refresh-btn" id="report-refresh" onclick="loadReporting()">↻ Refresh report</button>
+      </div>
+      <div id="report-status" class="report-message">Open this tab to load traffic reporting.</div>
+      <div id="report-content" style="display:none;">
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-label">GA4 Users</div><div class="stat-val cyan" id="r-users">—</div><div class="stat-sub">Daily active users</div></div>
+          <div class="stat-card"><div class="stat-label">GA4 Sessions</div><div class="stat-val cyan" id="r-sessions">—</div><div class="stat-sub">Daily sessions</div></div>
+          <div class="stat-card"><div class="stat-label">Search Clicks</div><div class="stat-val amber" id="r-clicks">—</div><div class="stat-sub">Daily Google clicks</div></div>
+          <div class="stat-card"><div class="stat-label">Search Impressions</div><div class="stat-val amber" id="r-impressions">—</div><div class="stat-sub">Daily Google impressions</div></div>
+          <div class="stat-card"><div class="stat-label">Search CTR</div><div class="stat-val green" id="r-ctr">—</div><div class="stat-sub">Click-through rate</div></div>
+          <div class="stat-card"><div class="stat-label">Average Position</div><div class="stat-val green" id="r-position">—</div><div class="stat-sub">Google search position</div></div>
+        </div>
+
+        <div class="report-section">
+          <div class="report-heading">Period comparisons</div>
+          <div class="comparison-grid" id="report-comparisons"></div>
+        </div>
+
+        <div class="report-section">
+          <div class="report-heading">Daily detail</div>
+          <div class="report-tables">
+            <div class="report-table-card"><div class="table-title">Landing pages</div><ul class="report-list" id="r-landing-pages"></ul></div>
+            <div class="report-table-card"><div class="table-title">Search queries</div><ul class="report-list" id="r-queries"></ul></div>
+            <div class="report-table-card"><div class="table-title">Search pages</div><ul class="report-list" id="r-pages"></ul></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -470,9 +544,105 @@ function doLogout() {
 function showTab(tab) {
   document.getElementById('view-users').style.display = tab === 'users' ? 'block' : 'none';
   document.getElementById('view-funnel').style.display = tab === 'funnel' ? 'block' : 'none';
+  document.getElementById('view-reporting').style.display = tab === 'reporting' ? 'block' : 'none';
   document.getElementById('tab-users-btn').classList.toggle('active', tab === 'users');
   document.getElementById('tab-funnel-btn').classList.toggle('active', tab === 'funnel');
+  document.getElementById('tab-reporting-btn').classList.toggle('active', tab === 'reporting');
   if (tab === 'funnel') loadFunnel();
+  if (tab === 'reporting' && !window.reportingLoaded) loadReporting();
+}
+
+async function loadReporting() {
+  const status = document.getElementById('report-status');
+  const content = document.getElementById('report-content');
+  const refresh = document.getElementById('report-refresh');
+  status.className = 'report-message';
+  status.textContent = 'Loading Google Analytics and Search Console data...';
+  status.style.display = 'block';
+  content.style.display = 'none';
+  refresh.disabled = true;
+  try {
+    const res = await fetch(API + '/api/admin/reporting/daily', {
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not load the traffic report.');
+    renderReporting(data);
+    window.reportingLoaded = true;
+    status.style.display = 'none';
+    content.style.display = 'block';
+  } catch (e) {
+    status.className = 'report-message error';
+    status.textContent = e.message || 'Could not load the traffic report.';
+  } finally {
+    refresh.disabled = false;
+  }
+}
+
+function renderReporting(data) {
+  const ga4 = data.ga4 || {};
+  const search = data.searchConsole || {};
+  document.getElementById('report-date').textContent = data.date || '—';
+  document.getElementById('r-users').textContent = number(ga4.users);
+  document.getElementById('r-sessions').textContent = number(ga4.sessions);
+  document.getElementById('r-clicks').textContent = number(search.clicks);
+  document.getElementById('r-impressions').textContent = number(search.impressions);
+  document.getElementById('r-ctr').textContent = percent(search.ctr);
+  document.getElementById('r-position').textContent = decimal(search.averagePosition);
+
+  const comparisons = data.comparisons || {};
+  document.getElementById('report-comparisons').innerHTML = [
+    comparisonCard('Last 7 days', comparisons.sevenDay),
+    comparisonCard('Last 30 days', comparisons.thirtyDay)
+  ].join('');
+
+  renderReportList('r-landing-pages', ga4.landingPages, 'page', item => number(item.sessions) + ' sessions');
+  renderReportList('r-queries', search.topQueries, 'query', item => number(item.clicks) + ' clicks');
+  renderReportList('r-pages', search.topPages, 'page', item => number(item.clicks) + ' clicks');
+}
+
+function comparisonCard(title, comparison) {
+  if (!comparison) return '<div class="comparison-card"><div class="comparison-title">' + esc(title) + '</div><div class="report-message">No comparison data.</div></div>';
+  const metrics = [
+    ['Users', 'users', number], ['Sessions', 'sessions', number],
+    ['Clicks', 'clicks', number], ['Impressions', 'impressions', number],
+    ['CTR', 'ctr', percent], ['Avg. position', 'averagePosition', decimal]
+  ];
+  const rows = metrics.map(([label, key, formatter]) => {
+    const delta = comparison.change?.[key];
+    return '<div class="comparison-row">' +
+      '<div class="comparison-label">' + esc(label) + '</div>' +
+      '<div class="comparison-value">' + formatter(comparison.current?.[key]) + '</div>' +
+      '<div class="comparison-value">' + formatter(comparison.previous?.[key]) + '</div>' +
+      '<div class="comparison-value ' + changeClass(delta, key === 'averagePosition') + '">' + changeText(delta) + '</div></div>';
+  }).join('');
+  return '<div class="comparison-card"><div class="comparison-title">' + esc(title) + '</div>' +
+    '<div class="comparison-row header"><div>Metric</div><div class="comparison-value">Current</div><div class="comparison-value">Previous</div><div class="comparison-value">Change</div></div>' + rows + '</div>';
+}
+
+function renderReportList(id, items, nameKey, valueFormatter) {
+  const list = document.getElementById(id);
+  if (!items || !items.length) {
+    list.innerHTML = '<li><span class="report-list-name">No data for this date.</span></li>';
+    return;
+  }
+  list.innerHTML = items.map(item => '<li title="' + esc(item[nameKey]) + '"><span class="report-list-name">' +
+    esc(item[nameKey] || '(not set)') + '</span><span class="report-list-value">' + esc(valueFormatter(item)) + '</span></li>').join('');
+}
+
+function number(value) { return Number(value || 0).toLocaleString('en-GB'); }
+function decimal(value) { return Number(value || 0).toLocaleString('en-GB', { maximumFractionDigits: 1 }); }
+function percent(value) { return (Number(value || 0) * 100).toLocaleString('en-GB', { maximumFractionDigits: 1 }) + '%'; }
+function changeText(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+  const amount = Number(value) * 100;
+  return (amount > 0 ? '+' : '') + amount.toLocaleString('en-GB', { maximumFractionDigits: 1 }) + '%';
+}
+function changeClass(value, lowerIsBetter = false) {
+  if (value === null || value === undefined || Number(value) === 0) return 'change-flat';
+  const improved = lowerIsBetter ? Number(value) < 0 : Number(value) > 0;
+  return improved ? 'change-up' : 'change-down';
 }
 
 async function loadUsers() {
@@ -683,7 +853,7 @@ function renderFunnelBars(data) {
 }
 
 function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 </script>
 
