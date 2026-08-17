@@ -24,6 +24,14 @@ function validateDate(date) {
   return date;
 }
 function yesterday() { return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
+function shiftDate(date, days) {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+function change(current, previous) {
+  return previous ? (current - previous) / previous : null;
+}
 async function getAccessToken(credentials, fetchImpl) {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60000) return cachedToken.value;
   const now = Math.floor(Date.now() / 1000);
@@ -45,7 +53,7 @@ async function googlePost(url, body, token, fetchImpl) {
 function metric(row, index) { return Number(row?.metricValues?.[index]?.value || 0); }
 function searchMetric(row, index) { return Number(row?.[['clicks', 'impressions', 'ctr', 'position'][index]] || 0); }
 
-async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, hostname: hostnameOverride, siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch } = {}) {
+async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date); validateDate(searchConsoleDate);
   const config = loadConfig(env);
   const hostname = hostnameOverride || config.hostname;
@@ -56,20 +64,57 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
   const gaRange = { startDate: date, endDate: date };
   const scRange = { startDate: searchConsoleDate, endDate: searchConsoleDate };
   const dimensionFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } };
-  const [gaTotals, gaSources, gaPages, scTotals, scQueries, scPages] = await Promise.all([
+  const comparisonRanges = {
+    sevenDay: {
+      current: { startDate: shiftDate(date, -6), endDate: date },
+      previous: { startDate: shiftDate(date, -13), endDate: shiftDate(date, -7) },
+      searchCurrent: { startDate: shiftDate(searchConsoleDate, -6), endDate: searchConsoleDate },
+      searchPrevious: { startDate: shiftDate(searchConsoleDate, -13), endDate: shiftDate(searchConsoleDate, -7) }
+    },
+    thirtyDay: {
+      current: { startDate: shiftDate(date, -29), endDate: date },
+      previous: { startDate: shiftDate(date, -59), endDate: shiftDate(date, -30) },
+      searchCurrent: { startDate: shiftDate(searchConsoleDate, -29), endDate: searchConsoleDate },
+      searchPrevious: { startDate: shiftDate(searchConsoleDate, -59), endDate: shiftDate(searchConsoleDate, -30) }
+    }
+  };
+  const gaSummary = (range) => googlePost(gaUrl, { dateRanges: [range], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl);
+  const scSummary = (range) => googlePost(scUrl, range, token, fetchImpl);
+  const responses = await Promise.all([
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl),
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
     googlePost(scUrl, scRange, token, fetchImpl),
     googlePost(scUrl, { ...scRange, dimensions: ['query'], rowLimit: 10 }, token, fetchImpl),
-    googlePost(scUrl, { ...scRange, dimensions: ['page'], rowLimit: 10 }, token, fetchImpl)
+    googlePost(scUrl, { ...scRange, dimensions: ['page'], rowLimit: 10 }, token, fetchImpl),
+    ...(includeComparisons ? [
+      gaSummary(comparisonRanges.sevenDay.current), gaSummary(comparisonRanges.sevenDay.previous),
+      scSummary(comparisonRanges.sevenDay.searchCurrent), scSummary(comparisonRanges.sevenDay.searchPrevious),
+      gaSummary(comparisonRanges.thirtyDay.current), gaSummary(comparisonRanges.thirtyDay.previous),
+      scSummary(comparisonRanges.thirtyDay.searchCurrent), scSummary(comparisonRanges.thirtyDay.searchPrevious)
+    ] : [])
   ]);
+  const [gaTotals, gaSources, gaPages, scTotals, scQueries, scPages, ga7, gaPrevious7, sc7, scPrevious7, ga30, gaPrevious30, sc30, scPrevious30] = responses;
   const totals = scTotals.rows?.[0] || {};
-  return {
+  function comparison(period, currentGa, previousGa, currentSc, previousSc) {
+    const currentGaRow = currentGa.rows?.[0];
+    const previousGaRow = previousGa.rows?.[0];
+    const currentScRow = currentSc.rows?.[0];
+    const previousScRow = previousSc.rows?.[0];
+    const current = { users: metric(currentGaRow, 0), sessions: metric(currentGaRow, 1), clicks: searchMetric(currentScRow, 0), impressions: searchMetric(currentScRow, 1), ctr: searchMetric(currentScRow, 2), averagePosition: searchMetric(currentScRow, 3) };
+    const previous = { users: metric(previousGaRow, 0), sessions: metric(previousGaRow, 1), clicks: searchMetric(previousScRow, 0), impressions: searchMetric(previousScRow, 1), ctr: searchMetric(previousScRow, 2), averagePosition: searchMetric(previousScRow, 3) };
+    return { period, current, previous, change: { users: change(current.users, previous.users), sessions: change(current.sessions, previous.sessions), clicks: change(current.clicks, previous.clicks), impressions: change(current.impressions, previous.impressions), ctr: change(current.ctr, previous.ctr), averagePosition: change(current.averagePosition, previous.averagePosition) } };
+  }
+  const report = {
     date, generatedAt: new Date().toISOString(),
     ga4: { date, provisional: true, users: metric(gaTotals.rows?.[0], 0), sessions: metric(gaTotals.rows?.[0], 1), trafficSources: (gaSources.rows || []).map((row) => ({ source: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })), landingPages: (gaPages.rows || []).map((row) => ({ page: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })) },
     searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), topQueries: (scQueries.rows || []).map((row) => ({ query: row.keys?.[0] || '', clicks: searchMetric(row, 0), impressions: searchMetric(row, 1), ctr: searchMetric(row, 2), averagePosition: searchMetric(row, 3) })), topPages: (scPages.rows || []).map((row) => ({ page: row.keys?.[0] || '', clicks: searchMetric(row, 0), impressions: searchMetric(row, 1), ctr: searchMetric(row, 2), averagePosition: searchMetric(row, 3) })) }
   };
+  if (includeComparisons) report.comparisons = {
+      sevenDay: comparison('7 days', ga7, gaPrevious7, sc7, scPrevious7),
+      thirtyDay: comparison('30 days', ga30, gaPrevious30, sc30, scPrevious30)
+  };
+  return report;
 }
 function clearTokenCache() { cachedToken = null; }
 module.exports = { getDailyTrafficReport, clearTokenCache, validateDate };
