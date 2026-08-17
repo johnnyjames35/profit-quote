@@ -165,7 +165,7 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
 // Read-only Google traffic report — admin only. Defaults to yesterday for complete data.
 router.get('/reporting/daily', requireAdmin, async (req, res) => {
   try {
-    const report = await getDailyTrafficReport({ date: req.query.date });
+    const report = await getDailyTrafficReport({ date: req.query.date, includeComparisons: true });
     res.set('Cache-Control', 'private, no-store');
     res.json(report);
   } catch (error) {

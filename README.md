@@ -23,4 +23,4 @@ AI Quote Builder for UK Tradespeople — by Cambrian Digital / Big Bulldog UK Lt
 
 ## Daily traffic reporting
 
-Authenticated administrators can request `GET /api/admin/reporting/daily`. It defaults to yesterday; use `?date=YYYY-MM-DD` for a specific day. The endpoint reads GA4 users, sessions, channels and landing pages plus Search Console clicks, impressions, CTR, average position, top queries and top pages. It requests Google's read-only scopes and does not persist reporting data or credentials.
+Authenticated administrators can request `GET /api/admin/reporting/daily`. It defaults to yesterday; use `?date=YYYY-MM-DD` for a specific day. The endpoint reads GA4 users, sessions, channels and landing pages plus Search Console clicks, impressions, CTR, average position, top queries and top pages. It also returns rolling 7-day and 30-day totals compared with their immediately preceding periods. It requests Google's read-only scopes and does not persist reporting data or credentials.
