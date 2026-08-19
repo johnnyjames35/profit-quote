@@ -19,6 +19,8 @@ test('traffic reporting renders daily detail and both comparison periods', () =>
   assert.match(adminHtml, /ga4\.landingPages/);
   assert.match(adminHtml, /search\.topQueries/);
   assert.match(adminHtml, /search\.topPages/);
+  assert.match(adminHtml, /Top Google Search Queries \(30 days\)/);
+  assert.match(adminHtml, /number\(item\.impressions\).*percent\(item\.ctr\).*decimal\(item\.averagePosition\)/);
 });
 
 test('inline admin scripts remain valid JavaScript', () => {

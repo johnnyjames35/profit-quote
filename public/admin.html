@@ -467,8 +467,8 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="report-heading">Daily detail</div>
           <div class="report-tables">
             <div class="report-table-card"><div class="table-title">Landing pages</div><ul class="report-list" id="r-landing-pages"></ul></div>
-            <div class="report-table-card"><div class="table-title">Search queries</div><ul class="report-list" id="r-queries"></ul></div>
-            <div class="report-table-card"><div class="table-title">Search pages</div><ul class="report-list" id="r-pages"></ul></div>
+            <div class="report-table-card"><div class="table-title">Top Google Search Queries (30 days)</div><ul class="report-list" id="r-queries"></ul></div>
+            <div class="report-table-card"><div class="table-title">Top Google Search Pages (30 days)</div><ul class="report-list" id="r-pages"></ul></div>
           </div>
         </div>
       </div>
@@ -598,8 +598,9 @@ function renderReporting(data) {
   ].join('');
 
   renderReportList('r-landing-pages', ga4.landingPages, 'page', item => number(item.sessions) + ' sessions');
-  renderReportList('r-queries', search.topQueries, 'query', item => number(item.clicks) + ' clicks');
-  renderReportList('r-pages', search.topPages, 'page', item => number(item.clicks) + ' clicks');
+  const searchMetrics = item => number(item.clicks) + ' clicks · ' + number(item.impressions) + ' impressions · ' + percent(item.ctr) + ' CTR · position ' + decimal(item.averagePosition);
+  renderReportList('r-queries', search.topQueries, 'query', searchMetrics, 'No data for the last 30 days.');
+  renderReportList('r-pages', search.topPages, 'page', searchMetrics, 'No data for the last 30 days.');
 }
 
 function comparisonCard(title, comparison) {
@@ -621,10 +622,10 @@ function comparisonCard(title, comparison) {
     '<div class="comparison-row header"><div>Metric</div><div class="comparison-value">Current</div><div class="comparison-value">Previous</div><div class="comparison-value">Change</div></div>' + rows + '</div>';
 }
 
-function renderReportList(id, items, nameKey, valueFormatter) {
+function renderReportList(id, items, nameKey, valueFormatter, emptyMessage = 'No data for this date.') {
   const list = document.getElementById(id);
   if (!items || !items.length) {
-    list.innerHTML = '<li><span class="report-list-name">No data for this date.</span></li>';
+    list.innerHTML = '<li><span class="report-list-name">' + esc(emptyMessage) + '</span></li>';
     return;
   }
   list.innerHTML = items.map(item => '<li title="' + esc(item[nameKey]) + '"><span class="report-list-name">' +

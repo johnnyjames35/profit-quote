@@ -52,6 +52,12 @@ async function googlePost(url, body, token, fetchImpl) {
 }
 function metric(row, index) { return Number(row?.metricValues?.[index]?.value || 0); }
 function searchMetric(row, index) { return Number(row?.[['clicks', 'impressions', 'ctr', 'position'][index]] || 0); }
+function topSearchRows(rows, key) {
+  return (rows || [])
+    .map((row) => ({ [key]: row.keys?.[0] || '', clicks: searchMetric(row, 0), impressions: searchMetric(row, 1), ctr: searchMetric(row, 2), averagePosition: searchMetric(row, 3) }))
+    .sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks || a.averagePosition - b.averagePosition)
+    .slice(0, 15);
+}
 
 async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date); validateDate(searchConsoleDate);
@@ -63,6 +69,7 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
   const scUrl = `${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
   const gaRange = { startDate: date, endDate: date };
   const scRange = { startDate: searchConsoleDate, endDate: searchConsoleDate };
+  const scTopRange = { startDate: shiftDate(searchConsoleDate, -29), endDate: searchConsoleDate };
   const dimensionFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } };
   const comparisonRanges = {
     sevenDay: {
@@ -85,8 +92,8 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
     googlePost(scUrl, scRange, token, fetchImpl),
-    googlePost(scUrl, { ...scRange, dimensions: ['query'], rowLimit: 10 }, token, fetchImpl),
-    googlePost(scUrl, { ...scRange, dimensions: ['page'], rowLimit: 10 }, token, fetchImpl),
+    googlePost(scUrl, { ...scTopRange, dimensions: ['query'], rowLimit: 100 }, token, fetchImpl),
+    googlePost(scUrl, { ...scTopRange, dimensions: ['page'], rowLimit: 100 }, token, fetchImpl),
     ...(includeComparisons ? [
       gaSummary(comparisonRanges.sevenDay.current), gaSummary(comparisonRanges.sevenDay.previous),
       scSummary(comparisonRanges.sevenDay.searchCurrent), scSummary(comparisonRanges.sevenDay.searchPrevious),
@@ -108,7 +115,7 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
   const report = {
     date, generatedAt: new Date().toISOString(),
     ga4: { date, provisional: true, users: metric(gaTotals.rows?.[0], 0), sessions: metric(gaTotals.rows?.[0], 1), trafficSources: (gaSources.rows || []).map((row) => ({ source: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })), landingPages: (gaPages.rows || []).map((row) => ({ page: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })) },
-    searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), topQueries: (scQueries.rows || []).map((row) => ({ query: row.keys?.[0] || '', clicks: searchMetric(row, 0), impressions: searchMetric(row, 1), ctr: searchMetric(row, 2), averagePosition: searchMetric(row, 3) })), topPages: (scPages.rows || []).map((row) => ({ page: row.keys?.[0] || '', clicks: searchMetric(row, 0), impressions: searchMetric(row, 1), ctr: searchMetric(row, 2), averagePosition: searchMetric(row, 3) })) }
+    searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), topResultsPeriod: { startDate: scTopRange.startDate, endDate: scTopRange.endDate, days: 30 }, topQueries: topSearchRows(scQueries.rows, 'query'), topPages: topSearchRows(scPages.rows, 'page') }
   };
   if (includeComparisons) report.comparisons = {
       sevenDay: comparison('7 days', ga7, gaPrevious7, sc7, scPrevious7),
