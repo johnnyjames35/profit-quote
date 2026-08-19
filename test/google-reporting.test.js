@@ -19,7 +19,7 @@ test('returns normalized GA4 and Search Console metrics', async () => {
     { rows: [{ dimensionValues: [{ value: 'Organic Search' }], metricValues: [{ value: '9' }, { value: '7' }] }] },
     { rows: [{ dimensionValues: [{ value: '/' }], metricValues: [{ value: '8' }, { value: '6' }] }] },
     { rows: [{ clicks: 5, impressions: 100, ctr: 0.05, position: 4.2 }] },
-    { rows: [{ keys: ['builder quote'], clicks: 3, impressions: 40, ctr: 0.075, position: 3.1 }] },
+    { rows: [{ keys: ['clicked query'], clicks: 3, impressions: 40, ctr: 0.075, position: 3.1 }, { keys: ['builder quote'], clicks: 1, impressions: 90, ctr: 0.011, position: 8.2 }] },
     { rows: [{ keys: ['https://profitquote.co.uk/'], clicks: 4, impressions: 70, ctr: 0.057, position: 3.8 }] },
     { rows: [{ metricValues: [{ value: '70' }, { value: '90' }] }] },
     { rows: [{ metricValues: [{ value: '50' }, { value: '60' }] }] },
@@ -36,6 +36,9 @@ test('returns normalized GA4 and Search Console metrics', async () => {
   assert.equal(result.ga4.users, 12); assert.equal(result.ga4.sessions, 18);
   assert.equal(result.ga4.trafficSources[0].source, 'Organic Search'); assert.equal(result.searchConsole.clicks, 5);
   assert.equal(result.searchConsole.topQueries[0].query, 'builder quote'); assert.equal(calls.length, 15);
+  assert.deepEqual(result.searchConsole.topResultsPeriod, { startDate: '2026-07-14', endDate: '2026-08-12', days: 30 });
+  assert.deepEqual(JSON.parse(calls[5].options.body), { startDate: '2026-07-14', endDate: '2026-08-12', dimensions: ['query'], rowLimit: 100 });
+  assert.deepEqual(JSON.parse(calls[6].options.body), { startDate: '2026-07-14', endDate: '2026-08-12', dimensions: ['page'], rowLimit: 100 });
   assert.equal(result.comparisons.sevenDay.current.sessions, 90);
   assert.equal(result.comparisons.sevenDay.change.sessions, 0.5);
   assert.equal(result.comparisons.thirtyDay.current.clicks, 80);
