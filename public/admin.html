@@ -263,12 +263,12 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .report-table-card .table-title { padding: 16px 18px; border-bottom: 1px solid var(--border); }
 .report-list { list-style: none; }
 .report-list li {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px;
   padding: 11px 18px; border-bottom: 1px solid var(--border); align-items: center;
 }
 .report-list li:last-child { border-bottom: none; }
 .report-list-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 0.78rem; }
-.report-list-value { color: var(--cyan); font-family: var(--mono); font-size: 0.78rem; }
+.report-list-value { color: var(--cyan); font-family: var(--mono); font-size: 0.78rem; white-space: normal; }
 @media (max-width: 768px) {
   .stats-row, .funnel-stats-row { grid-template-columns: repeat(2, 1fr); }
   .comparison-grid, .report-tables { grid-template-columns: 1fr; }
