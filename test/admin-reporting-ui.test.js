@@ -21,6 +21,7 @@ test('traffic reporting renders daily detail and both comparison periods', () =>
   assert.match(adminHtml, /search\.topPages/);
   assert.match(adminHtml, /Top Google Search Queries \(30 days\)/);
   assert.match(adminHtml, /number\(item\.impressions\).*percent\(item\.ctr\).*decimal\(item\.averagePosition\)/);
+  assert.match(adminHtml, /\.report-list li \{[\s\S]*grid-template-columns: minmax\(0, 1fr\);/);
 });
 
 test('inline admin scripts remain valid JavaScript', () => {
