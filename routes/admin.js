@@ -107,6 +107,36 @@ router.get('/funnel', requireAdmin, async (req, res) => {
   }
 });
 
+// Clear funnel tracking events without touching registered users or their quotes.
+router.delete('/funnel/events', requireAdmin, async (req, res) => {
+  try {
+    const result = await req.app.locals.pool.query('DELETE FROM events');
+    res.json({ success: true, deletedEvents: result.rowCount });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Clear unconverted guest sessions and their guest-owned quotes only.
+// Converted quotes are safe because conversion moves them to user_id and clears guest_id.
+router.delete('/funnel/guest-data', requireAdmin, async (req, res) => {
+  const pool = req.app.locals.pool;
+  try {
+    await pool.query('BEGIN');
+    const quotes = await pool.query('DELETE FROM quotes WHERE guest_id IS NOT NULL');
+    const sessions = await pool.query('DELETE FROM guest_sessions');
+    await pool.query('COMMIT');
+    res.json({
+      success: true,
+      deletedGuestQuotes: quotes.rowCount,
+      deletedGuestSessions: sessions.rowCount
+    });
+  } catch(e) {
+    await pool.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Mark a user as paid — admin only
 router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
   const pool = req.app.locals.pool;
@@ -176,3 +206,4 @@ router.get('/reporting/daily', requireAdmin, async (req, res) => {
 });
 
 module.exports = router;
+

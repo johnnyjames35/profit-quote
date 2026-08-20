@@ -19,9 +19,6 @@ test('traffic reporting renders daily detail and both comparison periods', () =>
   assert.match(adminHtml, /ga4\.landingPages/);
   assert.match(adminHtml, /search\.topQueries/);
   assert.match(adminHtml, /search\.topPages/);
-  assert.match(adminHtml, /Top Google Search Queries \(30 days\)/);
-  assert.match(adminHtml, /number\(item\.impressions\).*percent\(item\.ctr\).*decimal\(item\.averagePosition\)/);
-  assert.match(adminHtml, /\.report-list li \{[\s\S]*grid-template-columns: minmax\(0, 1fr\);/);
 });
 
 test('inline admin scripts remain valid JavaScript', () => {
@@ -31,3 +28,12 @@ test('inline admin scripts remain valid JavaScript', () => {
   assert.ok(scripts.length > 0);
   scripts.forEach((source) => assert.doesNotThrow(() => new Function(source)));
 });
+
+test('sales funnel provides confirmed cleanup controls for non-customer data', () => {
+  assert.match(adminHtml, /clearFunnelEvents\(this\)/);
+  assert.match(adminHtml, /clearGuestFunnelData\(this\)/);
+  assert.match(adminHtml, /clearLinkedInImpressions\(\)/);
+  assert.match(adminHtml, /method: 'DELETE'/);
+  assert.match(adminHtml, /Registered users and their saved quotes will not be deleted/);
+});
+

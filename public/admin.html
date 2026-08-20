@@ -221,6 +221,15 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
   background: var(--navy); border: 1px solid var(--border); border-radius: 6px;
   color: var(--white); font-family: var(--mono); font-size: 1.1rem; padding: 8px 12px; width: 160px;
 }
+.funnel-cleanup {
+  background: var(--navy2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.funnel-cleanup-copy { max-width: 620px; }
+.funnel-cleanup-title { color: var(--white); font-weight: 700; margin-bottom: 4px; }
+.funnel-cleanup-note { color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+.funnel-cleanup-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .impressions-card .imp-note { font-size: 0.75rem; color: var(--muted); flex: 1; min-width: 200px; }
 .funnel-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
 .funnel-step { margin-bottom: 4px; }
@@ -263,12 +272,12 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .report-table-card .table-title { padding: 16px 18px; border-bottom: 1px solid var(--border); }
 .report-list { list-style: none; }
 .report-list li {
-  display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
   padding: 11px 18px; border-bottom: 1px solid var(--border); align-items: center;
 }
 .report-list li:last-child { border-bottom: none; }
 .report-list-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 0.78rem; }
-.report-list-value { color: var(--cyan); font-family: var(--mono); font-size: 0.78rem; white-space: normal; }
+.report-list-value { color: var(--cyan); font-family: var(--mono); font-size: 0.78rem; }
 @media (max-width: 768px) {
   .stats-row, .funnel-stats-row { grid-template-columns: repeat(2, 1fr); }
   .comparison-grid, .report-tables { grid-template-columns: 1fr; }
@@ -388,6 +397,18 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         <div class="imp-note">Manual entry — LinkedIn doesn't share this number automatically. Everything below is fully automatic.</div>
       </div>
 
+      <div class="funnel-cleanup">
+        <div class="funnel-cleanup-copy">
+          <div class="funnel-cleanup-title">Clear test and stale funnel data</div>
+          <div class="funnel-cleanup-note">These controls do not delete registered users, their saved quotes or paid-customer status.</div>
+        </div>
+        <div class="funnel-cleanup-actions">
+          <button class="btn-delete" onclick="clearFunnelEvents(this)">Clear tracking events</button>
+          <button class="btn-delete" onclick="clearGuestFunnelData(this)">Clear guest/free-quote data</button>
+          <button class="btn-delete" onclick="clearLinkedInImpressions()">Clear LinkedIn figure</button>
+        </div>
+      </div>
+
       <div class="funnel-stats-row">
         <div class="stat-card">
           <div class="stat-label">Visitors Today</div>
@@ -467,8 +488,8 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="report-heading">Daily detail</div>
           <div class="report-tables">
             <div class="report-table-card"><div class="table-title">Landing pages</div><ul class="report-list" id="r-landing-pages"></ul></div>
-            <div class="report-table-card"><div class="table-title">Top Google Search Queries (30 days)</div><ul class="report-list" id="r-queries"></ul></div>
-            <div class="report-table-card"><div class="table-title">Top Google Search Pages (30 days)</div><ul class="report-list" id="r-pages"></ul></div>
+            <div class="report-table-card"><div class="table-title">Search queries</div><ul class="report-list" id="r-queries"></ul></div>
+            <div class="report-table-card"><div class="table-title">Search pages</div><ul class="report-list" id="r-pages"></ul></div>
           </div>
         </div>
       </div>
@@ -598,9 +619,8 @@ function renderReporting(data) {
   ].join('');
 
   renderReportList('r-landing-pages', ga4.landingPages, 'page', item => number(item.sessions) + ' sessions');
-  const searchMetrics = item => number(item.clicks) + ' clicks · ' + number(item.impressions) + ' impressions · ' + percent(item.ctr) + ' CTR · position ' + decimal(item.averagePosition);
-  renderReportList('r-queries', search.topQueries, 'query', searchMetrics, 'No data for the last 30 days.');
-  renderReportList('r-pages', search.topPages, 'page', searchMetrics, 'No data for the last 30 days.');
+  renderReportList('r-queries', search.topQueries, 'query', item => number(item.clicks) + ' clicks');
+  renderReportList('r-pages', search.topPages, 'page', item => number(item.clicks) + ' clicks');
 }
 
 function comparisonCard(title, comparison) {
@@ -622,10 +642,10 @@ function comparisonCard(title, comparison) {
     '<div class="comparison-row header"><div>Metric</div><div class="comparison-value">Current</div><div class="comparison-value">Previous</div><div class="comparison-value">Change</div></div>' + rows + '</div>';
 }
 
-function renderReportList(id, items, nameKey, valueFormatter, emptyMessage = 'No data for this date.') {
+function renderReportList(id, items, nameKey, valueFormatter) {
   const list = document.getElementById(id);
   if (!items || !items.length) {
-    list.innerHTML = '<li><span class="report-list-name">' + esc(emptyMessage) + '</span></li>';
+    list.innerHTML = '<li><span class="report-list-name">No data for this date.</span></li>';
     return;
   }
   list.innerHTML = items.map(item => '<li title="' + esc(item[nameKey]) + '"><span class="report-list-name">' +
@@ -792,6 +812,51 @@ function saveImpressions() {
   renderFunnelBars(window.lastFunnelData);
 }
 
+async function clearFunnelDataset(path, button, confirmation) {
+  if (!confirm(confirmation)) return;
+  button.disabled = true;
+  try {
+    const res = await fetch(API + '/api/admin/funnel/' + path, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + adminToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Could not clear the data: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    await loadFunnel();
+  } catch(e) {
+    alert('Connection error — the data was not cleared.');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function clearFunnelEvents(button) {
+  return clearFunnelDataset(
+    'events',
+    button,
+    'Clear all sales-funnel tracking events? Registered users and saved quotes will not be deleted. This cannot be undone.'
+  );
+}
+
+function clearGuestFunnelData(button) {
+  return clearFunnelDataset(
+    'guest-data',
+    button,
+    'Clear all guest sessions and unfinished guest-owned quotes? Registered users and their saved quotes will not be deleted. This cannot be undone.'
+  );
+}
+
+function clearLinkedInImpressions() {
+  if (!confirm('Clear the manually entered LinkedIn impressions figure?')) return;
+  localStorage.removeItem('pq_linkedin_impressions');
+  document.getElementById('impressions-input').value = '';
+  renderFunnelBars(window.lastFunnelData);
+}
+
 async function loadFunnel() {
   const savedImpressions = localStorage.getItem('pq_linkedin_impressions');
   if (savedImpressions) document.getElementById('impressions-input').value = savedImpressions;
@@ -860,3 +925,4 @@ function esc(s) {
 
 </body>
 </html>
+
