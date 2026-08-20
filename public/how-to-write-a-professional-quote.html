@@ -226,13 +226,14 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
   <div class="wrap">
     <div class="kc-badge">📖 ProfitQuote Trade Guides</div>
     <h1 class="article-h1">How to Write a Professional Builder's Quote (Free Template &amp; Examples)</h1>
-    <div class="article-meta"><strong>By John James</strong> &middot; Founder of ProfitQuote &middot; 7 min read &middot; Last updated: 27 July 2026</div>
+    <div class="article-meta"><strong>By John James</strong> &middot; Founder of ProfitQuote &middot; 8 min read &middot; Last updated: 21 August 2026</div>
   </div>
 </section>
 <section style="padding-top:0;">
   <div class="wrap article-body">
 
-<p>A scruffy, hand-written quote on the back of a diary page and a clean, professional quotation can be for the exact same job, at the exact same price &mdash; and still win completely different results. Customers can't judge your workmanship before you start, so the quote is often the only thing they have to judge you on. Here's how to write one that wins the job and protects your profit.</p>
+<p><strong>A professional quote clearly identifies both parties, describes the work, states the price and VAT position, lists inclusions and exclusions, sets payment terms and explains how long the offer remains valid.</strong> It should give the customer confidence while protecting you from arguments about work that was never included.</p>
+<p>If the scope is still too uncertain to offer a fixed price, read <a href="/quote-vs-estimate.html" style="color:var(--amber);">Quote vs Estimate</a> before choosing the document to send.</p>
 
 <h2>What Every Professional Quote Needs</h2>
 <p>Before writing your quotation, make sure you've included every hidden business expense — read <a href="/25-costs-tradespeople-forget.html" style="color:var(--amber);">25 Costs Tradespeople Forget to Include</a> so nothing slips through unbilled. Whatever trade you're in, a proper quotation should always include:</p>
@@ -252,14 +253,14 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
 <p>Here's a simple layout you can copy for any job. Swap in your own details and adjust the line items to suit the work — or grab the ready-made PDF version below.</p>
 
 <div class="download-box">
-  <div class="dl-title">📄 Download the Free PDF Quote Template</div>
-  <div class="dl-sub">The exact layout below, ready to fill in and send. Enter your email and it'll download straight away.</div>
+  <div class="dl-title">📄 Open the Free Quote Template</div>
+  <div class="dl-sub">Enter your email to open the editable template below, then fill it in and generate your PDF.</div>
   <form class="download-form" id="templateForm">
     <input type="email" id="templateEmail" placeholder="you@yourbusiness.co.uk" required>
-    <button type="submit" class="btn-download" id="templateBtn">Download Free PDF &rarr;</button>
+    <button type="submit" class="btn-download" id="templateBtn">Open Free Template &rarr;</button>
   </form>
   <div id="templateMsg"></div>
-  <div class="dl-fineprint">We'll only use your email to send occasional quoting tips. Unsubscribe anytime.</div>
+  <div class="dl-fineprint">We use your email to provide and manage this template request. See our <a href="/privacy.html">Privacy Policy</a>.</div>
 </div>
 
 <div class="builder-box" id="builderBox" style="display:none;">
@@ -515,12 +516,12 @@ if (templateForm) {
         document.getElementById('f_quote_date').value = new Date().toISOString().split('T')[0];
       } else {
         msg.innerHTML = '<div class="dl-msg error">' + (data.error || 'Something went wrong, please try again.') + '</div>';
-        btn.textContent = 'Download Free PDF \u2192';
+        btn.textContent = 'Open Free Template \u2192';
         btn.disabled = false;
       }
     } catch(err) {
       msg.innerHTML = '<div class="dl-msg error">Something went wrong, please try again.</div>';
-      btn.textContent = 'Download Free PDF \u2192';
+      btn.textContent = 'Open Free Template \u2192';
       btn.disabled = false;
     }
   });
