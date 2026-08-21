@@ -1,4 +1,4 @@
-const { getDailyTrafficReport } = require('./google-reporting');
+const { getDailyTrafficReport, validateDate } = require('./google-reporting');
 
 const PORTFOLIO_SITES = Object.freeze([
   { business: 'ProfitQuote', hostname: 'profitquote.co.uk', siteUrl: 'https://profitquote.co.uk/' },
@@ -8,33 +8,45 @@ const PORTFOLIO_SITES = Object.freeze([
 ]);
 
 async function getPortfolioDailyTrafficReport({ date, reportGetter = getDailyTrafficReport } = {}) {
+  validateDate(date);
   const businesses = await Promise.all(PORTFOLIO_SITES.map(async (site) => {
-    const report = await reportGetter({
-      date,
-      searchConsoleDate: date,
-      hostname: site.hostname,
-      siteUrl: site.siteUrl,
-      includeComparisons: false
-    });
-    return {
-      business: site.business,
-      hostname: site.hostname,
-      ga4: {
-        date: report.ga4.date,
-        provisional: report.ga4.provisional,
-        users: report.ga4.users,
-        sessions: report.ga4.sessions
-      },
-      searchConsole: {
-        date: report.searchConsole.date,
-        clicks: report.searchConsole.clicks,
-        impressions: report.searchConsole.impressions,
-        ctr: report.searchConsole.ctr,
-        averagePosition: report.searchConsole.averagePosition
-      }
-    };
+    try {
+      const report = await reportGetter({
+        date,
+        searchConsoleDate: date,
+        hostname: site.hostname,
+        siteUrl: site.siteUrl,
+        includeComparisons: false
+      });
+      return {
+        business: site.business,
+        hostname: site.hostname,
+        status: 'OK',
+        ga4: {
+          date: report.ga4.date,
+          provisional: report.ga4.provisional,
+          users: report.ga4.users,
+          sessions: report.ga4.sessions
+        },
+        searchConsole: {
+          date: report.searchConsole.date,
+          clicks: report.searchConsole.clicks,
+          impressions: report.searchConsole.impressions,
+          ctr: report.searchConsole.ctr,
+          averagePosition: report.searchConsole.averagePosition
+        }
+      };
+    } catch (error) {
+      console.error(`Portfolio reporting failed for ${site.business}:`, error.message);
+      return {
+        business: site.business,
+        hostname: site.hostname,
+        status: 'MONITORING_UNRESOLVED',
+        error: 'Unable to retrieve Google reporting data'
+      };
+    }
   }));
-  return { date: businesses[0]?.ga4.date || date, generatedAt: new Date().toISOString(), businesses };
+  return { date, generatedAt: new Date().toISOString(), businesses };
 }
 
 module.exports = { getPortfolioDailyTrafficReport, PORTFOLIO_SITES };
