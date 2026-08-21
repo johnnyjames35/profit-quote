@@ -25,6 +25,7 @@ app.use('/api/issues', require('./routes/issues'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/reporting', require('./routes/reporting'));
+app.use('/monitoring', require('./routes/monitoring'));
 app.use('/api/photos', require('./routes/photos'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/leads', require('./routes/leads'));
