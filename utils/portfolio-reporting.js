@@ -1,4 +1,4 @@
-const { getDailyTrafficReport, validateDate } = require('./google-reporting');
+const { getDailyAggregateSourceReport, validateDate } = require('./google-reporting');
 
 const PORTFOLIO_SITES = Object.freeze([
   { business: 'ProfitQuote', hostname: 'profitquote.co.uk', siteUrl: 'https://profitquote.co.uk/' },
@@ -7,34 +7,22 @@ const PORTFOLIO_SITES = Object.freeze([
   { business: 'ZenFlo', hostname: 'zenflo.co.uk', siteUrl: 'https://zenflo.co.uk/' }
 ]);
 
-async function getPortfolioDailyTrafficReport({ date, reportGetter = getDailyTrafficReport } = {}) {
+async function getPortfolioDailyTrafficReport({ date, reportGetter = getDailyAggregateSourceReport } = {}) {
   validateDate(date);
   const businesses = await Promise.all(PORTFOLIO_SITES.map(async (site) => {
     try {
       const report = await reportGetter({
         date,
-        searchConsoleDate: date,
         hostname: site.hostname,
-        siteUrl: site.siteUrl,
-        includeComparisons: false
+        siteUrl: site.siteUrl
       });
+      const sourceStatuses = [report.ga4.status, report.searchConsole.status];
       return {
         business: site.business,
         hostname: site.hostname,
-        status: 'OK',
-        ga4: {
-          date: report.ga4.date,
-          provisional: report.ga4.provisional,
-          users: report.ga4.users,
-          sessions: report.ga4.sessions
-        },
-        searchConsole: {
-          date: report.searchConsole.date,
-          clicks: report.searchConsole.clicks,
-          impressions: report.searchConsole.impressions,
-          ctr: report.searchConsole.ctr,
-          averagePosition: report.searchConsole.averagePosition
-        }
+        status: sourceStatuses.every((status) => status === 'OK') ? 'OK' : sourceStatuses.some((status) => status === 'OK') ? 'PARTIAL' : 'MONITORING_UNRESOLVED',
+        ga4: report.ga4,
+        searchConsole: report.searchConsole
       };
     } catch (error) {
       console.error(`Portfolio reporting failed for ${site.business}:`, error.message);
@@ -42,7 +30,8 @@ async function getPortfolioDailyTrafficReport({ date, reportGetter = getDailyTra
         business: site.business,
         hostname: site.hostname,
         status: 'MONITORING_UNRESOLVED',
-        error: 'Unable to retrieve Google reporting data'
+        ga4: { status: 'MONITORING_UNRESOLVED', date, error: 'Unable to retrieve GA4 data' },
+        searchConsole: { status: 'MONITORING_UNRESOLVED', date, error: 'Unable to retrieve Search Console data' }
       };
     }
   }));
