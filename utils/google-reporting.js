@@ -59,6 +59,31 @@ function topSearchRows(rows, key) {
     .slice(0, 15);
 }
 
+async function getDailyAggregateSourceReport({ date = yesterday(), hostname: hostnameOverride, siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch } = {}) {
+  validateDate(date);
+  const config = loadConfig(env);
+  const hostname = hostnameOverride || config.hostname;
+  const siteUrl = siteUrlOverride || config.siteUrl;
+  const token = await getAccessToken(config.credentials, fetchImpl);
+  const gaUrl = `${GA4_API_BASE}/properties/${encodeURIComponent(config.propertyId)}:runReport`;
+  const scUrl = `${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
+  const dimensionFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } };
+  const [gaResult, searchResult] = await Promise.allSettled([
+    googlePost(gaUrl, { dateRanges: [{ startDate: date, endDate: date }], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl),
+    googlePost(scUrl, { startDate: date, endDate: date }, token, fetchImpl)
+  ]);
+  const gaRow = gaResult.status === 'fulfilled' ? gaResult.value.rows?.[0] : null;
+  const searchRow = searchResult.status === 'fulfilled' ? searchResult.value.rows?.[0] : null;
+  return {
+    ga4: gaResult.status === 'fulfilled'
+      ? { status: 'OK', date, provisional: true, users: metric(gaRow, 0), sessions: metric(gaRow, 1) }
+      : { status: 'MONITORING_UNRESOLVED', date, error: 'Unable to retrieve GA4 data' },
+    searchConsole: searchResult.status === 'fulfilled'
+      ? { status: 'OK', date, clicks: searchMetric(searchRow, 0), impressions: searchMetric(searchRow, 1), ctr: searchMetric(searchRow, 2), averagePosition: searchMetric(searchRow, 3) }
+      : { status: 'MONITORING_UNRESOLVED', date, error: 'Unable to retrieve Search Console data' }
+  };
+}
+
 async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date); validateDate(searchConsoleDate);
   const config = loadConfig(env);
@@ -124,4 +149,4 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
   return report;
 }
 function clearTokenCache() { cachedToken = null; }
-module.exports = { getDailyTrafficReport, clearTokenCache, validateDate };
+module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, clearTokenCache, validateDate };
