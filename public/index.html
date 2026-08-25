@@ -8,5 +8,42 @@
 <section id="pricing"><div class="wrap proof"><div><div class="eyebrow">Straightforward pricing</div><h2>Use three quotes first. Decide afterwards.</h2><p class="lead">No account or card is needed for your first three complete quotes. If it earns its place in your business, keep your work and unlock the full library.</p></div><div class="quote-card"><div class="price">£49<span style="font-size:1rem;color:var(--muted)"> / month</span></div><p>plus £99 personal setup. Setup is free during August 2026.</p><div class="check"><b>✓</b><span>Unlimited quotes and saved library</span></div><div class="check"><b>✓</b><span>Business details and job variations</span></div><div class="check"><b>✓</b><span>Cancel without a long contract</span></div><a class="button" href="/dashboard?try=1">Try three quotes free →</a></div></div></section>
 <section><div class="wrap"><h2>Questions before you try it?</h2><div class="faq"><div><h3>Do I need to register?</h3><p>No. Build and save three quotes first. Create an account only when you want to continue.</p></div><div><h3>Does it set the price for me?</h3><p>No. It helps structure the calculation, but you review and approve every figure.</p></div><div><h3>Is it only for one trade?</h3><p>No. The builder works with labour-and-material jobs across many trades.</p></div><div><h3>Who is behind it?</h3><p>ProfitQuote is an early-stage product from Big Bulldog UK Ltd. We are improving it from real usage, not invented testimonials.</p></div></div></div></section>
 <section><div class="wrap cta"><h2>Build a real quote. Judge it for yourself.</h2><p class="lead" style="margin-inline:auto">Your first three complete quotes are free, with no signup wall.</p><div class="actions" style="justify-content:center"><a class="button" href="/dashboard?try=1">Create your first of 3 free quotes →</a></div></div></section>
-<footer><div class="wrap foot"><span>© 2026 Big Bulldog UK Ltd · ProfitQuote</span><div class="foot-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="mailto:hello@profitquote.co.uk">Contact</a><a href="/dashboard">Sign in</a></div></div></footer></body></html>
+<footer><div class="wrap foot"><span>© 2026 Big Bulldog UK Ltd · ProfitQuote</span><div class="foot-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="mailto:hello@profitquote.co.uk">Contact</a><a href="/dashboard">Sign in</a></div></div></footer><script>
+(function () {
+  function source() {
+    const params = new URLSearchParams(location.search);
+    const campaignSource = params.get('utm_source');
+    if (campaignSource) return campaignSource.toLowerCase();
+    const referrer = document.referrer.toLowerCase();
+    if (referrer.includes('linkedin')) return 'linkedin';
+    if (referrer.includes('google')) return 'google';
+    if (referrer.includes('bing')) return 'bing';
+    if (referrer.includes('facebook') || referrer.includes('fb.com')) return 'facebook';
+    return referrer ? 'referral' : 'direct';
+  }
+
+  function record(eventType) {
+    const body = JSON.stringify({ event_type: eventType, source: source() });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }));
+      return;
+    }
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  if (!sessionStorage.getItem('pq_homepage_visit_recorded')) {
+    sessionStorage.setItem('pq_homepage_visit_recorded', '1');
+    record('page_viewed');
+  }
+
+  document.querySelectorAll('a[href^="/dashboard?try=1"]').forEach((link) => {
+    link.addEventListener('click', () => record('trial_click'));
+  });
+})();
+</script></body></html>
 
