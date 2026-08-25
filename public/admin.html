@@ -397,21 +397,23 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         <div class="imp-note">Manual entry — LinkedIn doesn't share this number automatically. Everything below is fully automatic.</div>
       </div>
 
-      <div class="funnel-cleanup">
-        <div class="funnel-cleanup-copy">
-          <div class="funnel-cleanup-title">Clear test and stale funnel data</div>
-          <div class="funnel-cleanup-note">These controls do not delete registered users, their saved quotes or paid-customer status.</div>
+      <div class="report-toolbar">
+        <div>
+          <label for="funnel-period" class="stat-label">Reporting period</label>
+          <select id="funnel-period" onchange="loadFunnel()" style="margin-top:6px;padding:8px 10px;border-radius:6px;">
+            <option value="today">Today (UK)</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="all">All time</option>
+          </select>
+          <span class="stat-sub" id="funnel-updated" style="margin-left:12px;">Not refreshed</span>
         </div>
-        <div class="funnel-cleanup-actions">
-          <button class="btn-delete" onclick="clearFunnelEvents(this)">Clear tracking events</button>
-          <button class="btn-delete" onclick="clearGuestFunnelData(this)">Clear guest/free-quote data</button>
-          <button class="btn-delete" onclick="clearLinkedInImpressions()">Clear LinkedIn figure</button>
-        </div>
+        <button class="refresh-btn" onclick="loadFunnel()">↻ Refresh funnel</button>
       </div>
 
       <div class="funnel-stats-row">
         <div class="stat-card">
-          <div class="stat-label">Visitors Today</div>
+          <div class="stat-label" id="f-visitors-label">Recorded Visits Today</div>
           <div class="stat-val cyan" id="f-visitors-today">—</div>
         </div>
         <div class="stat-card">
@@ -447,11 +449,11 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-quotes">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Paid Customers</div>
+          <div class="stat-label">New Paying Customers</div>
           <div class="stat-val green" id="f-paid">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Monthly Recurring Revenue</div>
+          <div class="stat-label">Current MRR</div>
           <div class="stat-val green" id="f-mrr">—</div>
         </div>
       </div>
@@ -812,57 +814,13 @@ function saveImpressions() {
   renderFunnelBars(window.lastFunnelData);
 }
 
-async function clearFunnelDataset(path, button, confirmation) {
-  if (!confirm(confirmation)) return;
-  button.disabled = true;
-  try {
-    const res = await fetch(API + '/api/admin/funnel/' + path, {
-      method: 'DELETE',
-      headers: { 'Authorization': 'Bearer ' + adminToken }
-    });
-    if (res.status === 401) { doLogout(); return; }
-    const data = await res.json();
-    if (!res.ok) {
-      alert('Could not clear the data: ' + (data.error || 'Unknown error'));
-      return;
-    }
-    await loadFunnel();
-  } catch(e) {
-    alert('Connection error — the data was not cleared.');
-  } finally {
-    button.disabled = false;
-  }
-}
-
-function clearFunnelEvents(button) {
-  return clearFunnelDataset(
-    'events',
-    button,
-    'Clear all sales-funnel tracking events? Registered users and saved quotes will not be deleted. This cannot be undone.'
-  );
-}
-
-function clearGuestFunnelData(button) {
-  return clearFunnelDataset(
-    'guest-data',
-    button,
-    'Clear all guest sessions and unfinished guest-owned quotes? Registered users and their saved quotes will not be deleted. This cannot be undone.'
-  );
-}
-
-function clearLinkedInImpressions() {
-  if (!confirm('Clear the manually entered LinkedIn impressions figure?')) return;
-  localStorage.removeItem('pq_linkedin_impressions');
-  document.getElementById('impressions-input').value = '';
-  renderFunnelBars(window.lastFunnelData);
-}
-
 async function loadFunnel() {
   const savedImpressions = localStorage.getItem('pq_linkedin_impressions');
   if (savedImpressions) document.getElementById('impressions-input').value = savedImpressions;
 
   try {
-    const res = await fetch(API + '/api/admin/funnel', {
+    const period = document.getElementById('funnel-period')?.value || 'today';
+    const res = await fetch(API + '/api/admin/funnel?period=' + encodeURIComponent(period), {
       headers: { 'Authorization': 'Bearer ' + adminToken }
     });
     if (res.status === 401) { doLogout(); return; }
@@ -879,7 +837,11 @@ async function loadFunnel() {
     document.getElementById('f-accounts').textContent = data.accountsCreated;
     document.getElementById('f-quotes').textContent = data.totalQuotes;
     document.getElementById('f-paid').textContent = data.paidCustomers;
+    document.getElementById('f-active-paid').textContent = data.activePaidCustomers;
     document.getElementById('f-mrr').textContent = '£' + data.mrr;
+    const periodLabels = { today: 'Recorded Visits Today', '7d': 'Recorded Visits — 7 Days', '30d': 'Recorded Visits — 30 Days', all: 'Recorded Visits — All Time' };
+    document.getElementById('f-visitors-label').textContent = periodLabels[data.period] || 'Recorded Visits';
+    document.getElementById('funnel-updated').textContent = 'Updated ' + new Date(data.generatedAt).toLocaleString('en-GB', { timeZone: data.timezone || 'Europe/London', dateStyle: 'medium', timeStyle: 'short' });
 
     renderFunnelBars(data);
   } catch(e) {
