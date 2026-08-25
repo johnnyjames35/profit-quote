@@ -29,7 +29,8 @@ app.use('/monitoring', require('./routes/monitoring'));
 app.use('/api/photos', require('./routes/photos'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/leads', require('./routes/leads'));
-app.use('/webhook', require('./routes/stripe-webhook'));
+// Stripe Payment Links are reconciled through authenticated account checks.
+// Legacy webhook processing is deliberately disabled.
 
 // Trial / payment check middleware
 async function trialCheck(req, res, next) {
