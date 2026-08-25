@@ -2,6 +2,7 @@ const router = require('express').Router();
 
 const GA_MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID;
 const GA_API_SECRET = process.env.GA_API_SECRET;
+const PUBLIC_EVENT_TYPES = new Set(['page_viewed', 'trial_click']);
 
 // Sends the same event to Google Analytics 4 (does not affect the database save above)
 async function sendToGA(event_type, user_id, source) {
@@ -29,6 +30,7 @@ async function sendToGA(event_type, user_id, source) {
 router.post('/', async (req, res) => {
   const { event_type, user_id, source } = req.body;
   if (!event_type) return res.status(400).json({ error: 'event_type required' });
+  if (!PUBLIC_EVENT_TYPES.has(event_type)) return res.status(400).json({ error: 'unsupported public event_type' });
   try {
     const pool = req.app.locals.pool;
     await pool.query(
