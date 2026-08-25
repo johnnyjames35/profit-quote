@@ -29,11 +29,14 @@ test('inline admin scripts remain valid JavaScript', () => {
   scripts.forEach((source) => assert.doesNotThrow(() => new Function(source)));
 });
 
-test('sales funnel provides confirmed cleanup controls for non-customer data', () => {
-  assert.match(adminHtml, /clearFunnelEvents\(this\)/);
-  assert.match(adminHtml, /clearGuestFunnelData\(this\)/);
-  assert.match(adminHtml, /clearLinkedInImpressions\(\)/);
-  assert.match(adminHtml, /method: 'DELETE'/);
-  assert.match(adminHtml, /Registered users and their saved quotes will not be deleted/);
+test('sales funnel exposes explicit reporting periods and refresh metadata', () => {
+  assert.match(adminHtml, /id="funnel-period"/);
+  assert.match(adminHtml, /value="today"/);
+  assert.match(adminHtml, /value="7d"/);
+  assert.match(adminHtml, /value="30d"/);
+  assert.match(adminHtml, /value="all"/);
+  assert.match(adminHtml, /\/api\/admin\/funnel\?period=/);
+  assert.match(adminHtml, /id="funnel-updated"/);
+  assert.match(adminHtml, /Europe\/London/);
+  assert.doesNotMatch(adminHtml, /clearFunnelEvents\(this\)/);
 });
-
