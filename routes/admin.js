@@ -58,49 +58,57 @@ router.get('/users', requireAdmin, async (req, res) => {
   }
 });
 
-// Funnel metrics — admin only
+// Funnel metrics — admin only. Periods use Europe/London calendar boundaries.
 router.get('/funnel', requireAdmin, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const period = ['today', '7d', '30d', 'all'].includes(req.query.period) ? req.query.period : 'today';
+    const lowerBounds = {
+      today: "date_trunc('day', NOW() AT TIME ZONE 'Europe/London') AT TIME ZONE 'Europe/London'",
+      '7d': "(date_trunc('day', NOW() AT TIME ZONE 'Europe/London') - INTERVAL '6 days') AT TIME ZONE 'Europe/London'",
+      '30d': "(date_trunc('day', NOW() AT TIME ZONE 'Europe/London') - INTERVAL '29 days') AT TIME ZONE 'Europe/London'"
+    };
+    const condition = (column) => period === 'all' ? 'TRUE' : `${column} >= ${lowerBounds[period]}`;
 
     const [
-      visitorsToday, totalVisitors, linkedinVisitors, googleVisitors,
-      trialClicks, accountsCreated, firstQuotes, totalQuotes, paidCustomers,
+      visitors, linkedinVisitors, googleVisitors, trialClicks, accountsCreated,
+      firstQuotes, totalQuotes, paidCustomers, activePaidCustomers,
       guestStarts, guestQuotes, guestConversions
     ] = await Promise.all([
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND created_at >= $1", [todayStart]),
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed'"),
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='linkedin'"),
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='google'"),
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='trial_click'"),
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='account_created'"),
-      pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote'"),
-      pool.query("SELECT COUNT(*)::int AS c FROM quotes"),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='linkedin' AND ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='google' AND ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='trial_click' AND ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote' AND ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL AND ${condition('paid_at')}`),
       pool.query("SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL"),
-      pool.query("SELECT COUNT(*)::int AS c FROM guest_sessions"),
-      pool.query("SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL"),
-      pool.query("SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL")
+      pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL AND ${condition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL AND ${condition('created_at')}`)
     ]);
 
-    const paidCount = paidCustomers.rows[0].c;
-    const mrr = paidCount * 49;
-
+    const activePaidCount = activePaidCustomers.rows[0].c;
+    res.set('Cache-Control', 'private, no-store');
     res.json({
-      visitorsToday: visitorsToday.rows[0].c,
-      totalVisitors: totalVisitors.rows[0].c,
+      period,
+      timezone: 'Europe/London',
+      generatedAt: new Date().toISOString(),
+      visitorsToday: visitors.rows[0].c,
+      totalVisitors: visitors.rows[0].c,
       linkedinVisitors: linkedinVisitors.rows[0].c,
       googleVisitors: googleVisitors.rows[0].c,
       trialClicks: trialClicks.rows[0].c,
       accountsCreated: accountsCreated.rows[0].c,
       firstQuotes: firstQuotes.rows[0].c,
       totalQuotes: totalQuotes.rows[0].c,
-      paidCustomers: paidCount,
+      paidCustomers: paidCustomers.rows[0].c,
+      activePaidCustomers: activePaidCount,
       guestStarts: guestStarts.rows[0].c,
       guestQuotes: guestQuotes.rows[0].c,
       guestConversions: guestConversions.rows[0].c,
-      mrr
+      mrr: activePaidCount * 49
     });
   } catch(e) {
     res.status(500).json({ error: e.message });
