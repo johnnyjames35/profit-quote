@@ -453,6 +453,10 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val green" id="f-paid">—</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Active Paying Customers</div>
+          <div class="stat-val green" id="f-active-paid">—</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">Current MRR</div>
           <div class="stat-val green" id="f-mrr">—</div>
         </div>
@@ -837,7 +841,8 @@ async function loadFunnel() {
     document.getElementById('f-accounts').textContent = data.accountsCreated;
     document.getElementById('f-quotes').textContent = data.totalQuotes;
     document.getElementById('f-paid').textContent = data.paidCustomers;
-    document.getElementById('f-active-paid').textContent = data.activePaidCustomers;
+    const activePaidEl = document.getElementById('f-active-paid');
+    if (activePaidEl) activePaidEl.textContent = data.activePaidCustomers;
     document.getElementById('f-mrr').textContent = '£' + data.mrr;
     const periodLabels = { today: 'Recorded Visits Today', '7d': 'Recorded Visits — 7 Days', '30d': 'Recorded Visits — 30 Days', all: 'Recorded Visits — All Time' };
     document.getElementById('f-visitors-label').textContent = periodLabels[data.period] || 'Recorded Visits';
@@ -887,4 +892,3 @@ function esc(s) {
 
 </body>
 </html>
-
