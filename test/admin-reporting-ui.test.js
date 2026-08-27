@@ -10,6 +10,7 @@ test('admin dashboard exposes traffic reporting only through its reporting tab',
   assert.match(adminHtml, /id="view-reporting"/);
   assert.match(adminHtml, /if \(tab === 'reporting' && !window\.reportingLoaded\) loadReporting\(\)/);
   assert.match(adminHtml, /fetch\(API \+ '\/api\/admin\/reporting\/daily'/);
+  assert.match(adminHtml, /fetch\(API \+ '\/api\/admin\/reporting\/live'/);
   assert.match(adminHtml, /'Authorization': 'Bearer ' \+ adminToken/);
 });
 
@@ -22,6 +23,8 @@ test('traffic reporting renders daily detail and both comparison periods', () =>
   assert.match(adminHtml, /Latest calendar-day report/);
   assert.match(adminHtml, /not Google's rolling last 24 hours/);
   assert.match(adminHtml, /Last successfully refreshed/);
+  assert.match(adminHtml, /latest 24 available hours/);
+  assert.match(adminHtml, /live\.topPages/);
 });
 
 test('inline admin scripts remain valid JavaScript', () => {
