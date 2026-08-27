@@ -38,9 +38,10 @@ test('returns normalized GA4 and Search Console metrics', async () => {
   assert.deepEqual(result.reportWindow, { type: 'calendar-day', timezone: 'Europe/London', startDate: '2026-08-12', endDate: '2026-08-12' });
   assert.equal(result.ga4.trafficSources[0].source, 'Organic Search'); assert.equal(result.searchConsole.clicks, 5);
   assert.equal(result.searchConsole.topQueries[0].query, 'builder quote'); assert.equal(calls.length, 15);
-  assert.deepEqual(result.searchConsole.topResultsPeriod, { startDate: '2026-07-14', endDate: '2026-08-12', days: 30 });
-  assert.deepEqual(JSON.parse(calls[5].options.body), { startDate: '2026-07-14', endDate: '2026-08-12', dimensions: ['query'], rowLimit: 100 });
-  assert.deepEqual(JSON.parse(calls[6].options.body), { startDate: '2026-07-14', endDate: '2026-08-12', dimensions: ['page'], rowLimit: 100 });
+  assert.equal(result.searchConsole.date, '2026-08-10');
+  assert.deepEqual(result.searchConsole.topResultsPeriod, { startDate: '2026-07-12', endDate: '2026-08-10', days: 30 });
+  assert.deepEqual(JSON.parse(calls[5].options.body), { startDate: '2026-07-12', endDate: '2026-08-10', dimensions: ['query'], rowLimit: 100 });
+  assert.deepEqual(JSON.parse(calls[6].options.body), { startDate: '2026-07-12', endDate: '2026-08-10', dimensions: ['page'], rowLimit: 100 });
   assert.equal(result.comparisons.sevenDay.current.sessions, 90);
   assert.equal(result.comparisons.sevenDay.change.sessions, 0.5);
   assert.equal(result.comparisons.thirtyDay.current.clicks, 80);
@@ -61,23 +62,24 @@ test('returns the latest 24 available Search Console hours and aggregates pages'
   const responses = [
     { access_token: 'test-token', expires_in: 3600 },
     { rows: [
-      { keys: ['2026-08-26T11:00:00+01:00'], clicks: 9, impressions: 90, ctr: 0.1, position: 9 },
-      { keys: ['2026-08-26T12:00:00+01:00'], clicks: 1, impressions: 10, ctr: 0.1, position: 5 },
-      { keys: ['2026-08-27T11:00:00+01:00'], clicks: 2, impressions: 30, ctr: 0.066, position: 3 }
+      { keys: ['2026-08-26T13:00:00+01:00'], clicks: 9, impressions: 90, ctr: 0.1, position: 9 },
+      { keys: ['2026-08-26T14:00:00+01:00'], clicks: 1, impressions: 10, ctr: 0.1, position: 5 },
+      { keys: ['2026-08-27T12:00:00+01:00'], clicks: 2, impressions: 30, ctr: 0.066, position: 3 }
     ] },
     { rows: [
-      { keys: ['2026-08-26T12:00:00+01:00', 'https://profitquote.co.uk/'], clicks: 1, impressions: 10, ctr: 0.1, position: 5 },
-      { keys: ['2026-08-27T11:00:00+01:00', 'https://profitquote.co.uk/'], clicks: 2, impressions: 30, ctr: 0.066, position: 3 }
+      { keys: ['2026-08-26T14:00:00+01:00', 'https://profitquote.co.uk/'], clicks: 1, impressions: 10, ctr: 0.1, position: 5 },
+      { keys: ['2026-08-27T12:00:00+01:00', 'https://profitquote.co.uk/'], clicks: 2, impressions: 30, ctr: 0.066, position: 3 }
     ] }
   ];
   const calls = [];
   const fetchImpl = async (_url, options) => { calls.push(options); return { ok: true, status: 200, json: async () => responses.shift() }; };
-  const result = await getLiveSearchReport({ env, fetchImpl });
+  const result = await getLiveSearchReport({ env, fetchImpl, now: new Date('2026-08-27T16:00:00Z').getTime() });
   assert.equal(result.clicks, 3);
   assert.equal(result.impressions, 40);
   assert.equal(result.averagePosition, 3.5);
   assert.equal(result.topPages[0].page, 'https://profitquote.co.uk/');
   assert.equal(result.window.hours, 24);
+  assert.equal(result.window.estimatedThrough, '2026-08-27T12:00:00.000Z');
   assert.equal(JSON.parse(calls[1].body).dataState, 'HOURLY_ALL');
   assert.deepEqual(JSON.parse(calls[2].body).dimensions, ['HOUR', 'PAGE']);
 });
