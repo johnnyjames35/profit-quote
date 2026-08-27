@@ -101,7 +101,7 @@ async function getDailyAggregateSourceReport({ date = yesterday(), hostname: hos
   };
 }
 
-async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = date, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
+async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = shiftDate(date, -2), hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date); validateDate(searchConsoleDate);
   const config = loadConfig(env);
   const hostname = hostnameOverride || config.hostname;
@@ -192,7 +192,7 @@ function aggregateHourlyRows(rows, latestHour, pageKeyIndex = null) {
     .slice(0, 10);
 }
 
-async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch } = {}) {
+async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch, now = Date.now() } = {}) {
   const config = loadConfig(env);
   const siteUrl = siteUrlOverride || config.siteUrl;
   const token = await getAccessToken(config.credentials, fetchImpl);
@@ -207,12 +207,16 @@ async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env
   const availableHours = (hourly.rows || [])
     .map((row) => new Date(row.keys?.[0] || ''))
     .filter((hour) => !Number.isNaN(hour.getTime()));
-  const latestHour = availableHours.length ? new Date(Math.max(...availableHours.map((hour) => hour.getTime()))) : null;
+  const latestActivityHour = availableHours.length ? new Date(Math.max(...availableHours.map((hour) => hour.getTime()))) : null;
+  const configuredLag = Number(env.SEARCH_CONSOLE_LIVE_DELAY_HOURS || 4);
+  const lagHours = Number.isFinite(configuredLag) ? Math.min(12, Math.max(1, configuredLag)) : 4;
+  const windowEnd = new Date(now - (lagHours * 60 * 60 * 1000));
+  windowEnd.setUTCMinutes(0, 0, 0);
   return {
     generatedAt: new Date().toISOString(),
-    window: { type: 'latest-24-available-hours', hours: 24, partial: true, latestHour: latestHour?.toISOString() || null },
-    ...aggregateHourlyRows(hourly.rows, latestHour),
-    topPages: aggregateHourlyRows(hourlyPages.rows, latestHour, 1)
+    window: { type: 'estimated-latest-24-available-hours', hours: 24, partial: true, estimatedThrough: windowEnd.toISOString(), lagHours, latestActivityHour: latestActivityHour?.toISOString() || null, firstIncompleteHour: hourly.metadata?.first_incomplete_hour || null },
+    ...aggregateHourlyRows(hourly.rows, windowEnd),
+    topPages: aggregateHourlyRows(hourlyPages.rows, windowEnd, 1)
   };
 }
 function clearTokenCache() { cachedToken = null; }

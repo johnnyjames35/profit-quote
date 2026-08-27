@@ -20,7 +20,7 @@ test('traffic reporting renders daily detail and both comparison periods', () =>
   assert.match(adminHtml, /ga4\.landingPages/);
   assert.match(adminHtml, /search\.topQueries/);
   assert.match(adminHtml, /search\.topPages/);
-  assert.match(adminHtml, /Latest calendar-day report/);
+  assert.match(adminHtml, /Latest GA4 calendar-day report/);
   assert.match(adminHtml, /not Google's rolling last 24 hours/);
   assert.match(adminHtml, /Last successfully refreshed/);
   assert.match(adminHtml, /latest 24 available hours/);
