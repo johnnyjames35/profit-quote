@@ -471,9 +471,10 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
     <div id="view-reporting" style="display:none;">
       <div class="report-toolbar">
-        <div class="report-date">Report date: <strong id="report-date">—</strong></div>
+        <div class="report-date">Latest calendar-day report: <strong id="report-date">—</strong><br><span id="report-refreshed" class="stat-sub">Not refreshed yet</span></div>
         <button class="refresh-btn" id="report-refresh" onclick="loadReporting()">↻ Refresh report</button>
       </div>
+      <div class="report-message" id="report-window-note">This covers the previous UK calendar day, not Google's rolling last 24 hours. Google may continue adjusting recent figures.</div>
       <div id="report-status" class="report-message">Open this tab to load traffic reporting.</div>
       <div id="report-content" style="display:none;">
         <div class="stats-row">
@@ -486,16 +487,16 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         </div>
 
         <div class="report-section">
-          <div class="report-heading">Period comparisons</div>
+          <div class="report-heading">Calendar-period comparisons</div>
           <div class="comparison-grid" id="report-comparisons"></div>
         </div>
 
         <div class="report-section">
-          <div class="report-heading">Daily detail</div>
+          <div class="report-heading">Report detail</div>
           <div class="report-tables">
-            <div class="report-table-card"><div class="table-title">Landing pages</div><ul class="report-list" id="r-landing-pages"></ul></div>
-            <div class="report-table-card"><div class="table-title">Search queries</div><ul class="report-list" id="r-queries"></ul></div>
-            <div class="report-table-card"><div class="table-title">Search pages</div><ul class="report-list" id="r-pages"></ul></div>
+            <div class="report-table-card"><div class="table-title" id="landing-pages-title">GA4 landing pages</div><ul class="report-list" id="r-landing-pages"></ul></div>
+            <div class="report-table-card"><div class="table-title" id="queries-title">Search opportunities</div><ul class="report-list" id="r-queries"></ul></div>
+            <div class="report-table-card"><div class="table-title" id="pages-title">Search pages</div><ul class="report-list" id="r-pages"></ul></div>
           </div>
         </div>
       </div>
@@ -611,12 +612,19 @@ function renderReporting(data) {
   const ga4 = data.ga4 || {};
   const search = data.searchConsole || {};
   document.getElementById('report-date').textContent = data.date || '—';
+  const refreshed = data.generatedAt ? new Date(data.generatedAt).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' }) : 'unknown';
+  document.getElementById('report-refreshed').textContent = 'Last successfully refreshed: ' + refreshed + ' · admin traffic excluded';
   document.getElementById('r-users').textContent = number(ga4.users);
   document.getElementById('r-sessions').textContent = number(ga4.sessions);
   document.getElementById('r-clicks').textContent = number(search.clicks);
   document.getElementById('r-impressions').textContent = number(search.impressions);
   document.getElementById('r-ctr').textContent = percent(search.ctr);
   document.getElementById('r-position').textContent = decimal(search.averagePosition);
+  const opportunityPeriod = search.topResultsPeriod || {};
+  const periodLabel = opportunityPeriod.startDate && opportunityPeriod.endDate ? opportunityPeriod.startDate + ' to ' + opportunityPeriod.endDate : 'rolling 30 days';
+  document.getElementById('landing-pages-title').textContent = 'GA4 landing pages · ' + (ga4.date || data.date || '—');
+  document.getElementById('queries-title').textContent = 'Search queries · ' + periodLabel;
+  document.getElementById('pages-title').textContent = 'Search pages · ' + periodLabel;
 
   const comparisons = data.comparisons || {};
   document.getElementById('report-comparisons').innerHTML = [
