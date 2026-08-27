@@ -23,7 +23,12 @@ function validateDate(date) {
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw new Error('date must be a real calendar date');
   return date;
 }
-function yesterday() { return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
+function yesterday() {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date())
+    .reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
+  return shiftDate(`${parts.year}-${parts.month}-${parts.day}`, -1);
+}
 function shiftDate(date, days) {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -59,6 +64,17 @@ function topSearchRows(rows, key) {
     .slice(0, 15);
 }
 
+function reportingDimensionFilter(hostname) {
+  return {
+    andGroup: {
+      expressions: [
+        { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } },
+        { notExpression: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/admin', caseSensitive: false } } } }
+      ]
+    }
+  };
+}
+
 async function getDailyAggregateSourceReport({ date = yesterday(), hostname: hostnameOverride, siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date);
   const config = loadConfig(env);
@@ -67,7 +83,7 @@ async function getDailyAggregateSourceReport({ date = yesterday(), hostname: hos
   const token = await getAccessToken(config.credentials, fetchImpl);
   const gaUrl = `${GA4_API_BASE}/properties/${encodeURIComponent(config.propertyId)}:runReport`;
   const scUrl = `${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
-  const dimensionFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } };
+  const dimensionFilter = reportingDimensionFilter(hostname);
   const [gaResult, searchResult] = await Promise.allSettled([
     googlePost(gaUrl, { dateRanges: [{ startDate: date, endDate: date }], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl),
     googlePost(scUrl, { startDate: date, endDate: date }, token, fetchImpl)
@@ -95,7 +111,7 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
   const gaRange = { startDate: date, endDate: date };
   const scRange = { startDate: searchConsoleDate, endDate: searchConsoleDate };
   const scTopRange = { startDate: shiftDate(searchConsoleDate, -29), endDate: searchConsoleDate };
-  const dimensionFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: hostname, caseSensitive: false } } };
+  const dimensionFilter = reportingDimensionFilter(hostname);
   const comparisonRanges = {
     sevenDay: {
       current: { startDate: shiftDate(date, -6), endDate: date },
@@ -138,8 +154,8 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
     return { period, current, previous, change: { users: change(current.users, previous.users), sessions: change(current.sessions, previous.sessions), clicks: change(current.clicks, previous.clicks), impressions: change(current.impressions, previous.impressions), ctr: change(current.ctr, previous.ctr), averagePosition: change(current.averagePosition, previous.averagePosition) } };
   }
   const report = {
-    date, generatedAt: new Date().toISOString(),
-    ga4: { date, provisional: true, users: metric(gaTotals.rows?.[0], 0), sessions: metric(gaTotals.rows?.[0], 1), trafficSources: (gaSources.rows || []).map((row) => ({ source: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })), landingPages: (gaPages.rows || []).map((row) => ({ page: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })) },
+    date, generatedAt: new Date().toISOString(), reportWindow: { type: 'calendar-day', timezone: 'Europe/London', startDate: date, endDate: date },
+    ga4: { date, provisional: true, excludesAdminTraffic: true, users: metric(gaTotals.rows?.[0], 0), sessions: metric(gaTotals.rows?.[0], 1), trafficSources: (gaSources.rows || []).map((row) => ({ source: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })), landingPages: (gaPages.rows || []).map((row) => ({ page: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })) },
     searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), topResultsPeriod: { startDate: scTopRange.startDate, endDate: scTopRange.endDate, days: 30 }, topQueries: topSearchRows(scQueries.rows, 'query'), topPages: topSearchRows(scPages.rows, 'page') }
   };
   if (includeComparisons) report.comparisons = {
