@@ -34,6 +34,8 @@ test('returns normalized GA4 and Search Console metrics', async () => {
   const fetchImpl = async (url, options) => { calls.push({ url, options }); return { ok: true, status: 200, json: async () => responses.shift() }; };
   const result = await getDailyTrafficReport({ date: '2026-08-12', includeComparisons: true, env, fetchImpl });
   assert.equal(result.ga4.users, 12); assert.equal(result.ga4.sessions, 18);
+  assert.equal(result.ga4.excludesAdminTraffic, true);
+  assert.deepEqual(result.reportWindow, { type: 'calendar-day', timezone: 'Europe/London', startDate: '2026-08-12', endDate: '2026-08-12' });
   assert.equal(result.ga4.trafficSources[0].source, 'Organic Search'); assert.equal(result.searchConsole.clicks, 5);
   assert.equal(result.searchConsole.topQueries[0].query, 'builder quote'); assert.equal(calls.length, 15);
   assert.deepEqual(result.searchConsole.topResultsPeriod, { startDate: '2026-07-14', endDate: '2026-08-12', days: 30 });
@@ -43,6 +45,9 @@ test('returns normalized GA4 and Search Console metrics', async () => {
   assert.equal(result.comparisons.sevenDay.change.sessions, 0.5);
   assert.equal(result.comparisons.thirtyDay.current.clicks, 80);
   assert.match(calls[4].url, /searchconsole\.googleapis\.com/);
+  const gaFilter = JSON.parse(calls[1].options.body).dimensionFilter;
+  assert.equal(gaFilter.andGroup.expressions[1].notExpression.filter.fieldName, 'pagePath');
+  assert.equal(gaFilter.andGroup.expressions[1].notExpression.filter.stringFilter.value, '/admin');
 });
 
 test('never includes credentials in upstream error messages', async () => {
