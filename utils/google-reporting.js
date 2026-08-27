@@ -23,12 +23,13 @@ function validateDate(date) {
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw new Error('date must be a real calendar date');
   return date;
 }
-function yesterday() {
+function ukCalendarDate() {
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' })
     .formatToParts(new Date())
     .reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
-  return shiftDate(`${parts.year}-${parts.month}-${parts.day}`, -1);
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
+function yesterday() { return shiftDate(ukCalendarDate(), -1); }
 function shiftDate(date, days) {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -164,5 +165,55 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = d
   };
   return report;
 }
+
+function aggregateHourlyRows(rows, latestHour, pageKeyIndex = null) {
+  if (!latestHour) return pageKeyIndex === null ? { clicks: 0, impressions: 0, ctr: 0, averagePosition: 0 } : [];
+  const cutoff = latestHour.getTime() - (23 * 60 * 60 * 1000);
+  const selected = (rows || []).filter((row) => {
+    const hour = new Date(row.keys?.[0] || '');
+    return !Number.isNaN(hour.getTime()) && hour.getTime() >= cutoff && hour.getTime() <= latestHour.getTime();
+  });
+  const summarize = (items) => {
+    const clicks = items.reduce((sum, row) => sum + searchMetric(row, 0), 0);
+    const impressions = items.reduce((sum, row) => sum + searchMetric(row, 1), 0);
+    const weightedPosition = items.reduce((sum, row) => sum + (searchMetric(row, 3) * searchMetric(row, 1)), 0);
+    return { clicks, impressions, ctr: impressions ? clicks / impressions : 0, averagePosition: impressions ? weightedPosition / impressions : 0 };
+  };
+  if (pageKeyIndex === null) return summarize(selected);
+  const groups = new Map();
+  selected.forEach((row) => {
+    const key = row.keys?.[pageKeyIndex] || '(not set)';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  });
+  return [...groups.entries()]
+    .map(([page, items]) => ({ page, ...summarize(items) }))
+    .sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks)
+    .slice(0, 10);
+}
+
+async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env, fetchImpl = fetch } = {}) {
+  const config = loadConfig(env);
+  const siteUrl = siteUrlOverride || config.siteUrl;
+  const token = await getAccessToken(config.credentials, fetchImpl);
+  const scUrl = `${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
+  const endDate = ukCalendarDate();
+  const startDate = shiftDate(endDate, -2);
+  const baseRequest = { startDate, endDate, dataState: 'HOURLY_ALL', rowLimit: 25000 };
+  const [hourly, hourlyPages] = await Promise.all([
+    googlePost(scUrl, { ...baseRequest, dimensions: ['HOUR'] }, token, fetchImpl),
+    googlePost(scUrl, { ...baseRequest, dimensions: ['HOUR', 'PAGE'] }, token, fetchImpl)
+  ]);
+  const availableHours = (hourly.rows || [])
+    .map((row) => new Date(row.keys?.[0] || ''))
+    .filter((hour) => !Number.isNaN(hour.getTime()));
+  const latestHour = availableHours.length ? new Date(Math.max(...availableHours.map((hour) => hour.getTime()))) : null;
+  return {
+    generatedAt: new Date().toISOString(),
+    window: { type: 'latest-24-available-hours', hours: 24, partial: true, latestHour: latestHour?.toISOString() || null },
+    ...aggregateHourlyRows(hourly.rows, latestHour),
+    topPages: aggregateHourlyRows(hourlyPages.rows, latestHour, 1)
+  };
+}
 function clearTokenCache() { cachedToken = null; }
-module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, clearTokenCache, validateDate };
+module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, clearTokenCache, validateDate };
