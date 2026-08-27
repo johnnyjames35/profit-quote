@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
-const { getDailyTrafficReport, clearTokenCache, validateDate } = require('../utils/google-reporting');
+const { getDailyTrafficReport, getLiveSearchReport, clearTokenCache, validateDate } = require('../utils/google-reporting');
 
 const { privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
 const env = {
@@ -54,4 +54,30 @@ test('never includes credentials in upstream error messages', async () => {
   clearTokenCache();
   const fetchImpl = async () => ({ ok: false, status: 403, json: async () => ({ error: { message: privateKey } }) });
   await assert.rejects(getDailyTrafficReport({ date: '2026-08-12', env, fetchImpl }), /^Error: Google authentication failed \(403\)$/);
+});
+
+test('returns the latest 24 available Search Console hours and aggregates pages', async () => {
+  clearTokenCache();
+  const responses = [
+    { access_token: 'test-token', expires_in: 3600 },
+    { rows: [
+      { keys: ['2026-08-26T11:00:00+01:00'], clicks: 9, impressions: 90, ctr: 0.1, position: 9 },
+      { keys: ['2026-08-26T12:00:00+01:00'], clicks: 1, impressions: 10, ctr: 0.1, position: 5 },
+      { keys: ['2026-08-27T11:00:00+01:00'], clicks: 2, impressions: 30, ctr: 0.066, position: 3 }
+    ] },
+    { rows: [
+      { keys: ['2026-08-26T12:00:00+01:00', 'https://profitquote.co.uk/'], clicks: 1, impressions: 10, ctr: 0.1, position: 5 },
+      { keys: ['2026-08-27T11:00:00+01:00', 'https://profitquote.co.uk/'], clicks: 2, impressions: 30, ctr: 0.066, position: 3 }
+    ] }
+  ];
+  const calls = [];
+  const fetchImpl = async (_url, options) => { calls.push(options); return { ok: true, status: 200, json: async () => responses.shift() }; };
+  const result = await getLiveSearchReport({ env, fetchImpl });
+  assert.equal(result.clicks, 3);
+  assert.equal(result.impressions, 40);
+  assert.equal(result.averagePosition, 3.5);
+  assert.equal(result.topPages[0].page, 'https://profitquote.co.uk/');
+  assert.equal(result.window.hours, 24);
+  assert.equal(JSON.parse(calls[1].body).dataState, 'HOURLY_ALL');
+  assert.deepEqual(JSON.parse(calls[2].body).dimensions, ['HOUR', 'PAGE']);
 });

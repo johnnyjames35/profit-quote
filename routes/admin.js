@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
-const { getDailyTrafficReport } = require('../utils/google-reporting');
+const { getDailyTrafficReport, getLiveSearchReport } = require('../utils/google-reporting');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
 const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.JWT_SECRET + '_admin';
@@ -210,6 +210,18 @@ router.get('/reporting/daily', requireAdmin, async (req, res) => {
     const isInputError = error.message.startsWith('date must');
     console.error('Daily reporting error:', error.message);
     res.status(isInputError ? 400 : 502).json({ error: isInputError ? error.message : 'Unable to retrieve Google reporting data' });
+  }
+});
+
+// Fresh, partial Search Console data using Google's latest 24 available hourly rows.
+router.get('/reporting/live', requireAdmin, async (_req, res) => {
+  try {
+    const report = await getLiveSearchReport();
+    res.set('Cache-Control', 'private, no-store');
+    res.json(report);
+  } catch (error) {
+    console.error('Live reporting error:', error.message);
+    res.status(502).json({ error: 'Unable to retrieve live Search Console data' });
   }
 });
 
