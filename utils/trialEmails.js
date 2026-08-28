@@ -113,4 +113,18 @@ async function checkAndSendTrialEmails(pool) {
   }
 }
 
-module.exports = { checkAndSendTrialEmails };
+function startTrialEmailScheduler(pool) {
+  async function check() {
+    try {
+      await checkAndSendTrialEmails(pool);
+    } catch (error) {
+      console.error('Trial email scheduler error:', error.message);
+    }
+  }
+  check();
+  const timer = setInterval(check, 60 * 60 * 1000);
+  timer.unref?.();
+  console.log('Trial nudge email scheduler started (checks hourly)');
+}
+
+module.exports = { checkAndSendTrialEmails, startTrialEmailScheduler };
