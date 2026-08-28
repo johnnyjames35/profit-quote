@@ -12,7 +12,7 @@ function validEmail(value) {
 function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, description, quoteData }) {
   return new Promise((resolve, reject) => {
     if (!process.env.BREVO_API_KEY) return reject(new Error('Email delivery is not configured'));
-    const money = (value) => `£${Number(value || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const money = (value) => `£${Math.round(Number(value) || 0).toLocaleString('en-GB')}`;
     const items = String(description || '').split(/,|;|\n| and /i).map((item) => item.trim()).filter((item) => item.length > 4).slice(0, 30);
     const breakdown = [
       ['Labour', quoteData.labour], ['Materials', quoteData.mats],

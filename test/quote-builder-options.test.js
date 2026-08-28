@@ -38,9 +38,10 @@ test('protected pricing applies real costs, target margin and VAT correctly', ()
   const result = calculate({ days:5, dayRate:200, overheadPerDay:50, materials:500, markup:20, skipCost:250, scaffoldCost:0, contingency:10, profitTarget:30, vatRate:20 });
   assert.equal(result.knownCost, 2000);
   assert.equal(result.protectedCost, 2200);
-  assert.ok(Math.abs(result.subtotalExVat - 3142.857142857143) < 0.001);
+  assert.equal(result.subtotalExVat, 3143);
   assert.equal(result.profitPct, 30);
-  assert.ok(Math.abs(result.total - 3771.4285714285716) < 0.001);
+  assert.equal(result.vatAmount, 629);
+  assert.equal(result.total, 3772);
   assert.ok(Math.abs(result.labour + result.mats + result.skipPrice + result.scaffoldPrice + result.contingencyPrice - result.subtotalExVat) < 0.001);
 });
 
@@ -57,10 +58,10 @@ test('business setup persists the costing inputs used by quotes', () => {
   assert.match(auth, /vat_rate/);
 });
 
-test('customer-facing quote currency is always limited to two decimals', () => {
+test('customer-facing quote currency uses clear whole pounds', () => {
   const dashboard = fs.readFileSync(path.join(root, 'public', 'dashboard.html'), 'utf8');
   const route = fs.readFileSync(path.join(root, 'routes', 'quotes.js'), 'utf8');
-  assert.doesNotMatch(dashboard, /toLocaleString\('en-GB',\{minimumFractionDigits:2\}\)/);
-  assert.match(dashboard, /minimumFractionDigits:2,maximumFractionDigits:2/);
-  assert.match(route, /minimumFractionDigits: 2, maximumFractionDigits: 2/);
+  assert.match(dashboard, /Math\.round\(total\)\.toLocaleString\('en-GB'\)/);
+  assert.match(dashboard, /subtotalExVat=Math\.ceil/);
+  assert.match(route, /Math\.round\(Number\(value\) \|\| 0\)/);
 });
