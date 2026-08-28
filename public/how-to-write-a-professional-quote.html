@@ -153,6 +153,10 @@ section{padding:60px 24px;}
 .b-costs{background:var(--dark);border:1px solid var(--border2);border-radius:10px;padding:16px;margin:14px 0;}
 .b-cost-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:0.88rem;}
 .b-cost-row input{width:110px;text-align:right;background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--white);font-family:var(--font);}
+.b-choice-row{display:flex;gap:8px;margin-top:6px;}
+.b-choice{flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--body);font:inherit;cursor:pointer;}
+.b-choice.active{border-color:var(--amber);color:var(--amber);background:rgba(255,194,10,0.08);}
+.b-hint{font-size:0.72rem;color:var(--muted);margin-top:6px;line-height:1.5;}
 .b-cost-row.total{border-top:2px solid var(--amber-border2);margin-top:8px;padding-top:12px;font-weight:800;color:var(--white);}
 .b-vat-toggle{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--body);margin:8px 0 4px;}
 .btn-generate{display:block;width:100%;background:var(--amber);color:var(--black);font-weight:800;font-size:0.95rem;padding:13px;border-radius:10px;border:none;cursor:pointer;margin-top:16px;transition:opacity 0.2s;}
@@ -287,12 +291,31 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
   <div class="b-costs">
     <div class="b-cost-row"><span>Materials</span><input type="number" step="0.01" id="f_materials" value="0"></div>
     <div class="b-cost-row"><span>Labour</span><input type="number" step="0.01" id="f_labour" value="0"></div>
-    <div class="b-cost-row"><span>Waste disposal / skip</span><input type="number" step="0.01" id="f_waste" value="0"></div>
+    <div class="b-cost-row"><span>Number of skips</span><input type="number" min="1" max="20" step="1" id="f_skip_quantity" value="1"></div>
+    <div class="b-cost-row"><span>Cost per skip</span><input type="number" step="0.01" min="0" id="f_waste" value="0"></div>
+    <div class="b-cost-row"><span>Skip total</span><span id="f_skip_total_display">£0.00</span></div>
     <div class="b-cost-row"><span>Other costs</span><input type="number" step="0.01" id="f_other" value="0"></div>
     <div class="b-cost-row"><span>Subtotal</span><span id="f_subtotal_display">£0.00</span></div>
     <div class="b-vat-toggle"><input type="checkbox" id="f_vat_toggle"> <label for="f_vat_toggle">Add VAT (20%)</label></div>
     <div class="b-cost-row"><span>VAT</span><span id="f_vat_display">£0.00</span></div>
     <div class="b-cost-row total"><span>TOTAL</span><span id="f_total_display">£0.00</span></div>
+  </div>
+
+  <h4>Customer-supplied Items</h4>
+  <div class="b-field">
+    <label>Is the customer supplying any materials?</label>
+    <input type="hidden" id="f_client_supplies" value="no">
+    <div class="b-choice-row">
+      <button type="button" class="b-choice active" id="clientSupplyNo">No</button>
+      <button type="button" class="b-choice" id="clientSupplyYes">Yes</button>
+    </div>
+  </div>
+  <div class="b-row single" id="clientSupplyFields" style="display:none;margin-top:12px;">
+    <div class="b-field">
+      <label>What is the customer supplying?</label>
+      <textarea id="f_client_items" maxlength="300" placeholder="e.g. Kitchen units and appliances"></textarea>
+      <div class="b-hint">These items will be added to What's Excluded on the PDF.</div>
+    </div>
   </div>
 
   <h4>Terms</h4>
@@ -431,7 +454,8 @@ function toggleFaq(btn){
 // ---- Draft autosave (so accidental navigation never loses progress) ----
 const DRAFT_KEY = 'pq_quote_draft_v1';
 const BUILDER_FIELD_IDS = ['f_business_name','f_quote_number','f_business_details','f_quote_date',
-  'f_customer_details','f_job_address','f_description','f_materials','f_labour','f_waste','f_other',
+  'f_customer_details','f_job_address','f_description','f_materials','f_labour','f_skip_quantity','f_waste','f_other',
+  'f_client_supplies','f_client_items',
   'f_vat_toggle','f_included','f_excluded','f_deposit','f_valid_for','f_payment_terms'];
 
 function saveDraft(){
@@ -469,7 +493,17 @@ function clearDraft(){
     if (el.type === 'checkbox') el.checked = false;
     else el.value = '';
   });
+  document.getElementById('f_skip_quantity').value = '1';
+  setClientSupply(false);
   recalcTotals();
+}
+
+function setClientSupply(enabled){
+  document.getElementById('f_client_supplies').value = enabled ? 'yes' : 'no';
+  document.getElementById('clientSupplyNo').classList.toggle('active', !enabled);
+  document.getElementById('clientSupplyYes').classList.toggle('active', enabled);
+  document.getElementById('clientSupplyFields').style.display = enabled ? 'grid' : 'none';
+  saveDraft();
 }
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -479,6 +513,9 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('builderBox').style.display = 'block';
     recalcTotals();
   }
+  setClientSupply(document.getElementById('f_client_supplies').value === 'yes');
+  document.getElementById('clientSupplyNo').addEventListener('click', () => setClientSupply(false));
+  document.getElementById('clientSupplyYes').addEventListener('click', () => setClientSupply(true));
   BUILDER_FIELD_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', saveDraft);
@@ -531,18 +568,21 @@ if (templateForm) {
 function recalcTotals(){
   const materials = parseFloat(document.getElementById('f_materials').value) || 0;
   const labour = parseFloat(document.getElementById('f_labour').value) || 0;
-  const waste = parseFloat(document.getElementById('f_waste').value) || 0;
+  const skipQuantity = Math.max(1, Math.min(20, parseInt(document.getElementById('f_skip_quantity').value, 10) || 1));
+  const skipUnitCost = Math.max(0, parseFloat(document.getElementById('f_waste').value) || 0);
+  const waste = skipQuantity * skipUnitCost;
   const other = parseFloat(document.getElementById('f_other').value) || 0;
   const subtotal = materials + labour + waste + other;
   const vatOn = document.getElementById('f_vat_toggle').checked;
   const vat = vatOn ? subtotal * 0.2 : 0;
   const total = subtotal + vat;
   document.getElementById('f_subtotal_display').textContent = '£' + subtotal.toFixed(2);
+  document.getElementById('f_skip_total_display').textContent = '£' + waste.toFixed(2);
   document.getElementById('f_vat_display').textContent = '£' + vat.toFixed(2);
   document.getElementById('f_total_display').textContent = '£' + total.toFixed(2);
   return { subtotal, vat, total };
 }
-['f_materials','f_labour','f_waste','f_other','f_vat_toggle'].forEach(id => {
+['f_materials','f_labour','f_skip_quantity','f_waste','f_other','f_vat_toggle'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', recalcTotals);
 });
@@ -560,6 +600,13 @@ if (generateBtn) {
       const fmtDate = document.getElementById('f_quote_date').value;
       const [yy, mm, dd] = fmtDate ? fmtDate.split('-') : ['', '', ''];
       const displayDate = (dd && mm && yy) ? `${dd}/${mm}/${yy}` : '';
+      const clientSupplies = document.getElementById('f_client_supplies').value === 'yes';
+      const clientItems = document.getElementById('f_client_items').value.trim();
+      const existingExcluded = document.getElementById('f_excluded').value.trim();
+      const clientExclusion = clientSupplies
+        ? `Customer to supply: ${clientItems || 'materials agreed separately'}. These items are not included in the quotation total.`
+        : '';
+      const combinedExcluded = [existingExcluded, clientExclusion].filter(Boolean).join('\n');
 
       const values = {
         business_name: document.getElementById('f_business_name').value,
@@ -571,13 +618,13 @@ if (generateBtn) {
         description: document.getElementById('f_description').value,
         materials_cost: parseFloat(document.getElementById('f_materials').value || 0).toFixed(2),
         labour_cost: parseFloat(document.getElementById('f_labour').value || 0).toFixed(2),
-        waste_cost: parseFloat(document.getElementById('f_waste').value || 0).toFixed(2),
+        waste_cost: (Math.max(1, Math.min(20, parseInt(document.getElementById('f_skip_quantity').value, 10) || 1)) * (parseFloat(document.getElementById('f_waste').value) || 0)).toFixed(2),
         other_cost: parseFloat(document.getElementById('f_other').value || 0).toFixed(2),
         subtotal: subtotal.toFixed(2),
         vat: vat.toFixed(2),
         total: total.toFixed(2),
         included: document.getElementById('f_included').value,
-        excluded: document.getElementById('f_excluded').value,
+        excluded: combinedExcluded,
         deposit: document.getElementById('f_deposit').value,
         valid_for: document.getElementById('f_valid_for').value,
         payment_terms: document.getElementById('f_payment_terms').value
