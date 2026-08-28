@@ -279,7 +279,8 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 
 /* QUOTE BUILDER */
 .builder-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
-.btn-back{background:none;border:1px solid var(--card-border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--font);font-size:0.85rem;}
+.btn-back{background:var(--amber);border:1px solid var(--amber);color:var(--black);padding:8px 15px;border-radius:7px;cursor:pointer;font-family:var(--font);font-size:0.85rem;font-weight:800;transition:opacity 0.2s,transform 0.2s;}
+.btn-back:hover{opacity:0.9;transform:translateY(-1px);}
 .builder-title{font-size:1.1rem;font-weight:800;color:var(--white);letter-spacing:-0.02em;}
 .edit-mode-badge{font-size:0.7rem;font-weight:700;background:var(--amber-glow);border:1px solid var(--amber-border);color:var(--amber);padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;}
 .step-dots{display:flex;gap:6px;margin-bottom:20px;}
