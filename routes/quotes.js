@@ -1,6 +1,55 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { sendToGA } = require('../utils/ga');
+const https = require('https');
+
+const CUSTOMER_EMAIL_FROM = 'hello@profitquote.co.uk';
+
+function validEmail(value) {
+  return typeof value === 'string' && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, description, quoteData }) {
+  return new Promise((resolve, reject) => {
+    if (!process.env.BREVO_API_KEY) return reject(new Error('Email delivery is not configured'));
+    const money = (value) => `£${Number(value || 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}`;
+    const items = String(description || '').split(/,|;|\n| and /i).map((item) => item.trim()).filter((item) => item.length > 4).slice(0, 30);
+    const breakdown = [
+      ['Labour', quoteData.labour], ['Materials', quoteData.mats], ['Skip & Waste Disposal', quoteData.skipCost],
+      ['Scaffolding', quoteData.scaffoldCost], ['Contingency', quoteData.contingencyAmt]
+    ].filter(([, value]) => Number(value) > 0).map(([label, value]) => `${label}: ${money(value)}`);
+    const textContent = [
+      `Dear ${String(customerName || 'Customer').slice(0, 200)},`, '',
+      `Thank you for inviting ${businessName} to provide a quotation for your project.`, '',
+      'Project summary', ...items.map((item) => `• ${item}`), '',
+      `Total quotation: ${money(total)}`, '', 'Price breakdown', ...breakdown, '',
+      'This quotation includes the agreed scope of work and all identified materials and labour requirements.', '',
+      'To accept this quotation, reply to this email or contact us using the details below.', '',
+      'Kind regards,', businessName, ...(phone ? [String(phone).slice(0, 50)] : []), CUSTOMER_EMAIL_FROM, '',
+      'Generated with ProfitQuote — Profit Protection Software for Tradespeople', 'https://profitquote.co.uk'
+    ].join('\n');
+    const payload = JSON.stringify({
+      sender: { name: `${businessName} via ProfitQuote`.slice(0, 70), email: CUSTOMER_EMAIL_FROM },
+      replyTo: { name: 'ProfitQuote', email: CUSTOMER_EMAIL_FROM },
+      to: [{ email: to, name: String(customerName || 'Customer').slice(0, 70) }],
+      subject: `Your quotation from ${businessName}`.slice(0, 200),
+      textContent
+    });
+    const request = https.request({
+      hostname: 'api.brevo.com', path: '/v3/smtp/email', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), 'api-key': process.env.BREVO_API_KEY }
+    }, (response) => {
+      let body = '';
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => response.statusCode >= 200 && response.statusCode < 300
+        ? resolve()
+        : reject(new Error(`Email provider rejected request (${response.statusCode})`)));
+    });
+    request.on('error', reject);
+    request.write(payload);
+    request.end();
+  });
+}
 
 function logEvent(pool, eventType, userId, source) {
   return pool.query(
@@ -50,6 +99,33 @@ router.post('/', auth, async (req, res) => {
       logEvent(pool, 'first_quote', req.user.id, null);
     }
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/send-email', auth, async (req, res) => {
+  if (req.user.guest) return res.status(403).json({ error: 'Create an account to send quotes directly.' });
+  const { customer_email, customer_name, job_description, total, quote_data } = req.body || {};
+  if (!validEmail(customer_email)) return res.status(400).json({ error: 'Enter a valid customer email address.' });
+  if (!Number.isFinite(Number(total)) || Number(total) < 0 || Number(total) > 10000000) return res.status(400).json({ error: 'The quote total is invalid.' });
+  try {
+    const pool = req.app.locals.pool;
+    const recent = await pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND user_id=$1 AND created_at >= NOW() - INTERVAL '1 hour'", [req.user.id]);
+    if (recent.rows[0].c >= 10) return res.status(429).json({ error: 'Hourly email limit reached. Please try again later.' });
+    const userResult = await pool.query('SELECT name,business_name,phone FROM users WHERE id=$1', [req.user.id]);
+    if (!userResult.rows.length) return res.status(404).json({ error: 'User not found.' });
+    const user = userResult.rows[0];
+    const businessName = String(user.business_name || user.name || 'ProfitQuote customer').slice(0, 100);
+    await sendCustomerQuoteEmail({
+      to: customer_email.trim().toLowerCase(), businessName, customerName: customer_name,
+      phone: user.phone, total: Number(total), description: String(job_description || '').slice(0, 5000), quoteData: quote_data || {}
+    });
+    await pool.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_sent',$1,'profitquote_email',jsonb_build_object('recipient_domain',split_part($2,'@',2),'total',$3::numeric))", [req.user.id, customer_email.trim().toLowerCase(), Number(total)]);
+    sendToGA('quote_sent', req.user.id, 'profitquote_email').catch(() => {});
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ success: true, from: CUSTOMER_EMAIL_FROM });
+  } catch (error) {
+    console.error('Quote email error:', error.message);
+    res.status(502).json({ error: 'The quote could not be emailed. Please try again.' });
+  }
 });
 
 router.patch('/:id/status', auth, async (req, res) => {

@@ -2247,7 +2247,7 @@ async function saveQuote(){
   }catch(e){ showToast('Connection error'); }
 }
 
-function emailQuote(){
+function buildLegacyEmailDraft(){
   if(!currentQuoteData) return;
   trackFunnelEvent('quote_sent');
   const customerEmail=currentQuoteData.customer_email||'';
@@ -2349,6 +2349,30 @@ profitquote.co.uk`;
 
   const mailto=`mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.open(mailto);
+}
+
+async function emailQuote(){
+  if(!currentQuoteData) return;
+  if(currentUser?.guest){ buildLegacyEmailDraft(); return; }
+  const customerEmail=(currentQuoteData.customer_email||'').trim();
+  if(!customerEmail){ showToast('Enter the customer email before sending'); return; }
+  const button=document.querySelector('.btn-email');
+  const originalText=button?.textContent;
+  if(button){ button.disabled=true; button.textContent='Sending…'; }
+  try{
+    const response=await fetch(API+'/api/quotes/send-email',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(currentQuoteData)
+    });
+    const result=await response.json();
+    if(!response.ok) throw new Error(result.error||'The quote could not be emailed.');
+    showToast('Quote emailed from '+result.from+' ✓');
+  }catch(error){
+    showToast(error.message||'The quote could not be emailed.');
+  }finally{
+    if(button){ button.disabled=false; button.textContent=originalText||'✉️ Email'; }
+  }
 }
 
 function printQuote(){
