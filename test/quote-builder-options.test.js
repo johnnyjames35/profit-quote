@@ -56,3 +56,11 @@ test('business setup persists the costing inputs used by quotes', () => {
   assert.match(auth, /overhead_per_day/);
   assert.match(auth, /vat_rate/);
 });
+
+test('customer-facing quote currency is always limited to two decimals', () => {
+  const dashboard = fs.readFileSync(path.join(root, 'public', 'dashboard.html'), 'utf8');
+  const route = fs.readFileSync(path.join(root, 'routes', 'quotes.js'), 'utf8');
+  assert.doesNotMatch(dashboard, /toLocaleString\('en-GB',\{minimumFractionDigits:2\}\)/);
+  assert.match(dashboard, /minimumFractionDigits:2,maximumFractionDigits:2/);
+  assert.match(route, /minimumFractionDigits: 2, maximumFractionDigits: 2/);
+});
