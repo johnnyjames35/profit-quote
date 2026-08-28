@@ -145,14 +145,14 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = s
   ]);
   const [gaTotals, gaSources, gaPages, scTotals, scQueries, scPages, ga7, gaPrevious7, sc7, scPrevious7, ga30, gaPrevious30, sc30, scPrevious30] = responses;
   const totals = scTotals.rows?.[0] || {};
-  function comparison(period, currentGa, previousGa, currentSc, previousSc) {
+  function comparison(period, ranges, currentGa, previousGa, currentSc, previousSc) {
     const currentGaRow = currentGa.rows?.[0];
     const previousGaRow = previousGa.rows?.[0];
     const currentScRow = currentSc.rows?.[0];
     const previousScRow = previousSc.rows?.[0];
     const current = { users: metric(currentGaRow, 0), sessions: metric(currentGaRow, 1), clicks: searchMetric(currentScRow, 0), impressions: searchMetric(currentScRow, 1), ctr: searchMetric(currentScRow, 2), averagePosition: searchMetric(currentScRow, 3) };
     const previous = { users: metric(previousGaRow, 0), sessions: metric(previousGaRow, 1), clicks: searchMetric(previousScRow, 0), impressions: searchMetric(previousScRow, 1), ctr: searchMetric(previousScRow, 2), averagePosition: searchMetric(previousScRow, 3) };
-    return { period, current, previous, change: { users: change(current.users, previous.users), sessions: change(current.sessions, previous.sessions), clicks: change(current.clicks, previous.clicks), impressions: change(current.impressions, previous.impressions), ctr: change(current.ctr, previous.ctr), averagePosition: change(current.averagePosition, previous.averagePosition) } };
+    return { period, ranges: { ga4: { current: ranges.current, previous: ranges.previous }, searchConsole: { current: ranges.searchCurrent, previous: ranges.searchPrevious } }, current, previous, change: { users: change(current.users, previous.users), sessions: change(current.sessions, previous.sessions), clicks: change(current.clicks, previous.clicks), impressions: change(current.impressions, previous.impressions), ctr: change(current.ctr, previous.ctr), averagePosition: change(current.averagePosition, previous.averagePosition) } };
   }
   const report = {
     date, generatedAt: new Date().toISOString(), reportWindow: { type: 'calendar-day', timezone: 'Europe/London', startDate: date, endDate: date },
@@ -160,8 +160,8 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = s
     searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), topResultsPeriod: { startDate: scTopRange.startDate, endDate: scTopRange.endDate, days: 30 }, topQueries: topSearchRows(scQueries.rows, 'query'), topPages: topSearchRows(scPages.rows, 'page') }
   };
   if (includeComparisons) report.comparisons = {
-      sevenDay: comparison('7 days', ga7, gaPrevious7, sc7, scPrevious7),
-      thirtyDay: comparison('30 days', ga30, gaPrevious30, sc30, scPrevious30)
+      sevenDay: comparison('7 days', comparisonRanges.sevenDay, ga7, gaPrevious7, sc7, scPrevious7),
+      thirtyDay: comparison('30 days', comparisonRanges.thirtyDay, ga30, gaPrevious30, sc30, scPrevious30)
   };
   return report;
 }
@@ -212,11 +212,14 @@ async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env
   const lagHours = Number.isFinite(configuredLag) ? Math.min(12, Math.max(1, configuredLag)) : 4;
   const windowEnd = new Date(now - (lagHours * 60 * 60 * 1000));
   windowEnd.setUTCMinutes(0, 0, 0);
+  const firstIncompleteHour = new Date(hourly.metadata?.first_incomplete_hour || '');
+  const lastCompleteHour = Number.isNaN(firstIncompleteHour.getTime()) ? null : new Date(firstIncompleteHour.getTime() - (60 * 60 * 1000));
+  const effectiveWindowEnd = lastCompleteHour && lastCompleteHour < windowEnd ? lastCompleteHour : windowEnd;
   return {
     generatedAt: new Date().toISOString(),
-    window: { type: 'estimated-latest-24-available-hours', hours: 24, partial: true, estimatedThrough: windowEnd.toISOString(), lagHours, latestActivityHour: latestActivityHour?.toISOString() || null, firstIncompleteHour: hourly.metadata?.first_incomplete_hour || null },
-    ...aggregateHourlyRows(hourly.rows, windowEnd),
-    topPages: aggregateHourlyRows(hourlyPages.rows, windowEnd, 1)
+    window: { type: 'latest-24-complete-hours', hours: 24, partial: true, through: effectiveWindowEnd.toISOString(), estimatedThrough: windowEnd.toISOString(), lagHours, latestActivityHour: latestActivityHour?.toISOString() || null, firstIncompleteHour: hourly.metadata?.first_incomplete_hour || null },
+    ...aggregateHourlyRows(hourly.rows, effectiveWindowEnd),
+    topPages: aggregateHourlyRows(hourlyPages.rows, effectiveWindowEnd, 1)
   };
 }
 function clearTokenCache() { cachedToken = null; }

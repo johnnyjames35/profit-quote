@@ -449,6 +449,18 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-quotes">—</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Quote Starts</div>
+          <div class="stat-val cyan" id="f-quote-starts">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Quotes Sent</div>
+          <div class="stat-val cyan" id="f-quote-sends">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">PDF Downloads</div>
+          <div class="stat-val cyan" id="f-quote-downloads">—</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">New Paying Customers</div>
           <div class="stat-val green" id="f-paid">—</div>
         </div>
@@ -475,6 +487,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         <button class="refresh-btn" id="report-refresh" onclick="loadReporting()">↻ Refresh report</button>
       </div>
       <div class="report-message" id="report-window-note">This covers the previous UK calendar day, not Google's rolling last 24 hours. Google may continue adjusting recent figures.</div>
+      <div class="report-message" id="app-control-note">ProfitQuote app control: waiting for data.</div>
       <div id="report-status" class="report-message">Open this tab to load traffic reporting.</div>
       <div id="report-content" style="display:none;">
         <div class="report-section">
@@ -630,6 +643,8 @@ function renderReporting(data, live = {}) {
   document.getElementById('report-date').textContent = data.date || '—';
   const refreshed = data.generatedAt ? new Date(data.generatedAt).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' }) : 'unknown';
   document.getElementById('report-refreshed').textContent = 'Last successfully refreshed: ' + refreshed + ' · admin traffic excluded';
+  const app = data.appFunnel || {};
+  document.getElementById('app-control-note').textContent = 'ProfitQuote app records · ' + (app.date || data.date || '—') + ': ' + number(app.quoteCompletions) + ' quote completions, ' + number(app.quoteStarts) + ' starts, ' + number(app.quoteSends) + ' sends, ' + number(app.quoteDownloads) + ' PDF downloads, ' + number(app.accountsCreated) + ' accounts, ' + number(app.purchases) + ' purchases. Completion history comes from saved quotes; the other actions are tracked from this release onward.';
   document.getElementById('r-users').textContent = number(ga4.users);
   document.getElementById('r-sessions').textContent = number(ga4.sessions);
   document.getElementById('r-clicks').textContent = number(search.clicks);
@@ -640,8 +655,8 @@ function renderReporting(data, live = {}) {
   document.getElementById('live-impressions').textContent = live.error ? '—' : number(live.impressions);
   document.getElementById('live-ctr').textContent = live.error ? '—' : percent(live.ctr);
   document.getElementById('live-position').textContent = live.error ? '—' : decimal(live.averagePosition);
-  const estimatedThrough = live.window?.estimatedThrough ? new Date(live.window.estimatedThrough).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' }) : 'not yet available';
-  document.getElementById('live-search-note').textContent = live.error || ('Estimated 24-hour window through ' + estimatedThrough + ' using Google’s normal reporting delay. Page rows use page aggregation and may not add up to the property total.');
+  const liveThrough = live.window?.through ? new Date(live.window.through).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' }) : 'not yet available';
+  document.getElementById('live-search-note').textContent = live.error || ('Latest 24 complete hourly buckets through ' + liveThrough + '. Google marks newer hours incomplete; page rows use page aggregation and may not add up to the property total.');
   renderReportList('live-pages', live.topPages, 'page', item => number(item.impressions) + ' impressions · ' + number(item.clicks) + ' clicks');
   document.getElementById('calendar-report-heading').textContent = 'Calendar-day reports · GA4 ' + (ga4.date || data.date || '—') + ' · finalised Search Console ' + (search.date || '—');
   const opportunityPeriod = search.topResultsPeriod || {};
@@ -676,7 +691,12 @@ function comparisonCard(title, comparison) {
       '<div class="comparison-value">' + formatter(comparison.previous?.[key]) + '</div>' +
       '<div class="comparison-value ' + changeClass(delta, key === 'averagePosition') + '">' + changeText(delta) + '</div></div>';
   }).join('');
-  return '<div class="comparison-card"><div class="comparison-title">' + esc(title) + '</div>' +
+  const gaRanges = comparison.ranges?.ga4;
+  const scRanges = comparison.ranges?.searchConsole;
+  const rangeText = gaRanges && scRanges
+    ? '<div class="report-message">GA4: ' + esc(gaRanges.current.startDate + '–' + gaRanges.current.endDate) + ' vs ' + esc(gaRanges.previous.startDate + '–' + gaRanges.previous.endDate) + '<br>Search Console: ' + esc(scRanges.current.startDate + '–' + scRanges.current.endDate) + ' vs ' + esc(scRanges.previous.startDate + '–' + scRanges.previous.endDate) + '</div>'
+    : '';
+  return '<div class="comparison-card"><div class="comparison-title">' + esc(title) + '</div>' + rangeText +
     '<div class="comparison-row header"><div>Metric</div><div class="comparison-value">Current</div><div class="comparison-value">Previous</div><div class="comparison-value">Change</div></div>' + rows + '</div>';
 }
 
@@ -872,6 +892,9 @@ async function loadFunnel() {
     document.getElementById('f-trial-clicks').textContent = data.trialClicks;
     document.getElementById('f-accounts').textContent = data.accountsCreated;
     document.getElementById('f-quotes').textContent = data.totalQuotes;
+    document.getElementById('f-quote-starts').textContent = data.quoteStarts;
+    document.getElementById('f-quote-sends').textContent = data.quoteSends;
+    document.getElementById('f-quote-downloads').textContent = data.quoteDownloads;
     document.getElementById('f-paid').textContent = data.paidCustomers;
     const activePaidEl = document.getElementById('f-active-paid');
     if (activePaidEl) activePaidEl.textContent = data.activePaidCustomers;
@@ -893,8 +916,10 @@ function renderFunnelBars(data) {
   const steps = [
     { label: 'LinkedIn Impressions', value: impressions },
     { label: 'Website Visitors', value: data.totalVisitors },
-    { label: 'Started Free Quote', value: data.guestStarts },
-    { label: 'Free Quotes Saved', value: data.guestQuotes },
+    { label: 'Quote Starts', value: data.quoteStarts },
+    { label: 'Quotes Completed', value: data.quoteCompletions },
+    { label: 'Quotes Sent', value: data.quoteSends },
+    { label: 'PDF Downloads', value: data.quoteDownloads },
     { label: 'Trial Clicks', value: data.trialClicks },
     { label: 'Accounts Created', value: data.accountsCreated },
     { label: 'First Quotes', value: data.firstQuotes },

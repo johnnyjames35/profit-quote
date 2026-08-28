@@ -68,25 +68,32 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       '7d': "(date_trunc('day', NOW() AT TIME ZONE 'Europe/London') - INTERVAL '6 days') AT TIME ZONE 'Europe/London'",
       '30d': "(date_trunc('day', NOW() AT TIME ZONE 'Europe/London') - INTERVAL '29 days') AT TIME ZONE 'Europe/London'"
     };
-    const condition = (column) => period === 'all' ? 'TRUE' : `${column} >= ${lowerBounds[period]}`;
+    // Legacy tables use timestamp-without-time-zone values written by a UTC
+    // Railway session. Make that assumption explicit instead of depending on
+    // the current database/session timezone during comparisons.
+    const legacyCondition = (column) => period === 'all' ? 'TRUE' : `(${column} AT TIME ZONE 'UTC') >= ${lowerBounds[period]}`;
+    const zonedCondition = (column) => period === 'all' ? 'TRUE' : `${column} >= ${lowerBounds[period]}`;
 
     const [
       visitors, linkedinVisitors, googleVisitors, trialClicks, accountsCreated,
       firstQuotes, totalQuotes, paidCustomers, activePaidCustomers,
-      guestStarts, guestQuotes, guestConversions
+      guestStarts, guestQuotes, guestConversions, quoteStarts, quoteSends, quoteDownloads
     ] = await Promise.all([
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='linkedin' AND ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='google' AND ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='trial_click' AND ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote' AND ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL AND ${condition('paid_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='linkedin' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='google' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='trial_click' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL AND ${legacyCondition('paid_at')}`),
       pool.query("SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL"),
-      pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL AND ${condition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL AND ${condition('created_at')}`)
+      pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE ${zonedCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL AND ${zonedCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_started' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_downloaded' AND ${legacyCondition('created_at')}`)
     ]);
 
     const activePaidCount = activePaidCustomers.rows[0].c;
@@ -108,6 +115,10 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       guestStarts: guestStarts.rows[0].c,
       guestQuotes: guestQuotes.rows[0].c,
       guestConversions: guestConversions.rows[0].c,
+      quoteStarts: quoteStarts.rows[0].c,
+      quoteCompletions: totalQuotes.rows[0].c,
+      quoteSends: quoteSends.rows[0].c,
+      quoteDownloads: quoteDownloads.rows[0].c,
       mrr: activePaidCount * 49
     });
   } catch(e) {
@@ -204,6 +215,28 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
 router.get('/reporting/daily', requireAdmin, async (req, res) => {
   try {
     const report = await getDailyTrafficReport({ date: req.query.date, includeComparisons: true });
+    const pool = req.app.locals.pool;
+    const appResult = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM quotes WHERE (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_completions,
+        (SELECT COUNT(*)::int FROM events WHERE event_type='quote_started' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_starts,
+        (SELECT COUNT(*)::int FROM events WHERE event_type='quote_sent' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_sends,
+        (SELECT COUNT(*)::int FROM events WHERE event_type='quote_downloaded' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_downloads,
+        (SELECT COUNT(*)::int FROM users WHERE (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS accounts_created,
+        (SELECT COUNT(*)::int FROM users WHERE paid_at IS NOT NULL AND (paid_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (paid_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS purchases
+    `, [report.date]);
+    const app = appResult.rows[0] || {};
+    report.appFunnel = {
+      date: report.date,
+      timezone: 'Europe/London',
+      quoteStarts: app.quote_starts || 0,
+      quoteCompletions: app.quote_completions || 0,
+      quoteSends: app.quote_sends || 0,
+      quoteDownloads: app.quote_downloads || 0,
+      accountsCreated: app.accounts_created || 0,
+      purchases: app.purchases || 0,
+      note: 'Quote completions come from saved quote records; other funnel events are available from the deployment that introduced event tracking.'
+    };
     res.set('Cache-Control', 'private, no-store');
     res.json(report);
   } catch (error) {

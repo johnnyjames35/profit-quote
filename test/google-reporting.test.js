@@ -45,6 +45,7 @@ test('returns normalized GA4 and Search Console metrics', async () => {
   assert.equal(result.comparisons.sevenDay.current.sessions, 90);
   assert.equal(result.comparisons.sevenDay.change.sessions, 0.5);
   assert.equal(result.comparisons.thirtyDay.current.clicks, 80);
+  assert.deepEqual(result.comparisons.sevenDay.ranges.searchConsole.current, { startDate: '2026-08-04', endDate: '2026-08-10' });
   assert.match(calls[4].url, /searchconsole\.googleapis\.com/);
   const gaFilter = JSON.parse(calls[1].options.body).dimensionFilter;
   assert.equal(gaFilter.andGroup.expressions[1].notExpression.filter.fieldName, 'pagePath');
@@ -82,4 +83,21 @@ test('returns the latest 24 available Search Console hours and aggregates pages'
   assert.equal(result.window.estimatedThrough, '2026-08-27T12:00:00.000Z');
   assert.equal(JSON.parse(calls[1].body).dataState, 'HOURLY_ALL');
   assert.deepEqual(JSON.parse(calls[2].body).dimensions, ['HOUR', 'PAGE']);
+});
+
+test('does not include Search Console hours marked incomplete', async () => {
+  clearTokenCache();
+  const responses = [
+    { access_token: 'test-token', expires_in: 3600 },
+    { metadata: { first_incomplete_hour: '2026-08-27T12:00:00Z' }, rows: [
+      { keys: ['2026-08-27T11:00:00Z'], clicks: 2, impressions: 20, position: 4 },
+      { keys: ['2026-08-27T12:00:00Z'], clicks: 7, impressions: 70, position: 8 }
+    ] },
+    { rows: [] }
+  ];
+  const fetchImpl = async () => ({ ok: true, status: 200, json: async () => responses.shift() });
+  const result = await getLiveSearchReport({ env, fetchImpl, now: new Date('2026-08-27T18:00:00Z').getTime() });
+  assert.equal(result.window.through, '2026-08-27T11:00:00.000Z');
+  assert.equal(result.clicks, 2);
+  assert.equal(result.impressions, 20);
 });

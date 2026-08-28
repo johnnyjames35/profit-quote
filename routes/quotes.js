@@ -32,7 +32,9 @@ router.post('/', auth, async (req, res) => {
       const guestResult = await pool.query('INSERT INTO quotes (guest_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *', [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]);
       const used = claim.rows[0].quote_count;
       await pool.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_number',$2::int,'total',$3::numeric))", [req.user.id, used, Number(total)||0]);
+      await pool.query("INSERT INTO events(event_type,source,meta) VALUES('quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_id',$2::int,'total',$3::numeric))", [req.user.id, guestResult.rows[0].id, Number(total)||0]);
       sendToGA('guest_quote_completed', null, 'guest').catch(() => {});
+      sendToGA('quote_completed', null, 'guest').catch(() => {});
       return res.json({ ...guestResult.rows[0], guest_quotes_used:used, guest_quotes_remaining:3-used });
     }
     const result = await pool.query(
@@ -40,6 +42,8 @@ router.post('/', auth, async (req, res) => {
       [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]
     );
     res.json(result.rows[0]);
+
+    logEvent(pool, 'quote_completed', req.user.id, 'dashboard');
 
     const priorQuotes = await pool.query('SELECT id FROM quotes WHERE user_id=$1', [req.user.id]);
     if (priorQuotes.rows.length === 1) {

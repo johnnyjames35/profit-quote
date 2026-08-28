@@ -1228,6 +1228,16 @@ textarea.field-input{resize:vertical;min-height:80px;}
 <script>
 const API = '';
 let token = localStorage.getItem('pq_token');
+
+function trackFunnelEvent(eventType){
+  if(!token) return;
+  fetch(API+'/api/events/funnel',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({event_type:eventType}),
+    keepalive:true
+  }).catch(()=>{});
+}
 let guestToken = localStorage.getItem('pq_guest_token');
 let currentUser = null;
 
@@ -1974,6 +1984,7 @@ function setRisk(r){
 }
 
 function nextStep(n){
+  if(n===2 && currentBuilderStep===1 && !editingQuoteId) trackFunnelEvent('quote_started');
   currentBuilderStep = n;
   for(let i=1;i<=6;i++) document.getElementById('step-'+i).style.display=(i===n)?'block':'none';
   for(let i=1;i<=6;i++){
@@ -2238,6 +2249,7 @@ async function saveQuote(){
 
 function emailQuote(){
   if(!currentQuoteData) return;
+  trackFunnelEvent('quote_sent');
   const customerEmail=currentQuoteData.customer_email||'';
   const customerName=currentQuoteData.customer_name||'Customer';
   const bizName=currentUser?.business_name||currentUser?.name||'Your Tradesperson';
@@ -2341,6 +2353,7 @@ profitquote.co.uk`;
 
 function printQuote(){
   if(!currentQuoteData) return;
+  trackFunnelEvent('quote_downloaded');
   const customerName=currentQuoteData.customer_name||'Customer';
   // Prioritise business_name from settings over personal name
   const bizName=currentUser?.business_name||(currentUser?.name?currentUser.name+' Building Services':'');
