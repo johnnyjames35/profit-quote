@@ -52,9 +52,9 @@ function day3Email(name, email) {
 
 function day7Email(name, email) {
   return sendBrevoEmail(email,
-    "Your ProfitQuote trial ends today",
+    "Your ProfitQuote free trial period is ending",
     `<p>Hi ${name},</p>
-     <p>Your 7-day free trial ends today. If ProfitQuote has been useful, here's how to keep going:</p>
+     <p>Your 7-day free trial period is coming to an end. If ProfitQuote has been useful, here's how to keep going:</p>
      <p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
      <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
      <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
