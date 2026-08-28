@@ -289,6 +289,11 @@ body{font-family:var(--font);background:var(--black);color:var(--body);}
 .field-group{margin-bottom:16px;}
 .field-label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px;}
 .field-hint{font-size:0.72rem;color:var(--muted);line-height:1.5;margin-top:6px;}
+.scope-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;}
+.scope-chip{background:var(--dark);border:1px solid var(--card-border);border-radius:9px;padding:10px 12px;color:var(--body);font:inherit;font-size:0.82rem;text-align:left;cursor:pointer;line-height:1.35;}
+.scope-chip.selected{border-color:var(--amber);color:var(--white);background:rgba(255,194,10,0.10);}
+.scope-chip.selected::before{content:'✓ ';color:var(--amber);font-weight:900;}
+@media(max-width:560px){.scope-grid{grid-template-columns:1fr;}}
 .field-input{width:100%;padding:12px 14px;border:1px solid var(--card-border);border-radius:9px;font-size:0.95rem;color:var(--white);font-family:var(--font);outline:none;background:var(--dark);transition:border-color 0.2s;}
 .field-input:focus{border-color:var(--amber);}
 .field-input::placeholder{color:#444;}
@@ -787,9 +792,33 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="card">
           <div class="card-title">Job Details</div>
           <div class="field-group">
-            <label class="field-label">Job Description</label>
-            <p style="font-size:0.78rem;color:var(--amber);font-weight:600;margin-bottom:8px;line-height:1.5;">⚠️ Please describe the job in as much detail as possible — include every task, material and scope of work. The more detail you give, the more accurately the AI can protect you from underquoting.</p>
-            <textarea class="field-input" id="q-desc" rows="5" placeholder="e.g. Full kitchen refurb — 10 cupboards, 5m worktop, quartzite splashback, underfloor heating, 4 bifold double glazed doors, new ceiling and 12 downlighters"></textarea>
+            <label class="field-label">What type of job is it?</label>
+            <select class="field-input" id="q-job-type" onchange="selectJobType()">
+              <option value="">Choose a job type</option>
+              <option value="bathroom">Bathroom / Ensuite</option>
+              <option value="kitchen">Kitchen</option>
+              <option value="decorating">Decorating</option>
+              <option value="extension">Extension / Renovation</option>
+              <option value="roofing">Roofing</option>
+              <option value="plumbing">Plumbing / Heating</option>
+              <option value="electrical">Electrical</option>
+              <option value="other">Other / General Building</option>
+            </select>
+          </div>
+          <div class="field-group" id="scope-task-group" style="display:none;">
+            <label class="field-label">What work is included?</label>
+            <div class="field-hint">Tap everything that applies. You can change these at any time.</div>
+            <div class="scope-grid" id="scope-task-list"></div>
+          </div>
+          <input type="hidden" id="q-scope-tasks" value="[]">
+          <div class="field-group">
+            <label class="field-label">Anything else we should know? <span style="text-transform:none;font-weight:500;">(optional)</span></label>
+            <textarea class="field-input" id="q-extra" rows="3" maxlength="1000" oninput="updateGuidedDescription()" placeholder="e.g. Customer wants brass fittings and existing floorboards need checking"></textarea>
+          </div>
+          <div class="field-group" id="scope-summary-group" style="display:none;">
+            <label class="field-label">Scope summary</label>
+            <textarea class="field-input" id="q-desc" rows="4" readonly></textarea>
+            <div class="field-hint">ProfitQuote builds this from your selections. This is what appears on the quote.</div>
           </div>
           <div class="field-group"><label class="field-label">Customer Name</label><input class="field-input" id="q-customer" placeholder="e.g. Mr & Mrs Smith"></div>
           <div class="field-group"><label class="field-label">Customer Email (for sending quote)</label><input class="field-input" id="q-email" type="email" placeholder="e.g. smith@email.co.uk"></div>
@@ -1296,7 +1325,7 @@ let clientSuppliesMaterials = false;
 let editingQuoteId = null; // null = new quote, number = editing existing
 let currentBuilderStep = 1;
 const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
-const BUILDER_STEP_FIELDS = ['q-desc','q-customer','q-email','q-postcode',
+const BUILDER_STEP_FIELDS = ['q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
   'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
   'q-days','q-day-rate','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
   'q-contingency','q-profit-target'];
@@ -1330,6 +1359,7 @@ function restoreBuilderDraft(){
       const el = document.getElementById(id);
       if(el && val) el.value = val;
     });
+    restoreGuidedScope();
     if(typeof draft.needsSkip==='boolean') setSkip(draft.needsSkip);
     if(typeof draft.needsScaffold==='boolean') setScaffold(draft.needsScaffold);
     if(typeof draft.clientSuppliesMaterials==='boolean') setClientMaterials(draft.clientSuppliesMaterials);
@@ -1358,6 +1388,66 @@ function setClientMaterials(val){
   document.getElementById('client-materials-no').className=val?'risk-btn':'risk-btn active-low';
   document.getElementById('client-materials-fields').style.display=val?'block':'none';
   saveBuilderDraft();
+}
+
+const JOB_SCOPE_OPTIONS={
+  bathroom:['Remove existing bathroom','Dispose of old suite and waste','Alter plumbing','Install bath','Install shower','Install toilet and basin','Wall tiling','Floor tiling','Plastering / ceiling','Electrical work / lighting','Decorating','Final silicone and finishing'],
+  kitchen:['Remove existing kitchen','Dispose of units and waste','Install kitchen units','Fit worktops','Install sink and taps','Alter plumbing','Appliance connections','Electrical work / sockets','Lighting','Wall tiling / splashback','Flooring','Decorating and finishing'],
+  decorating:['Protect floors and furniture','Prepare walls and ceilings','Repair cracks and defects','Strip wallpaper','Prime new surfaces','Paint ceilings','Paint walls','Paint woodwork','Wallpapering','Final clean and waste removal'],
+  extension:['Site preparation','Groundworks','Foundations','Drainage','Brickwork / blockwork','Structural steel','Roof structure and covering','Windows and doors','Insulation','Plastering','Plumbing and heating','Electrical work','Flooring','Decorating','Waste removal'],
+  roofing:['Scaffolding','Remove existing covering','Repair roof structure','Install membrane and battens','Install tiles / slates','Leadwork and flashing','Fascia / soffit / guttering','Insulation','Waste removal'],
+  plumbing:['Drain down system','Remove existing fittings','Alter pipework','Install new fittings','Boiler / heating work','Radiators','Testing and commissioning','Making good','Waste removal'],
+  electrical:['Safe isolation','Remove existing fittings','New wiring / rewiring','Consumer unit work','Sockets and switches','Lighting / downlights','Testing and certification','Making good','Waste removal'],
+  other:['Site preparation','Removal / demolition','Structural work','Carpentry','Plastering','Plumbing','Electrical work','Flooring','Decorating','Making good','Waste removal']
+};
+let selectedScopeTasks=[];
+
+function selectJobType(){
+  selectedScopeTasks=[];
+  document.getElementById('q-scope-tasks').value='[]';
+  renderScopeTasks();
+  updateGuidedDescription();
+}
+
+function renderScopeTasks(){
+  const type=document.getElementById('q-job-type').value;
+  const options=JOB_SCOPE_OPTIONS[type]||[];
+  const group=document.getElementById('scope-task-group');
+  const list=document.getElementById('scope-task-list');
+  group.style.display=options.length?'block':'none';
+  list.innerHTML=options.map((task,index)=>`<button type="button" class="scope-chip${selectedScopeTasks.includes(task)?' selected':''}" onclick="toggleScopeTask(${index})">${task}</button>`).join('');
+}
+
+function toggleScopeTask(index){
+  const type=document.getElementById('q-job-type').value;
+  const task=(JOB_SCOPE_OPTIONS[type]||[])[index];
+  if(!task) return;
+  selectedScopeTasks=selectedScopeTasks.includes(task)?selectedScopeTasks.filter(item=>item!==task):[...selectedScopeTasks,task];
+  document.getElementById('q-scope-tasks').value=JSON.stringify(selectedScopeTasks);
+  renderScopeTasks();
+  updateGuidedDescription();
+}
+
+function updateGuidedDescription(){
+  const select=document.getElementById('q-job-type');
+  const typeLabel=select.options[select.selectedIndex]?.text||'';
+  const extra=document.getElementById('q-extra').value.trim();
+  const parts=[];
+  if(typeLabel&&select.value) parts.push(typeLabel+'.');
+  if(selectedScopeTasks.length) parts.push('Work included: '+selectedScopeTasks.join('; ')+'.');
+  if(extra) parts.push('Additional details: '+extra);
+  const description=parts.join(' ');
+  document.getElementById('q-desc').value=description;
+  document.getElementById('scope-summary-group').style.display=description?'block':'none';
+  saveBuilderDraft();
+}
+
+function restoreGuidedScope(){
+  try{ selectedScopeTasks=JSON.parse(document.getElementById('q-scope-tasks').value||'[]'); }
+  catch(e){ selectedScopeTasks=[]; }
+  if(!Array.isArray(selectedScopeTasks)) selectedScopeTasks=[];
+  renderScopeTasks();
+  updateGuidedDescription();
 }
 
 function setScaffold(val){
@@ -1741,7 +1831,11 @@ function editQuote(id){
   // Load saved data back into fields
   const qd=q.quote_data||{};
   
-  document.getElementById('q-desc').value=q.job_description||qd.job_description||'';
+  const savedDescription=q.job_description||qd.job_description||'';
+  document.getElementById('q-job-type').value=qd.jobType||'other';
+  document.getElementById('q-scope-tasks').value=JSON.stringify(Array.isArray(qd.scopeTasks)?qd.scopeTasks:[]);
+  document.getElementById('q-extra').value=qd.extraNotes||(qd.jobType?'':savedDescription);
+  restoreGuidedScope();
 document.getElementById('q-customer').value=q.customer_name||qd.customer_name||'';
 document.getElementById('q-email').value=q.customer_email||qd.customer_email||'';
 document.getElementById('q-postcode').value=qd.postcode||q.postcode||'';
@@ -2042,7 +2136,11 @@ function nextStep(n){
 function resetBuilder(){
   clearBuilderDraft();
   editingQuoteId=null;
-  ['q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  selectedScopeTasks=[];
+  document.getElementById('q-scope-tasks').value='[]';
+  renderScopeTasks();
+  updateGuidedDescription();
   document.getElementById('q-skip-quantity').value=1;
   needsSkip=true; needsScaffold=false; clientSuppliesMaterials=false;
   setSkip(true); setScaffold(false); setClientMaterials(false);
@@ -2096,7 +2194,10 @@ async function generateQuote(){
   document.getElementById('ai-output').style.display='none';
   document.getElementById('ai-warning-box').style.display='none';
 
+  updateGuidedDescription();
   const desc=document.getElementById('q-desc').value;
+  const jobType=document.getElementById('q-job-type').value;
+  const extraNotes=document.getElementById('q-extra').value.trim();
   const days=parseFloat(document.getElementById('q-days').value)||1;
   const dayRate=parseFloat(document.getElementById('q-day-rate').value)||200;
   const materials=parseFloat(document.getElementById('q-materials').value)||0;
@@ -2154,7 +2255,7 @@ async function generateQuote(){
     markup_percent:markup,
     profit_target:profitTarget,
     other_costs:scaffoldCost>0?'Scaffolding: £'+scaffoldCost:null,
-    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,skipCost,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,lenM,widM,lenFt,widFt,contingency,postcode:document.getElementById('q-postcode').value},
+    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,lenM,widM,lenFt,widFt,contingency,postcode:document.getElementById('q-postcode').value},
     total:total,
     profit_percent:profitPct
   };

@@ -17,3 +17,13 @@ test('quote builder supports multiple skips and client-supplied materials', () =
   assert.match(route, /quoteData\.clientSuppliesMaterials/);
   assert.match(route, /These items are not included in the quotation total/);
 });
+
+test('quote builder offers a guided ADHD-friendly scope flow', () => {
+  const dashboard = fs.readFileSync(path.join(root, 'public', 'dashboard.html'), 'utf8');
+  assert.match(dashboard, /id="q-job-type"/);
+  assert.match(dashboard, /id="scope-task-list"/);
+  assert.match(dashboard, /Anything else we should know/);
+  assert.match(dashboard, /const JOB_SCOPE_OPTIONS=/);
+  assert.match(dashboard, /scopeTasks:\[\.\.\.selectedScopeTasks\]/);
+  assert.match(dashboard, /readonly><\/textarea>/);
+});
