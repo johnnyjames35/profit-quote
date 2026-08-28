@@ -15,7 +15,8 @@ function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, 
     const money = (value) => `£${Number(value || 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}`;
     const items = String(description || '').split(/,|;|\n| and /i).map((item) => item.trim()).filter((item) => item.length > 4).slice(0, 30);
     const breakdown = [
-      ['Labour', quoteData.labour], ['Materials', quoteData.mats], ['Skip & Waste Disposal', quoteData.skipCost],
+      ['Labour', quoteData.labour], ['Materials', quoteData.mats],
+      [Number(quoteData.skipQuantity) > 1 ? `${Number(quoteData.skipQuantity)} Skips & Waste Disposal` : 'Skip & Waste Disposal', quoteData.skipCost],
       ['Scaffolding', quoteData.scaffoldCost], ['Contingency', quoteData.contingencyAmt]
     ].filter(([, value]) => Number(value) > 0).map(([label, value]) => `${label}: ${money(value)}`);
     const textContent = [
@@ -23,6 +24,9 @@ function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, 
       `Thank you for inviting ${businessName} to provide a quotation for your project.`, '',
       'Project summary', ...items.map((item) => `• ${item}`), '',
       `Total quotation: ${money(total)}`, '', 'Price breakdown', ...breakdown, '',
+      ...(quoteData.clientSuppliesMaterials
+        ? [`Client to supply: ${String(quoteData.clientSuppliedItems || 'materials agreed separately').slice(0, 300)}. These items are not included in the quotation total.`, '']
+        : []),
       'This quotation includes the agreed scope of work and all identified materials and labour requirements.', '',
       'To accept this quotation, reply to this email or contact us using the details below.', '',
       'Kind regards,', businessName, ...(phone ? [String(phone).slice(0, 50)] : []), CUSTOMER_EMAIL_FROM, '',
