@@ -2469,7 +2469,7 @@ function printQuote(){
     <div class="breakdown">
       <div class="section-label">Breakdown</div>
       ${qd.labour>0?`<div class="breakdown-row"><span>Labour</span><span>£${qd.labour.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
-      ${qd.mats>0?`<div class="breakdown-row"><span>Materials (inc. markup)</span><span>£${qd.mats.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
+      ${qd.mats>0?`<div class="breakdown-row"><span>Materials</span><span>£${qd.mats.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
       ${qd.skipCost>0?`<div class="breakdown-row"><span>Skip / Waste Disposal</span><span>£${qd.skipCost.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
       ${qd.scaffoldCost>0?`<div class="breakdown-row"><span>Scaffolding</span><span>£${qd.scaffoldCost.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
       ${qd.contingencyAmt>0?`<div class="breakdown-row"><span>Contingency</span><span>£${qd.contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
