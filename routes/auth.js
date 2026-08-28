@@ -220,9 +220,9 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     if (req.user.guest) {
-      const result = await pool.query('SELECT quote_count FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL', [req.user.id]);
+      const result = await pool.query("SELECT COALESCE(SUM(other.quote_count),0)::int AS used FROM guest_sessions current_session JOIN guest_sessions other ON other.ip_hash=current_session.ip_hash AND other.created_at>NOW()-INTERVAL '30 days' WHERE current_session.id=$1 AND current_session.expires_at>NOW() AND current_session.converted_user_id IS NULL GROUP BY current_session.id", [req.user.id]);
       if (!result.rows.length) return res.status(401).json({ error: 'Guest session expired' });
-      const used = result.rows[0].quote_count;
+      const used = result.rows[0].used;
       return res.json({ id:req.user.id,guest:true,name:'Guest',trade:'',plan:'guest',day_rate:200,hourly_rate:35,overhead_per_day:50,markup_percent:20,profit_target:30,vat_rate:0,business_name:'',phone:'',contact_email:'',town:'',is_guest:true,guest_quotes_used:used,guest_quotes_remaining:Math.max(0,3-used) });
     }
     const result = await pool.query(

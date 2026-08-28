@@ -81,10 +81,33 @@ router.post('/', auth, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     if (req.user.guest) {
-      const claim = await pool.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL AND quote_count<3 RETURNING quote_count', [req.user.id]);
-      if (!claim.rows.length) return res.status(402).json({ error:'guest_limit', message:'You have completed your 3 free quotes. Create an account to keep them and continue.' });
-      const guestResult = await pool.query('INSERT INTO quotes (guest_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *', [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]);
-      const used = claim.rows[0].quote_count;
+      const client = await pool.connect();
+      let guestResult, used;
+      try {
+        await client.query('BEGIN');
+        const session = await client.query('SELECT ip_hash FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL FOR UPDATE', [req.user.id]);
+        if (!session.rows.length) {
+          await client.query('ROLLBACK');
+          return res.status(401).json({ error:'Guest session expired' });
+        }
+        const ipHash = session.rows[0].ip_hash;
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [ipHash]);
+        const usage = await client.query("SELECT COALESCE(SUM(quote_count),0)::int AS used FROM guest_sessions WHERE ip_hash=$1 AND created_at>NOW()-INTERVAL '30 days'", [ipHash]);
+        used = usage.rows[0].used;
+        if (used >= 3) {
+          await client.query('ROLLBACK');
+          return res.status(402).json({ error:'guest_limit', code:'guest_limit', message:'You have completed your 3 free quotes. Create an account to keep them and continue.' });
+        }
+        await client.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1', [req.user.id]);
+        guestResult = await client.query('INSERT INTO quotes (guest_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *', [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]);
+        used += 1;
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw e;
+      } finally {
+        client.release();
+      }
       await pool.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_number',$2::int,'total',$3::numeric))", [req.user.id, used, Number(total)||0]);
       await pool.query("INSERT INTO events(event_type,source,meta) VALUES('quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_id',$2::int,'total',$3::numeric))", [req.user.id, guestResult.rows[0].id, Number(total)||0]);
       sendToGA('guest_quote_completed', null, 'guest').catch(() => {});

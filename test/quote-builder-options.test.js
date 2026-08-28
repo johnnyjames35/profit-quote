@@ -65,3 +65,20 @@ test('customer-facing quote currency uses clear whole pounds', () => {
   assert.match(dashboard, /subtotalExVat=Math\.ceil/);
   assert.match(route, /Math\.round\(Number\(value\) \|\| 0\)/);
 });
+
+test('three free quotes are enforced when generated and across fresh browser sessions', () => {
+  const dashboard = fs.readFileSync(path.join(root, 'public', 'dashboard.html'), 'utf8');
+  const quotes = fs.readFileSync(path.join(root, 'routes', 'quotes.js'), 'utf8');
+  const guest = fs.readFileSync(path.join(root, 'routes', 'guest.js'), 'utf8');
+  const auth = fs.readFileSync(path.join(root, 'routes', 'auth.js'), 'utf8');
+
+  assert.match(dashboard, /A guest quote counts when it is generated/);
+  assert.match(dashboard, /if\(currentUser\?\.guest && !editingQuoteId\)/);
+  assert.match(dashboard, /editingQuoteId=saved\.id/);
+  assert.match(dashboard, /currentUser\?\.guest && currentUser\.guest_quotes_remaining<=0/);
+  assert.match(quotes, /pg_advisory_xact_lock/);
+  assert.match(quotes, /SUM\(quote_count\)/);
+  assert.match(quotes, /used >= 3/);
+  assert.match(guest, /SUM\(other\.quote_count\)/);
+  assert.match(auth, /SUM\(other\.quote_count\)/);
+});

@@ -1611,6 +1611,7 @@ async function initApp(startInBuilder=false){
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='none';
     const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
     const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent='Build your first professional quote — no signup needed';
+    if(currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
     if(startInBuilder || quotes.length===0) switchTab('builder');
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
@@ -2146,6 +2147,7 @@ function nextStep(n){
 }
 
 function resetBuilder(){
+  if(currentUser?.guest && currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
   clearBuilderDraft();
   editingQuoteId=null;
   ['q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -2294,6 +2296,36 @@ async function generateQuote(){
     total:total,
     profit_percent:profitPct
   };
+
+  // A guest quote counts when it is generated, not only if the separate Save button is pressed.
+  // Store it now so PDF/email/printing cannot be used to bypass the three-quote allowance.
+  if(currentUser?.guest && !editingQuoteId){
+    try{
+      const claim=await fetch(API+'/api/quotes',{
+        method:'POST',
+        headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify(currentQuoteData)
+      });
+      const saved=await claim.json();
+      if(!claim.ok){
+        if(saved.code==='guest_limit'||saved.error==='guest_limit') showGuestSignup();
+        else { nextStep(5); showToast('Could not generate this quote: '+(saved.error||'please try again')); }
+        return;
+      }
+      editingQuoteId=saved.id;
+      currentUser.guest_quotes_remaining=saved.guest_quotes_remaining;
+      const pill=document.getElementById('trial-pill');
+      if(pill) pill.textContent='3 free quotes · '+saved.guest_quotes_remaining+' remaining';
+      document.getElementById('btn-save-quote').textContent='💾 Saved';
+      clearBuilderDraft();
+      loadQuotes();
+      showToast(saved.guest_quotes_remaining?'Quote generated and saved — '+saved.guest_quotes_remaining+' free remaining':'Third free quote generated — create an account for your next quote');
+    }catch(e){
+      nextStep(5);
+      showToast('Connection error — the quote was not generated');
+      return;
+    }
+  }
 
   // Populate breakdown
   document.getElementById('result-labour').textContent='£'+labour.toLocaleString('en-GB');
