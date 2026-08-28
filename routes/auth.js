@@ -5,7 +5,7 @@ const https = require('https');
 const crypto = require('crypto');
 const { sendToGA } = require('../utils/ga');
 
-const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,markup_percent,profit_target,vat_registered,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
+const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,overhead_per_day,markup_percent,profit_target,vat_registered,vat_rate,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
 
 function sendBrevoEmail(to, subject, html) {
   return new Promise((resolve, reject) => {
@@ -223,7 +223,7 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
       const result = await pool.query('SELECT quote_count FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL', [req.user.id]);
       if (!result.rows.length) return res.status(401).json({ error: 'Guest session expired' });
       const used = result.rows[0].quote_count;
-      return res.json({ id:req.user.id,guest:true,name:'Guest',trade:'',plan:'guest',day_rate:250,hourly_rate:35,markup_percent:20,profit_target:30,business_name:'',phone:'',contact_email:'',town:'',is_guest:true,guest_quotes_used:used,guest_quotes_remaining:Math.max(0,3-used) });
+      return res.json({ id:req.user.id,guest:true,name:'Guest',trade:'',plan:'guest',day_rate:200,hourly_rate:35,overhead_per_day:50,markup_percent:20,profit_target:30,vat_rate:0,business_name:'',phone:'',contact_email:'',town:'',is_guest:true,guest_quotes_used:used,guest_quotes_remaining:Math.max(0,3-used) });
     }
     const result = await pool.query(
       `SELECT ${USER_FIELDS} FROM users WHERE id=$1`,

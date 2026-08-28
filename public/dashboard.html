@@ -882,7 +882,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="card">
           <div class="card-title">Labour</div>
           <div class="field-group"><label class="field-label">Number of Days</label><input class="field-input" id="q-days" type="number" placeholder="e.g. 5" min="0.5" step="0.5"></div>
-          <div class="field-group"><label class="field-label">Day Rate (£)</label><input class="field-input" id="q-day-rate" type="number" placeholder="e.g. 200"></div>
+          <div class="field-group"><label class="field-label">Daily Labour Cost (£)</label><input class="field-input" id="q-day-rate" type="number" min="0" placeholder="e.g. 200"><div class="field-hint">What one working day genuinely costs the business, including your wage.</div></div>
+          <div class="field-group"><label class="field-label">Daily Overhead Allowance (£)</label><input class="field-input" id="q-overhead" type="number" min="0" placeholder="e.g. 50"><div class="field-hint">Insurance, vehicle, tools, office and other running costs spread across working days.</div></div>
         </div>
         <button class="btn-next" onclick="nextStep(4)">Next →</button>
         <button class="btn-prev" onclick="nextStep(2)">← Back</button>
@@ -893,7 +894,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="card">
           <div class="card-title">Materials & Markup</div>
           <div class="field-group"><label class="field-label">Materials you are supplying (£)</label><input class="field-input" id="q-materials" type="number" placeholder="e.g. 800"></div>
-          <div class="field-group"><label class="field-label">Markup % on Materials</label><input class="field-input" id="q-markup" type="number" placeholder="e.g. 20"></div>
+          <div class="field-group"><label class="field-label">Minimum Markup % on Materials</label><input class="field-input" id="q-markup" type="number" min="0" placeholder="e.g. 20"><div class="field-hint">ProfitQuote will still protect the target margin across the complete job.</div></div>
           <div class="field-group">
             <label class="field-label">Is the client supplying any materials?</label>
             <div class="risk-row">
@@ -1005,12 +1006,14 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
             <div class="breakdown">
               <div class="breakdown-row"><span>Labour</span><span id="result-labour">£0</span></div>
-              <div class="breakdown-row"><span>Materials (inc. markup)</span><span id="result-materials">£0</span></div>
+              <div class="breakdown-row"><span>Materials</span><span id="result-materials">£0</span></div>
               <div class="breakdown-row" id="result-skip-row" style="display:none;"><span id="result-skip-label">Skip / Waste Disposal</span><span id="result-skip">£0</span></div>
               <div class="breakdown-row" id="result-scaffold-row" style="display:none;"><span>Scaffolding</span><span id="result-scaffold">£0</span></div>
               <div class="breakdown-row"><span>Contingency</span><span id="result-contingency">£0</span></div>
+              <div class="breakdown-row" id="result-vat-row" style="display:none;"><span id="result-vat-label">VAT</span><span id="result-vat">£0</span></div>
               <div class="breakdown-row total"><span>Total Quote</span><span id="result-total">£0</span></div>
             </div>
+            <div class="field-hint" id="result-cost-basis" style="margin-top:10px;"></div>
             <div id="room-summary" style="font-size:0.78rem;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);"></div>
             <div class="ai-actions">
               <button class="btn-action btn-save" id="btn-save-quote" onclick="saveQuote()">💾 Save</button>
@@ -1234,11 +1237,14 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="setup-field"><label class="setup-label">Town / City</label><input class="setup-input" id="setup-town" placeholder="e.g. Swansea"></div>
       </div>
       <div class="card">
-        <div class="card-title">Your Rates</div>
-        <div class="setup-field"><label class="setup-label">Day Rate (£)</label><input class="setup-input" id="setup-day-rate" type="number" placeholder="250"></div>
-        <div class="setup-field"><label class="setup-label">Hourly Rate (£)</label><input class="setup-input" id="setup-hourly" type="number" placeholder="35"></div>
+        <div class="card-title">Pricing Defaults</div>
+        <p style="font-size:0.78rem;color:var(--muted);line-height:1.55;margin-bottom:14px;">Set these once. ProfitQuote will use them automatically on new quotes.</p>
+        <div class="setup-field"><label class="setup-label">Daily Labour Cost (£)</label><input class="setup-input" id="setup-day-rate" type="number" min="0" placeholder="200"><div class="field-hint">Your wage or employee cost for one working day.</div></div>
+        <div class="setup-field"><label class="setup-label">Daily Overhead Allowance (£)</label><input class="setup-input" id="setup-overhead" type="number" min="0" placeholder="50"><div class="field-hint">Vehicle, insurance, tools, office and other business costs per working day.</div></div>
+        <div class="setup-field"><label class="setup-label">Hourly Cost (£)</label><input class="setup-input" id="setup-hourly" type="number" min="0" placeholder="35"></div>
         <div class="setup-field"><label class="setup-label">Default Markup % on Materials</label><input class="setup-input" id="setup-markup" type="number" placeholder="20"></div>
-        <div class="setup-field"><label class="setup-label">Profit Target %</label><input class="setup-input" id="setup-profit" type="number" placeholder="30"></div>
+        <div class="setup-field"><label class="setup-label">Target Profit Margin %</label><input class="setup-input" id="setup-profit" type="number" min="0" max="80" placeholder="30"></div>
+        <div class="setup-field"><label class="setup-label">VAT</label><select class="setup-input" id="setup-vat-rate"><option value="0">Not VAT registered</option><option value="20">VAT registered - add 20%</option></select></div>
         <button class="btn-save-setup" onclick="saveSettings()">Save Settings ✓</button>
       </div>
       <div class="card">
@@ -1327,7 +1333,7 @@ let currentBuilderStep = 1;
 const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
 const BUILDER_STEP_FIELDS = ['q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
   'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
-  'q-days','q-day-rate','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
+  'q-days','q-day-rate','q-overhead','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
   'q-contingency','q-profit-target'];
 
 function saveBuilderDraft(){
@@ -1625,17 +1631,20 @@ function populateUserUI(){
   document.getElementById('setup-avatar').textContent=initials;
   document.getElementById('setup-name').textContent=currentUser.name||'';
   document.getElementById('setup-trade').textContent=currentUser.trade||'';
-  document.getElementById('setup-day-rate').value=currentUser.day_rate||200;
-  document.getElementById('setup-hourly').value=currentUser.hourly_rate||35;
-  document.getElementById('setup-markup').value=currentUser.markup_percent||20;
-  document.getElementById('setup-profit').value=currentUser.profit_target||30;
+  document.getElementById('setup-day-rate').value=currentUser.day_rate??200;
+  document.getElementById('setup-hourly').value=currentUser.hourly_rate??35;
+  document.getElementById('setup-overhead').value=currentUser.overhead_per_day??50;
+  document.getElementById('setup-markup').value=currentUser.markup_percent??20;
+  document.getElementById('setup-profit').value=currentUser.profit_target??30;
+  document.getElementById('setup-vat-rate').value=String(Number(currentUser.vat_rate)||0);
   document.getElementById('setup-business').value=currentUser.business_name||'';
   document.getElementById('setup-phone').value=currentUser.phone||'';
   document.getElementById('setup-email').value=currentUser.contact_email||'';
   document.getElementById('setup-town').value=currentUser.town||'';
-  document.getElementById('q-day-rate').value=currentUser.day_rate||200;
-  document.getElementById('q-markup').value=currentUser.markup_percent||20;
-  document.getElementById('q-profit-target').value=currentUser.profit_target||30;
+  document.getElementById('q-day-rate').value=currentUser.day_rate??200;
+  document.getElementById('q-overhead').value=currentUser.overhead_per_day??50;
+  document.getElementById('q-markup').value=currentUser.markup_percent??20;
+  document.getElementById('q-profit-target').value=currentUser.profit_target??30;
   const h=new Date().getHours();
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
   if(currentUser.guest){
@@ -1840,13 +1849,14 @@ document.getElementById('q-customer').value=q.customer_name||qd.customer_name||'
 document.getElementById('q-email').value=q.customer_email||qd.customer_email||'';
 document.getElementById('q-postcode').value=qd.postcode||q.postcode||'';
 document.getElementById('q-days').value=q.days||qd.days||1;
-document.getElementById('q-day-rate').value=q.day_rate||qd.day_rate||currentUser?.day_rate||200;
+document.getElementById('q-day-rate').value=q.day_rate??qd.day_rate??currentUser?.day_rate??200;
+document.getElementById('q-overhead').value=qd.overheadPerDay??currentUser?.overhead_per_day??50;
 document.getElementById('q-materials').value=qd.materials||q.materials||0;
-  document.getElementById('q-markup').value=q.markup_percent||currentUser?.markup_percent||20;
+  document.getElementById('q-markup').value=q.markup_percent??currentUser?.markup_percent??20;
   setClientMaterials(!!qd.clientSuppliesMaterials);
   document.getElementById('q-client-materials').value=qd.clientSuppliedItems||'';
-  document.getElementById('q-profit-target').value=q.profit_target||currentUser?.profit_target||30;
-  document.getElementById('q-contingency').value=qd.contingency||10;
+  document.getElementById('q-profit-target').value=q.profit_target??currentUser?.profit_target??30;
+  document.getElementById('q-contingency').value=qd.contingency??10;
 
   // Restore room dimensions
   if(qd.lenM){ document.getElementById('q-length-m').value=qd.lenM; convertRoom('m','length'); }
@@ -1900,26 +1910,27 @@ function updateHomeStats(){
   const thisMonth=quotes.filter(q=>new Date(q.created_at)>=monthStart);
   const thisYear=quotes.filter(q=>new Date(q.created_at)>=yearStart);
   const wonQuotes=quotes.filter(q=>q.status==='won');
+  const reliableProfitQuotes=quotes.filter(q=>q.quote_data?.pricingVersion===2);
 
   // Profit this year
   const profitYear=thisYear.reduce((sum,q)=>{
-    const t=parseFloat(q.total||0);
-    const pp=parseFloat(q.profit_percent||0)/100;
-    return sum+(t*pp);
+    if(q.quote_data?.pricingVersion!==2) return sum;
+    const savedProfit=Number(q.quote_data?.profit);
+    return sum+(Number.isFinite(savedProfit)?savedProfit:0);
   },0);
 
   // Profit this month
   const profitMonth=thisMonth.reduce((sum,q)=>{
-    const t=parseFloat(q.total||0);
-    const pp=parseFloat(q.profit_percent||0)/100;
-    return sum+(t*pp);
+    if(q.quote_data?.pricingVersion!==2) return sum;
+    const savedProfit=Number(q.quote_data?.profit);
+    return sum+(Number.isFinite(savedProfit)?savedProfit:0);
   },0);
 
   // Avg quote value
   const avgVal=quotes.length>0?(quotes.reduce((s,q)=>s+parseFloat(q.total||0),0)/quotes.length):0;
 
   // Avg margin (quote health)
-  const avgMargin=quotes.length>0?Math.round(quotes.reduce((s,q)=>s+parseFloat(q.profit_percent||0),0)/quotes.length):null;
+  const avgMargin=reliableProfitQuotes.length>0?Math.round(reliableProfitQuotes.reduce((s,q)=>s+parseFloat(q.profit_percent||0),0)/reliableProfitQuotes.length):null;
 
   // Conversion
   const conversion=quotes.length>0?Math.round((wonQuotes.length/quotes.length)*100):null;
@@ -2049,11 +2060,11 @@ function renderProfitCoach(){
   }
 
   // Calculate avg margin from last 3 quotes that match this job type
-  const matchingQuotes=quotes.filter(q=>{
+  const matchingQuotes=quotes.filter(q=>q.quote_data?.pricingVersion===2).filter(q=>{
     const qj=(q.job_description||'').toLowerCase();
     return matched.kw&&matched.kw.some(k=>qj.includes(k));
   }).slice(0,3);
-  const recentQuotes=quotes.slice(0,3);
+  const recentQuotes=quotes.filter(q=>q.quote_data?.pricingVersion===2).slice(0,3);
   const dataQuotes=matchingQuotes.length>=1?matchingQuotes:recentQuotes;
   const avgMarginData=dataQuotes.length>0?Math.round(dataQuotes.reduce((s,q)=>s+parseFloat(q.profit_percent||0),0)/dataQuotes.length):null;
   const jobTypeLabel=matchingQuotes.length>=1?matched.label:'recent jobs';
@@ -2148,9 +2159,10 @@ function resetBuilder(){
   updateSkipTotal();
   ['length-m-conv','length-ft-conv','width-m-conv','width-ft-conv','height-m-conv','height-ft-conv'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=''; });
   document.getElementById('room-area').textContent='';
-  document.getElementById('q-day-rate').value=currentUser?.day_rate||200;
-  document.getElementById('q-markup').value=currentUser?.markup_percent||20;
-  document.getElementById('q-profit-target').value=currentUser?.profit_target||30;
+  document.getElementById('q-day-rate').value=currentUser?.day_rate??200;
+  document.getElementById('q-overhead').value=currentUser?.overhead_per_day??50;
+  document.getElementById('q-markup').value=currentUser?.markup_percent??20;
+  document.getElementById('q-profit-target').value=currentUser?.profit_target??30;
   document.getElementById('q-contingency').value=10;
   selectedRisk='low'; setRisk('low');
   document.getElementById('ai-output').style.display='none';
@@ -2160,6 +2172,31 @@ function resetBuilder(){
   document.getElementById('edit-badge').style.display='none';
   document.getElementById('btn-save-quote').textContent='💾 Save';
   nextStep(1);
+}
+
+function calculateProtectedPrice({days,dayRate,overheadPerDay,materials,markup,skipCost,scaffoldCost,contingency,profitTarget,vatRate}){
+  const extras=skipCost+scaffoldCost;
+  const directLabourCost=days*dayRate;
+  const overheadCost=days*overheadPerDay;
+  const knownCost=directLabourCost+overheadCost+materials+extras;
+  const contingencyAmt=knownCost*(contingency/100);
+  const protectedCost=knownCost+contingencyAmt;
+  const targetSubtotal=protectedCost/(1-(profitTarget/100));
+  const materialsMarkupFloor=protectedCost+(materials*(markup/100));
+  const subtotalExVat=Math.max(targetSubtotal,materialsMarkupFloor);
+  const pricingFactor=protectedCost>0?subtotalExVat/protectedCost:1;
+  const profit=subtotalExVat-protectedCost;
+  return {
+    directLabourCost,overheadCost,knownCost,contingencyAmt,protectedCost,subtotalExVat,
+    labour:(directLabourCost+overheadCost)*pricingFactor,
+    mats:materials*pricingFactor,
+    skipPrice:skipCost*pricingFactor,
+    scaffoldPrice:scaffoldCost*pricingFactor,
+    contingencyPrice:contingencyAmt*pricingFactor,
+    profit,profitPct:subtotalExVat>0?Math.round((profit/subtotalExVat)*100):0,
+    vatAmount:subtotalExVat*(vatRate/100),
+    total:subtotalExVat*(1+(vatRate/100))
+  };
 }
 
 function calcHealthScore(profitPct, contingency, risk, hasSkip, hasScaffold, desc){
@@ -2199,24 +2236,19 @@ async function generateQuote(){
   const jobType=document.getElementById('q-job-type').value;
   const extraNotes=document.getElementById('q-extra').value.trim();
   const days=parseFloat(document.getElementById('q-days').value)||1;
-  const dayRate=parseFloat(document.getElementById('q-day-rate').value)||200;
-  const materials=parseFloat(document.getElementById('q-materials').value)||0;
-  const markup=parseFloat(document.getElementById('q-markup').value)||20;
-  const contingency=parseFloat(document.getElementById('q-contingency').value)||10;
-  const profitTarget=parseFloat(document.getElementById('q-profit-target').value)||30;
+  const dayRate=Math.max(0,parseFloat(document.getElementById('q-day-rate').value)||0);
+  const overheadPerDay=Math.max(0,parseFloat(document.getElementById('q-overhead').value)||0);
+  const materials=Math.max(0,parseFloat(document.getElementById('q-materials').value)||0);
+  const markup=Math.max(0,parseFloat(document.getElementById('q-markup').value)||0);
+  const contingency=Math.max(0,parseFloat(document.getElementById('q-contingency').value)||0);
+  const profitTarget=Math.max(0,Math.min(80,parseFloat(document.getElementById('q-profit-target').value)||0));
   const skipQuantity=needsSkip?Math.max(1,Math.min(20,parseInt(document.getElementById('q-skip-quantity').value,10)||1)):0;
   const skipUnitCost=needsSkip?(parseFloat(document.getElementById('q-skip-cost').value)||0):0;
   const skipCost=skipQuantity*skipUnitCost;
   const clientSuppliedItems=clientSuppliesMaterials?document.getElementById('q-client-materials').value.trim():'';
   const scaffoldCost=needsScaffold?(parseFloat(document.getElementById('q-scaffold-cost').value)||0):0;
-  const labour=days*dayRate;
-  const mats=materials*(1+(markup/100));
-  const extras=skipCost+scaffoldCost;
-  const subtotal=labour+mats+extras;
-  const contingencyAmt=subtotal*(contingency/100);
-  const total=subtotal+contingencyAmt;
-  const profit=total-(labour+materials+extras);
-  const profitPct=total>0?Math.round((profit/total)*100):0;
+  const vatRate=Math.max(0,Number(currentUser?.vat_rate)||0);
+  const {directLabourCost,overheadCost,knownCost,contingencyAmt,protectedCost,subtotalExVat,labour,mats,skipPrice,scaffoldPrice,contingencyPrice,profit,profitPct,vatAmount,total}=calculateProtectedPrice({days,dayRate,overheadPerDay,materials,markup,skipCost,scaffoldCost,contingency,profitTarget,vatRate});
 
   // Room summary
   const lenM=parseFloat(document.getElementById('q-length-m').value)||0;
@@ -2255,7 +2287,7 @@ async function generateQuote(){
     markup_percent:markup,
     profit_target:profitTarget,
     other_costs:scaffoldCost>0?'Scaffolding: £'+scaffoldCost:null,
-    quote_data:{labour,materials,mats,contingencyAmt,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,lenM,widM,lenFt,widFt,contingency,postcode:document.getElementById('q-postcode').value},
+    quote_data:{pricingVersion:2,labour,materials,mats,directLabourCost,overheadPerDay,overheadCost,knownCost,protectedCost,subtotalExVat,contingencyAmt,contingencyPrice,vatRate,vatAmount,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipPrice,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,scaffoldPrice,lenM,widM,lenFt,widFt,contingency,postcode:document.getElementById('q-postcode').value},
     total:total,
     profit_percent:profitPct
   };
@@ -2263,19 +2295,24 @@ async function generateQuote(){
   // Populate breakdown
   document.getElementById('result-labour').textContent='£'+labour.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-materials').textContent='£'+mats.toLocaleString('en-GB',{minimumFractionDigits:2});
-  document.getElementById('result-contingency').textContent='£'+contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2});
+  document.getElementById('result-contingency').textContent='£'+contingencyPrice.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-total').textContent='£'+total.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('result-profit-badge').textContent='+£'+Math.round(profit).toLocaleString('en-GB')+' profit ('+profitPct+'%)';
+  document.getElementById('result-cost-basis').textContent='Protected job cost: £'+protectedCost.toLocaleString('en-GB',{minimumFractionDigits:2})+' · Selling price before VAT: £'+subtotalExVat.toLocaleString('en-GB',{minimumFractionDigits:2});
+  const vatRow=document.getElementById('result-vat-row');
+  vatRow.style.display=vatAmount>0?'flex':'none';
+  document.getElementById('result-vat-label').textContent='VAT ('+vatRate+'%)';
+  document.getElementById('result-vat').textContent='£'+vatAmount.toLocaleString('en-GB',{minimumFractionDigits:2});
   document.getElementById('quote-builder-details').textContent=builderDetails;
   document.getElementById('room-summary').textContent=roomSummary;
   if(needsSkip&&skipCost>0){
     document.getElementById('result-skip-row').style.display='flex';
     document.getElementById('result-skip-label').textContent=skipQuantity>1?skipQuantity+' Skips / Waste Disposal':'Skip / Waste Disposal';
-    document.getElementById('result-skip').textContent='£'+skipCost.toLocaleString('en-GB',{minimumFractionDigits:2});
+    document.getElementById('result-skip').textContent='£'+skipPrice.toLocaleString('en-GB',{minimumFractionDigits:2});
   } else { document.getElementById('result-skip-row').style.display='none'; }
   if(needsScaffold&&scaffoldCost>0){
     document.getElementById('result-scaffold-row').style.display='flex';
-    document.getElementById('result-scaffold').textContent='£'+scaffoldCost.toLocaleString('en-GB',{minimumFractionDigits:2});
+    document.getElementById('result-scaffold').textContent='£'+scaffoldPrice.toLocaleString('en-GB',{minimumFractionDigits:2});
   } else { document.getElementById('result-scaffold-row').style.display='none'; }
 
   // Quote Health Score
@@ -2409,6 +2446,9 @@ function buildLegacyEmailDraft(){
   const total=currentQuoteData.total||0;
   const desc=currentQuoteData.job_description||'';
   const qd=currentQuoteData.quote_data||{};
+  const skipDisplay=qd.skipPrice??qd.skipCost??0;
+  const scaffoldDisplay=qd.scaffoldPrice??qd.scaffoldCost??0;
+  const contingencyDisplay=qd.contingencyPrice??qd.contingencyAmt??0;
 
   // Detect job type for personalised opening
   const descLower=desc.toLowerCase();
@@ -2431,8 +2471,8 @@ function buildLegacyEmailDraft(){
   const includes=[];
   includes.push('✔  Labour');
   includes.push('✔  Materials');
-  if(qd.skipCost>0) includes.push('✔  '+(qd.skipQuantity>1?qd.skipQuantity+' Skips & Waste Disposal':'Skip & Waste Disposal'));
-  if(qd.scaffoldCost>0) includes.push('✔  Scaffolding');
+  if(skipDisplay>0) includes.push('✔  '+(qd.skipQuantity>1?qd.skipQuantity+' Skips & Waste Disposal':'Skip & Waste Disposal'));
+  if(scaffoldDisplay>0) includes.push('✔  Scaffolding');
   includes.push('✔  Contingency');
 
   // Price breakdown with dot leaders
@@ -2444,9 +2484,10 @@ function buildLegacyEmailDraft(){
   const breakdownLines=[];
   if(qd.labour>0) breakdownLines.push(pad('Labour',qd.labour));
   if(qd.mats>0) breakdownLines.push(pad('Materials',qd.mats));
-  if(qd.skipCost>0) breakdownLines.push(pad(qd.skipQuantity>1?qd.skipQuantity+' Skips & Waste':'Skip & Waste',qd.skipCost));
-  if(qd.scaffoldCost>0) breakdownLines.push(pad('Scaffolding',qd.scaffoldCost));
-  if(qd.contingencyAmt>0) breakdownLines.push(pad('Contingency',qd.contingencyAmt));
+  if(skipDisplay>0) breakdownLines.push(pad(qd.skipQuantity>1?qd.skipQuantity+' Skips & Waste':'Skip & Waste',skipDisplay));
+  if(scaffoldDisplay>0) breakdownLines.push(pad('Scaffolding',scaffoldDisplay));
+  if(contingencyDisplay>0) breakdownLines.push(pad('Contingency',contingencyDisplay));
+  if(qd.vatAmount>0) breakdownLines.push(pad('VAT ('+(qd.vatRate||20)+'%)',qd.vatAmount));
 
   // Signature block
   const sigLines=[];
@@ -2540,6 +2581,9 @@ function printQuote(){
   const total=currentQuoteData.total||0;
   const desc=currentQuoteData.job_description||'';
   const qd=currentQuoteData.quote_data||{};
+  const skipDisplay=qd.skipPrice??qd.skipCost??0;
+  const scaffoldDisplay=qd.scaffoldPrice??qd.scaffoldCost??0;
+  const contingencyDisplay=qd.contingencyPrice??qd.contingencyAmt??0;
   const date=new Date().toLocaleDateString('en-GB');
   const ref='QUO-'+Date.now().toString().slice(-5);
 
@@ -2564,9 +2608,9 @@ function printQuote(){
   const includesRows=[];
   if(qd.labour>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> Labour</div>');
   if(qd.mats>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> Materials</div>');
-  if(qd.skipCost>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> '+(qd.skipQuantity>1?qd.skipQuantity+' Skips & Waste Disposal':'Skip & Waste Disposal')+'</div>');
-  if(qd.scaffoldCost>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> Scaffolding</div>');
-  if(qd.contingencyAmt>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> Contingency</div>');
+  if(skipDisplay>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> '+(qd.skipQuantity>1?qd.skipQuantity+' Skips & Waste Disposal':'Skip & Waste Disposal')+'</div>');
+  if(scaffoldDisplay>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> Scaffolding</div>');
+  if(contingencyDisplay>0) includesRows.push('<div class="check-row"><span class="check-icon">✓</span> Contingency</div>');
 
   const html=`<!DOCTYPE html>
 <html>
@@ -2652,9 +2696,10 @@ function printQuote(){
       <div class="section-label">Breakdown</div>
       ${qd.labour>0?`<div class="breakdown-row"><span>Labour</span><span>£${qd.labour.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
       ${qd.mats>0?`<div class="breakdown-row"><span>Materials</span><span>£${qd.mats.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
-      ${qd.skipCost>0?`<div class="breakdown-row"><span>${qd.skipQuantity>1?qd.skipQuantity+' Skips / Waste Disposal':'Skip / Waste Disposal'}</span><span>£${qd.skipCost.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
-      ${qd.scaffoldCost>0?`<div class="breakdown-row"><span>Scaffolding</span><span>£${qd.scaffoldCost.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
-      ${qd.contingencyAmt>0?`<div class="breakdown-row"><span>Contingency</span><span>£${qd.contingencyAmt.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
+      ${skipDisplay>0?`<div class="breakdown-row"><span>${qd.skipQuantity>1?qd.skipQuantity+' Skips / Waste Disposal':'Skip / Waste Disposal'}</span><span>£${skipDisplay.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
+      ${scaffoldDisplay>0?`<div class="breakdown-row"><span>Scaffolding</span><span>£${scaffoldDisplay.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
+      ${contingencyDisplay>0?`<div class="breakdown-row"><span>Contingency</span><span>£${contingencyDisplay.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
+      ${qd.vatAmount>0?`<div class="breakdown-row"><span>VAT (${qd.vatRate||20}%)</span><span>£${qd.vatAmount.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>`:''}
       <div class="breakdown-row"><span>Total</span><span>£${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
     </div>
     <div class="includes">
@@ -2804,10 +2849,12 @@ function copyVariation(){
 
 async function saveSettings(){
   const body={
-    day_rate:parseFloat(document.getElementById('setup-day-rate').value)||200,
-    hourly_rate:parseFloat(document.getElementById('setup-hourly').value)||35,
-    markup_percent:parseFloat(document.getElementById('setup-markup').value)||20,
-    profit_target:parseFloat(document.getElementById('setup-profit').value)||30,
+    day_rate:Math.max(0,parseFloat(document.getElementById('setup-day-rate').value)||0),
+    hourly_rate:Math.max(0,parseFloat(document.getElementById('setup-hourly').value)||0),
+    overhead_per_day:Math.max(0,parseFloat(document.getElementById('setup-overhead').value)||0),
+    markup_percent:Math.max(0,parseFloat(document.getElementById('setup-markup').value)||0),
+    profit_target:Math.max(0,Math.min(80,parseFloat(document.getElementById('setup-profit').value)||0)),
+    vat_rate:Math.max(0,parseFloat(document.getElementById('setup-vat-rate').value)||0),
     business_name:document.getElementById('setup-business').value.trim(),
     phone:document.getElementById('setup-phone').value.trim(),
     contact_email:document.getElementById('setup-email').value.trim(),
@@ -2818,6 +2865,7 @@ async function saveSettings(){
     if(res.ok){
       currentUser={...currentUser,...body};
       document.getElementById('q-day-rate').value=body.day_rate;
+      document.getElementById('q-overhead').value=body.overhead_per_day;
       document.getElementById('q-markup').value=body.markup_percent;
       document.getElementById('q-profit-target').value=body.profit_target;
       document.getElementById('step-rates').className='step-num done';

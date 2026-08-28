@@ -16,8 +16,9 @@ function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, 
     const items = String(description || '').split(/,|;|\n| and /i).map((item) => item.trim()).filter((item) => item.length > 4).slice(0, 30);
     const breakdown = [
       ['Labour', quoteData.labour], ['Materials', quoteData.mats],
-      [Number(quoteData.skipQuantity) > 1 ? `${Number(quoteData.skipQuantity)} Skips & Waste Disposal` : 'Skip & Waste Disposal', quoteData.skipCost],
-      ['Scaffolding', quoteData.scaffoldCost], ['Contingency', quoteData.contingencyAmt]
+      [Number(quoteData.skipQuantity) > 1 ? `${Number(quoteData.skipQuantity)} Skips & Waste Disposal` : 'Skip & Waste Disposal', quoteData.skipPrice ?? quoteData.skipCost],
+      ['Scaffolding', quoteData.scaffoldPrice ?? quoteData.scaffoldCost], ['Contingency', quoteData.contingencyPrice ?? quoteData.contingencyAmt],
+      [Number(quoteData.vatRate) > 0 ? `VAT (${Number(quoteData.vatRate)}%)` : 'VAT', quoteData.vatAmount]
     ].filter(([, value]) => Number(value) > 0).map(([label, value]) => `${label}: ${money(value)}`);
     const textContent = [
       `Dear ${String(customerName || 'Customer').slice(0, 200)},`, '',
