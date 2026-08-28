@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 const { startDailyTrafficEmailScheduler } = require('./utils/daily-traffic-email');
+const { startTrialEmailScheduler } = require('./utils/trialEmails');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -105,6 +106,7 @@ async function init() {
     await pool.query(schema);
     console.log('Database ready');
     startDailyTrafficEmailScheduler(pool);
+        startTrialEmailScheduler(pool);
   } catch(e) {
     console.error('DB init error:', e.message);
   }
