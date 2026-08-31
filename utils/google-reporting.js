@@ -65,6 +65,35 @@ function topSearchRows(rows, key) {
     .slice(0, 15);
 }
 
+function classifySearchOpportunities(rows, { meaningfulImpressions = 5, lowImpressionThreshold = 2 } = {}) {
+  const queryPages = (rows || []).map((row) => {
+    const impressions = searchMetric(row, 1);
+    const averagePosition = searchMetric(row, 3);
+    const lowImpression = impressions <= lowImpressionThreshold;
+    let category = 'noise';
+    if (impressions >= meaningfulImpressions && averagePosition >= 8 && averagePosition <= 30) category = 'quickWins';
+    else if (impressions >= meaningfulImpressions && averagePosition > 30 && averagePosition <= 100) category = 'longerTerm';
+    return {
+      query: row.keys?.[0] || '',
+      page: row.keys?.[1] || '',
+      clicks: searchMetric(row, 0),
+      impressions,
+      ctr: searchMetric(row, 2),
+      averagePosition,
+      lowImpression,
+      positionWarning: lowImpression ? `Position is based on only ${impressions} impression${impressions === 1 ? '' : 's'}` : null,
+      category
+    };
+  }).sort((a, b) => b.impressions - a.impressions || a.averagePosition - b.averagePosition);
+  return {
+    thresholds: { meaningfulImpressions, lowImpressionThreshold, quickWinPosition: { min: 8, max: 30 }, longerTermPosition: { minExclusive: 30, max: 100 } },
+    queryPages,
+    quickWins: queryPages.filter((row) => row.category === 'quickWins'),
+    longerTerm: queryPages.filter((row) => row.category === 'longerTerm'),
+    noise: queryPages.filter((row) => row.category === 'noise')
+  };
+}
+
 function reportingDimensionFilter(hostname) {
   return {
     andGroup: {
@@ -136,6 +165,7 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = s
     googlePost(scUrl, scRange, token, fetchImpl),
     googlePost(scUrl, { ...scTopRange, dimensions: ['query'], rowLimit: 100 }, token, fetchImpl),
     googlePost(scUrl, { ...scTopRange, dimensions: ['page'], rowLimit: 100 }, token, fetchImpl),
+    googlePost(scUrl, { ...scTopRange, dimensions: ['query', 'page'], rowLimit: 25000 }, token, fetchImpl),
     ...(includeComparisons ? [
       gaSummary(comparisonRanges.sevenDay.current), gaSummary(comparisonRanges.sevenDay.previous),
       scSummary(comparisonRanges.sevenDay.searchCurrent), scSummary(comparisonRanges.sevenDay.searchPrevious),
@@ -143,7 +173,7 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = s
       scSummary(comparisonRanges.thirtyDay.searchCurrent), scSummary(comparisonRanges.thirtyDay.searchPrevious)
     ] : [])
   ]);
-  const [gaTotals, gaSources, gaPages, scTotals, scQueries, scPages, ga7, gaPrevious7, sc7, scPrevious7, ga30, gaPrevious30, sc30, scPrevious30] = responses;
+  const [gaTotals, gaSources, gaPages, scTotals, scQueries, scPages, scQueryPages, ga7, gaPrevious7, sc7, scPrevious7, ga30, gaPrevious30, sc30, scPrevious30] = responses;
   const totals = scTotals.rows?.[0] || {};
   function comparison(period, ranges, currentGa, previousGa, currentSc, previousSc) {
     const currentGaRow = currentGa.rows?.[0];
@@ -157,7 +187,7 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = s
   const report = {
     date, generatedAt: new Date().toISOString(), reportWindow: { type: 'calendar-day', timezone: 'Europe/London', startDate: date, endDate: date },
     ga4: { date, provisional: true, excludesAdminTraffic: true, users: metric(gaTotals.rows?.[0], 0), sessions: metric(gaTotals.rows?.[0], 1), trafficSources: (gaSources.rows || []).map((row) => ({ source: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })), landingPages: (gaPages.rows || []).map((row) => ({ page: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })) },
-    searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), topResultsPeriod: { startDate: scTopRange.startDate, endDate: scTopRange.endDate, days: 30 }, topQueries: topSearchRows(scQueries.rows, 'query'), topPages: topSearchRows(scPages.rows, 'page') }
+    searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), averagePositionContext: 'Property-wide impression-weighted average across all queries, pages, devices and countries; it is not a rank for a specific search.', topResultsPeriod: { startDate: scTopRange.startDate, endDate: scTopRange.endDate, days: 30 }, topQueries: topSearchRows(scQueries.rows, 'query'), topPages: topSearchRows(scPages.rows, 'page'), opportunities: classifySearchOpportunities(scQueryPages.rows) }
   };
   if (includeComparisons) report.comparisons = {
       sevenDay: comparison('7 days', comparisonRanges.sevenDay, ga7, gaPrevious7, sc7, scPrevious7),
@@ -223,4 +253,4 @@ async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env
   };
 }
 function clearTokenCache() { cachedToken = null; }
-module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, clearTokenCache, validateDate };
+module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, classifySearchOpportunities, clearTokenCache, validateDate };

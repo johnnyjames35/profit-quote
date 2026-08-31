@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
-const { getDailyTrafficReport, getLiveSearchReport, clearTokenCache, validateDate } = require('../utils/google-reporting');
+const { getDailyTrafficReport, getLiveSearchReport, classifySearchOpportunities, clearTokenCache, validateDate } = require('../utils/google-reporting');
 
 const { privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
 const env = {
@@ -21,6 +21,10 @@ test('returns normalized GA4 and Search Console metrics', async () => {
     { rows: [{ clicks: 5, impressions: 100, ctr: 0.05, position: 4.2 }] },
     { rows: [{ keys: ['clicked query'], clicks: 3, impressions: 40, ctr: 0.075, position: 3.1 }, { keys: ['builder quote'], clicks: 1, impressions: 90, ctr: 0.011, position: 8.2 }] },
     { rows: [{ keys: ['https://profitquote.co.uk/'], clicks: 4, impressions: 70, ctr: 0.057, position: 3.8 }] },
+    { rows: [
+      { keys: ['builder quote template', 'https://profitquote.co.uk/builder-quote-template'], clicks: 1, impressions: 20, ctr: 0.05, position: 18 },
+      { keys: ['rare query', 'https://profitquote.co.uk/'], clicks: 0, impressions: 1, ctr: 0, position: 4 }
+    ] },
     { rows: [{ metricValues: [{ value: '70' }, { value: '90' }] }] },
     { rows: [{ metricValues: [{ value: '50' }, { value: '60' }] }] },
     { rows: [{ clicks: 20, impressions: 400, ctr: 0.05, position: 4 }] },
@@ -37,11 +41,15 @@ test('returns normalized GA4 and Search Console metrics', async () => {
   assert.equal(result.ga4.excludesAdminTraffic, true);
   assert.deepEqual(result.reportWindow, { type: 'calendar-day', timezone: 'Europe/London', startDate: '2026-08-12', endDate: '2026-08-12' });
   assert.equal(result.ga4.trafficSources[0].source, 'Organic Search'); assert.equal(result.searchConsole.clicks, 5);
-  assert.equal(result.searchConsole.topQueries[0].query, 'builder quote'); assert.equal(calls.length, 15);
+  assert.equal(result.searchConsole.topQueries[0].query, 'builder quote'); assert.equal(calls.length, 16);
+  assert.equal(result.searchConsole.opportunities.quickWins[0].page, 'https://profitquote.co.uk/builder-quote-template');
+  assert.equal(result.searchConsole.opportunities.noise[0].lowImpression, true);
+  assert.match(result.searchConsole.averagePositionContext, /not a rank/);
   assert.equal(result.searchConsole.date, '2026-08-10');
   assert.deepEqual(result.searchConsole.topResultsPeriod, { startDate: '2026-07-12', endDate: '2026-08-10', days: 30 });
   assert.deepEqual(JSON.parse(calls[5].options.body), { startDate: '2026-07-12', endDate: '2026-08-10', dimensions: ['query'], rowLimit: 100 });
   assert.deepEqual(JSON.parse(calls[6].options.body), { startDate: '2026-07-12', endDate: '2026-08-10', dimensions: ['page'], rowLimit: 100 });
+  assert.deepEqual(JSON.parse(calls[7].options.body), { startDate: '2026-07-12', endDate: '2026-08-10', dimensions: ['query', 'page'], rowLimit: 25000 });
   assert.equal(result.comparisons.sevenDay.current.sessions, 90);
   assert.equal(result.comparisons.sevenDay.change.sessions, 0.5);
   assert.equal(result.comparisons.thirtyDay.current.clicks, 80);
@@ -83,6 +91,17 @@ test('returns the latest 24 available Search Console hours and aggregates pages'
   assert.equal(result.window.estimatedThrough, '2026-08-27T12:00:00.000Z');
   assert.equal(JSON.parse(calls[1].body).dataState, 'HOURLY_ALL');
   assert.deepEqual(JSON.parse(calls[2].body).dimensions, ['HOUR', 'PAGE']);
+});
+
+test('classifies query and page combinations without treating tiny samples as opportunities', () => {
+  const result = classifySearchOpportunities([
+    { keys: ['quick', '/quick'], clicks: 1, impressions: 12, ctr: 0.08, position: 14 },
+    { keys: ['later', '/later'], clicks: 0, impressions: 9, ctr: 0, position: 42 },
+    { keys: ['tiny', '/tiny'], clicks: 0, impressions: 2, ctr: 0, position: 9 }
+  ]);
+  assert.equal(result.quickWins[0].query, 'quick');
+  assert.equal(result.longerTerm[0].query, 'later');
+  assert.equal(result.noise[0].positionWarning, 'Position is based on only 2 impressions');
 });
 
 test('does not include Search Console hours marked incomplete', async () => {

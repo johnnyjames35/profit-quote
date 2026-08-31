@@ -12,6 +12,7 @@
 </script> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>ProfitQuote — Admin</title>
   <script type="text/javascript">
 (function(c,l,a,r,i,t,y){
@@ -509,7 +510,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-card"><div class="stat-label">Search Clicks</div><div class="stat-val amber" id="r-clicks">—</div><div class="stat-sub">Daily Google clicks</div></div>
           <div class="stat-card"><div class="stat-label">Search Impressions</div><div class="stat-val amber" id="r-impressions">—</div><div class="stat-sub">Daily Google impressions</div></div>
           <div class="stat-card"><div class="stat-label">Search CTR</div><div class="stat-val green" id="r-ctr">—</div><div class="stat-sub">Click-through rate</div></div>
-          <div class="stat-card"><div class="stat-label">Average Position</div><div class="stat-val green" id="r-position">—</div><div class="stat-sub">Google search position</div></div>
+          <div class="stat-card"><div class="stat-label">Aggregate Avg. Position</div><div class="stat-val green" id="r-position">—</div><div class="stat-sub">Across all impressions; not a rank for one query</div></div>
         </div>
 
         <div class="report-section">
@@ -523,6 +524,12 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
             <div class="report-table-card"><div class="table-title" id="landing-pages-title">GA4 landing pages</div><ul class="report-list" id="r-landing-pages"></ul></div>
             <div class="report-table-card"><div class="table-title" id="queries-title">Search opportunities</div><ul class="report-list" id="r-queries"></ul></div>
             <div class="report-table-card"><div class="table-title" id="pages-title">Search pages</div><ul class="report-list" id="r-pages"></ul></div>
+          </div>
+          <div class="report-message" id="position-context"></div>
+          <div class="report-tables">
+            <div class="report-table-card"><div class="table-title">Quick wins · positions 8–30, 5+ impressions</div><ul class="report-list" id="r-quick-wins"></ul></div>
+            <div class="report-table-card"><div class="table-title">Longer term · positions 31–100, 5+ impressions</div><ul class="report-list" id="r-longer-term"></ul></div>
+            <div class="report-table-card"><div class="table-title">Low-signal / other combinations</div><ul class="report-list" id="r-search-noise"></ul></div>
           </div>
         </div>
       </div>
@@ -651,6 +658,7 @@ function renderReporting(data, live = {}) {
   document.getElementById('r-impressions').textContent = number(search.impressions);
   document.getElementById('r-ctr').textContent = percent(search.ctr);
   document.getElementById('r-position').textContent = decimal(search.averagePosition);
+  document.getElementById('position-context').textContent = search.averagePositionContext || 'Average position is aggregated across all impressions and does not represent a rank for one query.';
   document.getElementById('live-clicks').textContent = live.error ? '—' : number(live.clicks);
   document.getElementById('live-impressions').textContent = live.error ? '—' : number(live.impressions);
   document.getElementById('live-ctr').textContent = live.error ? '—' : percent(live.ctr);
@@ -674,6 +682,29 @@ function renderReporting(data, live = {}) {
   renderReportList('r-landing-pages', ga4.landingPages, 'page', item => number(item.sessions) + ' sessions');
   renderReportList('r-queries', search.topQueries, 'query', item => number(item.clicks) + ' clicks');
   renderReportList('r-pages', search.topPages, 'page', item => number(item.clicks) + ' clicks');
+  const opportunities = search.opportunities || {};
+  renderSearchOpportunityList('r-quick-wins', opportunities.quickWins);
+  renderSearchOpportunityList('r-longer-term', opportunities.longerTerm);
+  renderSearchOpportunityList('r-search-noise', opportunities.noise);
+}
+
+function renderSearchOpportunityList(id, items) {
+  const list = document.getElementById(id);
+  if (!items || !items.length) {
+    list.innerHTML = '<li><span class="report-list-name">No combinations in this group.</span></li>';
+    return;
+  }
+  list.innerHTML = items.slice(0, 25).map(item => {
+    const warning = item.positionWarning ? ' · ⚠ ' + item.positionWarning : '';
+    const label = (item.query || '(query withheld)') + ' → ' + shortPage(item.page);
+    const metrics = number(item.impressions) + ' impressions · ' + number(item.clicks) + ' clicks · position ' + decimal(item.averagePosition) + warning;
+    return '<li title="' + esc(label) + '"><span class="report-list-name">' + esc(label) + '</span><span class="report-list-value">' + esc(metrics) + '</span></li>';
+  }).join('');
+}
+
+function shortPage(page) {
+  try { const url = new URL(page); return url.pathname + url.search; }
+  catch (_) { return page || '(page withheld)'; }
 }
 
 function comparisonCard(title, comparison) {

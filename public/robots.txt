@@ -1,6 +1,4 @@
 User-agent: *
 Disallow: /api/
-Disallow: /admin.html
-Disallow: /admin/
 
 Sitemap: https://profitquote.co.uk/sitemap.xml

@@ -16,6 +16,20 @@ app.locals.pool = pool;
 // Middleware
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+// Consolidate public search signals and keep private application screens out of search.
+app.use((req, res, next) => {
+  if (req.hostname.toLowerCase() === 'www.profitquote.co.uk') {
+    return res.redirect(301, `https://profitquote.co.uk${req.originalUrl}`);
+  }
+  if (req.path.toLowerCase() === '/index.html') {
+    const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+    return res.redirect(301, `/${query}`);
+  }
+  if (['/admin', '/admin.html', '/dashboard', '/dashboard.html'].includes(req.path.toLowerCase())) {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
