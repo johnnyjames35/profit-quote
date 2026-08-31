@@ -279,6 +279,14 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .report-list li:last-child { border-bottom: none; }
 .report-list-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 0.78rem; }
 .report-list-value { color: var(--cyan); font-family: var(--mono); font-size: 0.78rem; }
+.search-opportunity-list li { display: block; }
+.search-opportunity-list .report-list-name {
+  display: block; overflow: visible; white-space: normal; overflow-wrap: anywhere;
+  color: var(--white); line-height: 1.45; margin-bottom: 7px;
+}
+.search-opportunity-list .report-list-value {
+  display: block; white-space: normal; line-height: 1.45;
+}
 @media (max-width: 768px) {
   .stats-row, .funnel-stats-row { grid-template-columns: repeat(2, 1fr); }
   .comparison-grid, .report-tables { grid-template-columns: 1fr; }
@@ -527,9 +535,9 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           </div>
           <div class="report-message" id="position-context"></div>
           <div class="report-tables">
-            <div class="report-table-card"><div class="table-title">Quick wins · positions 8–30, 5+ impressions</div><ul class="report-list" id="r-quick-wins"></ul></div>
-            <div class="report-table-card"><div class="table-title">Longer term · positions 31–100, 5+ impressions</div><ul class="report-list" id="r-longer-term"></ul></div>
-            <div class="report-table-card"><div class="table-title">Low-signal / other combinations</div><ul class="report-list" id="r-search-noise"></ul></div>
+            <div class="report-table-card"><div class="table-title">Quick wins · positions 8–30, 5+ impressions</div><ul class="report-list search-opportunity-list" id="r-quick-wins"></ul></div>
+            <div class="report-table-card"><div class="table-title">Longer term · positions 31–100, 5+ impressions</div><ul class="report-list search-opportunity-list" id="r-longer-term"></ul></div>
+            <div class="report-table-card"><div class="table-title">Low-signal / other combinations</div><ul class="report-list search-opportunity-list" id="r-search-noise"></ul></div>
           </div>
         </div>
       </div>

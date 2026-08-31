@@ -24,6 +24,8 @@ test('traffic reporting renders daily detail and both comparison periods', () =>
   assert.match(adminHtml, /Quick wins · positions 8–30, 5\+ impressions/);
   assert.match(adminHtml, /positionWarning/);
   assert.match(adminHtml, /not a rank for one query/);
+  assert.match(adminHtml, /search-opportunity-list \.report-list-name/);
+  assert.match(adminHtml, /report-list search-opportunity-list/);
   assert.match(adminHtml, /Latest GA4 calendar-day report/);
   assert.match(adminHtml, /not Google's rolling last 24 hours/);
   assert.match(adminHtml, /Last successfully refreshed/);
