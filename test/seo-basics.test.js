@@ -33,3 +33,11 @@ test('transparent company and author page is included in the sitemap', () => {
   assert.match(about, /John James/);
   assert.match(read('public/sitemap.xml'), /https:\/\/profitquote\.co\.uk\/about\.html/);
 });
+
+test('the demonstrated turnover versus profit opportunity answers its query directly', () => {
+  const html = read('public/turnover-vs-profit-explained.html');
+  assert.match(html, /<title>Turnover vs Profit: What’s the Difference\? \| ProfitQuote<\/title>/);
+  assert.match(html, /<h1 class="article-h1">Turnover vs Profit: What’s the Difference\?<\/h1>/);
+  assert.match(html, /Profit = turnover − business costs/);
+  assert.match(html, /"dateModified": "2026-08-31"/);
+});
