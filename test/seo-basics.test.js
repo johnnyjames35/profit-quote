@@ -41,3 +41,12 @@ test('the demonstrated turnover versus profit opportunity answers its query dire
   assert.match(html, /Profit = turnover − business costs/);
   assert.match(html, /"dateModified": "2026-08-31"/);
 });
+
+test('the builder quote template page targets commercial intent and routes readers into the free product', () => {
+  const html = read('public/how-to-write-a-professional-quote.html');
+  assert.match(html, /<title>Free Builder Quote Template: How to Write a Job Quote \| ProfitQuote<\/title>/);
+  assert.match(html, /<h1 class="article-h1">Free Builder Quote Template: How to Write a Professional Job Quote<\/h1>/);
+  assert.match(html, /"dateModified": "2026-09-01"/);
+  assert.match(html, /href="\/dashboard\?try=1&amp;source=builder-quote-template"/);
+  assert.match(html, /No signup or card required for your first three quotes\./);
+});
