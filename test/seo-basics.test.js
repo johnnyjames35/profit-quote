@@ -5,6 +5,26 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const publicSearchPages = [
+  'index.html',
+  'about.html',
+  'knowledge-centre.html',
+  'turnover-vs-profit-explained.html',
+  'how-to-write-a-professional-quote.html',
+  'how-to-price-a-building-job.html',
+  'how-to-price-labour-correctly.html',
+  'how-to-calculate-construction-overheads.html',
+  'how-to-calculate-profit-margin.html',
+  'quote-vs-estimate.html',
+  'stop-underquoting-jobs.html',
+  '25-costs-tradespeople-forget.html'
+];
+
+test('every public search landing page is included in GA4 measurement', () => {
+  publicSearchPages.forEach((file) => {
+    assert.match(read(`public/${file}`), /G-D6L8EB3PWK/, `${file} is missing the GA4 tag`);
+  });
+});
 
 test('homepage has one canonical commercial search identity', () => {
   const html = read('public/index.html');
