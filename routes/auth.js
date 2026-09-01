@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const https = require('https');
 const crypto = require('crypto');
 const { sendToGA } = require('../utils/ga');
+const { isFreeOnboardingOfferActive } = require('../utils/onboarding-offer');
 
 const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,overhead_per_day,markup_percent,profit_target,vat_registered,vat_rate,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
 
@@ -36,6 +37,9 @@ function sendBrevoEmail(to, subject, html) {
 }
 
 function sendWelcomeEmail(name, email) {
+  const onboardingItem = isFreeOnboardingOfferActive()
+    ? '<li>Personal setup included free until 30 September 2026</li>'
+    : '<li>£99 one-off onboarding fee</li>';
   return sendBrevoEmail(email,
     'Welcome to ProfitQuote — your 7-day free trial starts now',
     `<p>Hi ${name},</p>
@@ -43,7 +47,7 @@ function sendWelcomeEmail(name, email) {
      <p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
      <p>After your trial, you'll need:</p>
      <ul>
-       <li>£99 one-off onboarding fee</li>
+       ${onboardingItem}
        <li>£49/month subscription</li>
      </ul>
      <p>I'll be in touch before your trial ends to get you set up personally.</p>
@@ -63,15 +67,20 @@ function sendNotifyJohnEmail(name, email) {
 }
 
 function sendTrialExpiryEmail(name, email) {
+  const onboardingStep = isFreeOnboardingOfferActive()
+    ? `<p><strong>Your personal setup is included free when you subscribe by 30 September 2026.</strong></p>
+       <p><strong>Start your £49/month subscription:</strong><br>
+       <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>`
+    : `<p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
+       <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
+       <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
+       <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>`;
   return sendBrevoEmail(email,
     'Your ProfitQuote trial expires tomorrow',
     `<p>Hi ${name},</p>
      <p>Your 7-day free trial expires tomorrow.</p>
      <p>To keep using ProfitQuote you'll need to complete your onboarding:</p>
-     <p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
-     <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
-     <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
-     <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>
+     ${onboardingStep}
      <p>Once you've paid I'll personally set you up and make sure everything is running perfectly.</p>
      <p>John James<br>ProfitQuote | Cambrian Digital</p>`
   );

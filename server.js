@@ -5,6 +5,7 @@ const path = require('path');
 const { Pool } = require('pg');
 const { startDailyTrafficEmailScheduler } = require('./utils/daily-traffic-email');
 const { startTrialEmailScheduler } = require('./utils/trialEmails');
+const { isFreeOnboardingOfferActive } = require('./utils/onboarding-offer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,8 +75,10 @@ async function trialCheck(req, res, next) {
     // Blocked
     return res.status(402).json({
       error: 'trial_expired',
-      message: 'Your free trial has ended. Please complete your onboarding to continue using ProfitQuote.',
-      onboardingUrl: 'https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b',
+      message: isFreeOnboardingOfferActive()
+        ? 'Your free trial has ended. Subscribe by 30 September 2026 and your personal setup is included free.'
+        : 'Your free trial has ended. Please complete your onboarding to continue using ProfitQuote.',
+      onboardingUrl: isFreeOnboardingOfferActive() ? null : 'https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b',
       subscriptionUrl: 'https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a'
     });
   } catch(e) {
