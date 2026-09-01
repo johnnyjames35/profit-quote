@@ -668,6 +668,24 @@ if (generateBtn) {
     generateBtn.textContent = 'Generate My Quote PDF \u2192';
   });
 }
+
+// Record only the hand-off from this high-intent guide into the free product.
+// sendBeacon keeps the navigation fast; fetch is the compatibility fallback.
+document.querySelectorAll('a[href^="/dashboard?try=1"]').forEach((link) => {
+  link.addEventListener('click', () => {
+    const body = JSON.stringify({ event_type: 'trial_click', source: 'builder-quote-template' });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }));
+      return;
+    }
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true
+    }).catch(() => {});
+  });
+});
 </script>
 
 </body>

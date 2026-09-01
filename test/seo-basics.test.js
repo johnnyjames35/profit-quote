@@ -49,4 +49,5 @@ test('the builder quote template page targets commercial intent and routes reade
   assert.match(html, /"dateModified": "2026-09-01"/);
   assert.match(html, /href="\/dashboard\?try=1&amp;source=builder-quote-template"/);
   assert.match(html, /No signup or card required for your first three quotes\./);
+  assert.match(html, /event_type: 'trial_click', source: 'builder-quote-template'/);
 });
