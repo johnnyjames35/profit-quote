@@ -1,4 +1,5 @@
 const https = require('https');
+const { isFreeOnboardingOfferActive } = require('./onboarding-offer');
 
 function sendBrevoEmail(to, subject, html) {
   return new Promise((resolve, reject) => {
@@ -28,6 +29,13 @@ function sendBrevoEmail(to, subject, html) {
   });
 }
 
+function isSundayInLondon(now = new Date()) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    weekday: 'short'
+  }).format(now) === 'Sun';
+}
+
 function day1Email(name, email) {
   return sendBrevoEmail(email,
     "Quick tip for your first ProfitQuote quote",
@@ -50,21 +58,35 @@ function day3Email(name, email) {
   );
 }
 
-function day7Email(name, email) {
+function day7Email(name, email, now = new Date()) {
+  const paymentSteps = isFreeOnboardingOfferActive(now)
+    ? `<p><strong>Free onboarding is available until 30 September 2026.</strong> There is no £99 setup fee during the offer.</p>
+       <p><strong>Continue with your £49/month subscription:</strong><br>
+       <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>`
+    : `<p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
+       <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
+       <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
+       <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>`;
+
   return sendBrevoEmail(email,
     "Your ProfitQuote free trial period is ending",
     `<p>Hi ${name},</p>
      <p>Your 7-day free trial period is coming to an end. If ProfitQuote has been useful, here's how to keep going:</p>
-     <p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
-     <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
-     <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
-     <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>
+     ${paymentSteps}
      <p>Reply to this email any time if you have questions — happy to help personally.</p>
      <p>John James<br>ProfitQuote | Cambrian Digital</p>`
   );
 }
 
-async function checkAndSendTrialEmails(pool) {
+async function checkAndSendTrialEmails(pool, now = new Date()) {
+  // Customer/prospect email is deliberately suppressed on Sundays in Europe/London.
+  // Because stages are eligible once their due day has been reached, a Sunday-due
+  // message remains eligible and is sent on Monday rather than being discarded.
+  if (isSundayInLondon(now)) {
+    console.log('Trial email scheduler: Sunday in Europe/London — sends deferred until Monday');
+    return;
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS trial_email_log (
       id SERIAL PRIMARY KEY,
@@ -80,18 +102,18 @@ async function checkAndSendTrialEmails(pool) {
   );
 
   const stages = [
-    { days: 1, type: 'day1', send: day1Email },
-    { days: 3, type: 'day3', send: day3Email },
-    { days: 7, type: 'day7', send: day7Email }
+    { days: 1, type: 'day1', send: (name, email) => day1Email(name, email) },
+    { days: 3, type: 'day3', send: (name, email) => day3Email(name, email) },
+    { days: 7, type: 'day7', send: (name, email) => day7Email(name, email, now) }
   ];
 
   for (const user of result.rows) {
     const started = new Date(user.trial_started_at);
-    const now = new Date();
     const daysSince = Math.floor((now - started) / (1000 * 60 * 60 * 24));
 
     for (const stage of stages) {
-      if (daysSince === stage.days) {
+      // >= ensures an email that became due on Sunday is deferred to Monday.
+      if (daysSince >= stage.days) {
         const already = await pool.query(
           'SELECT 1 FROM trial_email_log WHERE user_id=$1 AND email_type=$2',
           [user.id, stage.type]
@@ -124,7 +146,7 @@ function startTrialEmailScheduler(pool) {
   check();
   const timer = setInterval(check, 60 * 60 * 1000);
   timer.unref?.();
-  console.log('Trial nudge email scheduler started (checks hourly)');
+  console.log('Trial nudge email scheduler started (checks hourly; Sunday sends deferred)');
 }
 
-module.exports = { checkAndSendTrialEmails, startTrialEmailScheduler };
+module.exports = { checkAndSendTrialEmails, startTrialEmailScheduler, isSundayInLondon, day7Email };
