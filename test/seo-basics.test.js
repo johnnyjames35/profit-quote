@@ -5,6 +5,13 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+test('homepage ownership copy is confident and does not undermine trust', () => {
+  const homepage = read('public/index.html');
+  assert.doesNotMatch(homepage, /early-stage product|invented testimonials/i);
+  assert.match(homepage, /built and operated by Big Bulldog UK Ltd/i);
+  assert.match(homepage, /hello@profitquote\.co\.uk/i);
+});
 const publicSearchPages = [
   'index.html',
   'about.html',
@@ -71,3 +78,4 @@ test('the builder quote template page targets commercial intent and routes reade
   assert.match(html, /No signup or card required for your first three quotes\./);
   assert.match(html, /event_type: 'trial_click', source: 'builder-quote-template'/);
 });
+
