@@ -621,6 +621,15 @@ function showTab(tab) {
   if (tab === 'reporting' && !window.reportingLoaded) loadReporting();
 }
 
+async function readAdminJson(res) {
+  if (!(res.headers.get('content-type') || '').includes('application/json')) {
+    throw new Error('Reporting server returned a non-JSON response (HTTP ' + res.status + '). Please retry; check the deployment logs if this continues.');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Reporting request failed (HTTP ' + res.status + ').');
+  return data;
+}
+
 async function loadReporting() {
   const status = document.getElementById('report-status');
   const content = document.getElementById('report-content');
@@ -632,14 +641,14 @@ async function loadReporting() {
   refresh.disabled = true;
   try {
     const headers = { 'Authorization': 'Bearer ' + adminToken };
-    const [res, liveRes] = await Promise.all([
+    const [res, live] = await Promise.all([
       fetch(API + '/api/admin/reporting/daily', { headers }),
       fetch(API + '/api/admin/reporting/live', { headers })
+        .then(readAdminJson)
+        .catch(() => ({ error: 'Live Search Console data is temporarily unavailable.' }))
     ]);
     if (res.status === 401) { doLogout(); return; }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Could not load the traffic report.');
-    const live = liveRes.ok ? await liveRes.json() : { error: 'Live Search Console data is temporarily unavailable.' };
+    const data = await readAdminJson(res);
     renderReporting(data, live);
     window.reportingLoaded = true;
     status.style.display = 'none';
@@ -919,7 +928,7 @@ async function loadFunnel() {
       headers: { 'Authorization': 'Bearer ' + adminToken }
     });
     if (res.status === 401) { doLogout(); return; }
-    const data = await res.json();
+    const data = await readAdminJson(res);
     window.lastFunnelData = data;
 
     document.getElementById('f-visitors-today').textContent = data.visitorsToday;
@@ -944,6 +953,9 @@ async function loadFunnel() {
 
     renderFunnelBars(data);
   } catch(e) {
+    window.lastFunnelData = null;
+    document.querySelectorAll('#view-funnel .stat-val').forEach((el) => { el.textContent = '—'; });
+    document.getElementById('funnel-updated').textContent = 'Refresh failed: ' + e.message;
     document.getElementById('funnel-bars').innerHTML = '<p style="color:var(--muted);">Could not load funnel data.</p>';
   }
 }

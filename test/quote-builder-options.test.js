@@ -31,7 +31,7 @@ test('quote builder offers a guided ADHD-friendly scope flow', () => {
 
 test('protected pricing applies real costs, target margin and VAT correctly', () => {
   const dashboard = fs.readFileSync(path.join(root, 'public', 'dashboard.html'), 'utf8');
-  const match = dashboard.match(/function calculateProtectedPrice\([\s\S]*?\n}\n\nfunction calcHealthScore/);
+  const match = dashboard.replace(/\r\n/g, '\n').match(/function calculateProtectedPrice\([\s\S]*?\n}\n\nfunction calcHealthScore/);
   assert.ok(match, 'pricing function should exist');
   const fnSource = match[0].replace(/\n\nfunction calcHealthScore$/, '');
   const calculate = vm.runInNewContext(`(${fnSource})`);

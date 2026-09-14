@@ -24,8 +24,7 @@
 
   function record(eventType) {
     const body = JSON.stringify({ event_type: eventType, source: source() });
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }));
+    if (navigator.sendBeacon && navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }))) {
       return;
     }
     fetch('/api/events', {

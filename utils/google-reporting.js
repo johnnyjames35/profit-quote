@@ -4,6 +4,10 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GA4_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
 const SEARCH_CONSOLE_API_BASE = 'https://searchconsole.googleapis.com/webmasters/v3';
 const SCOPES = ['https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/webmasters.readonly'];
+// Bound upstream calls so Express can return JSON before the edge proxy times out.
+function reportingFetch(fetchImpl, url, options) {
+  return fetchImpl(url, { ...options, signal: AbortSignal.timeout(20000) });
+}
 let cachedToken = null;
 
 function base64url(value) { return Buffer.from(value).toString('base64url'); }
@@ -45,14 +49,14 @@ async function getAccessToken(credentials, fetchImpl) {
   const claim = base64url(JSON.stringify({ iss: credentials.client_email, scope: SCOPES.join(' '), aud: GOOGLE_TOKEN_URL, iat: now, exp: now + 3600 }));
   const unsigned = `${header}.${claim}`;
   const signature = crypto.sign('RSA-SHA256', Buffer.from(unsigned), credentials.private_key).toString('base64url');
-  const response = await fetchImpl(GOOGLE_TOKEN_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${signature}` }) });
+  const response = await reportingFetch(fetchImpl, GOOGLE_TOKEN_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${signature}` }) });
   if (!response.ok) throw new Error(`Google authentication failed (${response.status})`);
   const data = await response.json();
   cachedToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in || 3600) * 1000 };
   return cachedToken.value;
 }
 async function googlePost(url, body, token, fetchImpl) {
-  const response = await fetchImpl(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const response = await reportingFetch(fetchImpl, url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (!response.ok) throw new Error(`Google reporting request failed (${response.status})`);
   return response.json();
 }

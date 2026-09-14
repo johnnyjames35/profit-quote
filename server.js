@@ -112,6 +112,13 @@ app.get('/admin', (req, res) => {
 });
 // Serve the homepage only for genuine visits to "/" —
 // anything else that reaches here didn't match a real page, so it's a true 404
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
+app.use('/api', (error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  res.status(error.status || 500).json({ error: error.type === 'entity.parse.failed' ? 'Invalid JSON request body' : 'API request failed' });
+});
 app.get('*', (req, res) => {
   res.status(404).send('<h1>Page not found</h1><p>The page you are looking for does not exist. <a href="/">Return to homepage</a></p>');
 });
