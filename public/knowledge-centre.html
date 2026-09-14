@@ -153,6 +153,14 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
 @media(max-width:900px){.kc-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:768px){.article-hero{padding:120px 20px 40px;}.kc-hero{padding:120px 20px 40px;}section{padding:44px 20px;}}
 @media(max-width:600px){.kc-grid{grid-template-columns:1fr;}}
+/* LATEST GUIDES */
+.latest-guides{background:var(--dark);border-top:1px solid var(--border);}
+.latest-guides-header{max-width:640px;margin:0 auto 32px;text-align:center;}
+.latest-guides-title{font-size:clamp(1.5rem,3.5vw,2rem);font-weight:900;color:var(--white);letter-spacing:-0.02em;line-height:1.2;margin-bottom:14px;}
+.latest-guides-intro{font-size:1rem;color:var(--body);line-height:1.75;}
+.latest-guides-embed{background:#FFFFFF;color:#10202B;color-scheme:light;border:1px solid var(--amber-border2);border-radius:var(--radius);padding:clamp(16px,3vw,28px);min-width:0;}
+.latest-guides-embed #soro-blog{width:100%;min-width:0;background:#FFFFFF;color:#10202B;}
+.latest-guides-note{color:#10202B;font-size:0.88rem;line-height:1.7;}
 </style>
 </head>
 <body>
@@ -229,6 +237,20 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
   </div>
 </section>
 
+<section class="latest-guides" aria-labelledby="latest-guides-title">
+  <div class="wrap-wide">
+    <div class="latest-guides-header">
+      <div class="kc-badge">Latest Guides</div>
+      <h2 class="latest-guides-title" id="latest-guides-title">Latest ProfitQuote Guides</h2>
+      <p class="latest-guides-intro">Explore more practical advice on pricing, quoting and protecting your profit as a UK tradesperson.</p>
+    </div>
+    <div class="latest-guides-embed">
+      <div id="soro-blog"></div>
+      <script src="https://app.trysoro.com/api/embed/5a9f7b12-5b79-4ae2-b27e-369823dc2f00" defer></script>
+      <noscript><p class="latest-guides-note">Enable JavaScript to view the latest guides. You can still read all nine trade guides above.</p></noscript>
+    </div>
+  </div>
+</section>
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">
