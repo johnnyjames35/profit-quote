@@ -43,15 +43,15 @@ function sendWelcomeEmail(name, email) {
   return sendBrevoEmail(email,
     'Welcome to ProfitQuote — your 7-day free trial starts now',
     `<p>Hi ${name},</p>
-     <p>Welcome to ProfitQuote! Your 7-day free trial has started.</p>
-     <p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
-     <p>After your trial, you'll need:</p>
-     <ul>
-       ${onboardingItem}
-       <li>£49/month subscription</li>
-     </ul>
-     <p>I'll be in touch before your trial ends to get you set up personally.</p>
-     <p>John James<br>ProfitQuote | Cambrian Digital</p>`
+<p>Welcome to ProfitQuote! Your 7-day free trial has started.</p>
+<p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
+<p>After your trial, you'll need:</p>
+<ul>
+${onboardingItem}
+<li>£49/month subscription</li>
+</ul>
+<p>I'll be in touch before your trial ends to get you set up personally.</p>
+<p>John James<br>ProfitQuote | Cambrian Digital</p>`
   );
 }
 
@@ -60,29 +60,9 @@ function sendNotifyJohnEmail(name, email) {
     process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk',
     `New ProfitQuote trial started — ${name}`,
     `<p>New user signed up for ProfitQuote:</p>
-     <p><strong>Name:</strong> ${name}<br>
-     <strong>Email:</strong> ${email}</p>
-     <p>Their 7-day trial starts today. Chase them on day 6!</p>`
-  );
-}
-
-function sendTrialExpiryEmail(name, email) {
-  const onboardingStep = isFreeOnboardingOfferActive()
-    ? `<p><strong>Your personal setup is included free when you subscribe by 30 September 2026.</strong></p>
-       <p><strong>Start your £49/month subscription:</strong><br>
-       <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>`
-    : `<p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
-       <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
-       <p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
-       <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a">Start £49/month subscription</a></p>`;
-  return sendBrevoEmail(email,
-    'Your ProfitQuote trial expires tomorrow',
-    `<p>Hi ${name},</p>
-     <p>Your 7-day free trial expires tomorrow.</p>
-     <p>To keep using ProfitQuote you'll need to complete your onboarding:</p>
-     ${onboardingStep}
-     <p>Once you've paid I'll personally set you up and make sure everything is running perfectly.</p>
-     <p>John James<br>ProfitQuote | Cambrian Digital</p>`
+<p><strong>Name:</strong> ${name}<br>
+<strong>Email:</strong> ${email}</p>
+<p>Their 7-day trial starts today. Chase them on day 6!</p>`
   );
 }
 
@@ -90,10 +70,10 @@ function sendResetEmail(name, email, resetLink) {
   return sendBrevoEmail(email,
     'Reset your ProfitQuote password',
     `<p>Hi ${name},</p>
-     <p>We received a request to reset your ProfitQuote password.</p>
-     <p><a href="${resetLink}">Click here to set a new password</a></p>
-     <p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
-     <p>John James<br>ProfitQuote | Cambrian Digital</p>`
+<p>We received a request to reset your ProfitQuote password.</p>
+<p><a href="${resetLink}">Click here to set a new password</a></p>
+<p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
+<p>John James<br>ProfitQuote | Cambrian Digital</p>`
   );
 }
 
@@ -153,15 +133,6 @@ router.post('/login', async (req, res) => {
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: 'Invalid email or password' });
-
-    if (!user.paid_at) {
-      const started = new Date(user.trial_started_at);
-      const now = new Date();
-      const daysSince = Math.floor((now - started) / (1000 * 60 * 60 * 24));
-      if (daysSince === 6) {
-        sendTrialExpiryEmail(user.name, user.email).catch(e => console.error('Expiry email error:', e.message));
-      }
-    }
 
     await pool.query(
       'UPDATE users SET first_login_at=COALESCE(first_login_at,NOW()), last_active_at=NOW() WHERE id=$1',
