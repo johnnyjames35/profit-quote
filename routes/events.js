@@ -4,7 +4,7 @@ const auth = require('../middleware/auth');
 const GA_MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID;
 const GA_API_SECRET = process.env.GA_API_SECRET;
 const PUBLIC_EVENT_TYPES = new Set(['page_viewed', 'trial_click']);
-const AUTHENTICATED_FUNNEL_EVENTS = new Set(['account_created', 'quote_started', 'quote_saved', 'quote_sent', 'quote_downloaded']);
+const AUTHENTICATED_FUNNEL_EVENTS = new Set(['account_created', 'quote_started', 'quote_saved', 'quote_sent', 'quote_downloaded', 'checkout_started']);
 
 // Sends the same event to Google Analytics 4 (does not affect the database save above)
 async function sendToGA(event_type, user_id, source) {
