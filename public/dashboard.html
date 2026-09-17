@@ -1589,7 +1589,7 @@ async function doRegister(){
     const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade,guest_token:localStorage.getItem('pq_guest_token')})});
     const data=await res.json();
     if(!res.ok){ err.textContent=data.error||'Registration failed.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; return; }
-    token=data.token; localStorage.setItem('pq_token',token); initApp();
+    token=data.token; localStorage.setItem('pq_token',token); trackFunnelEvent('account_created'); initApp();
   }catch(e){ err.textContent='Connection error.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; }
 }
 
@@ -2445,6 +2445,7 @@ async function saveQuote(){
     }
     if(res.ok){
       const saved=await res.json();
+      if(!editingQuoteId) trackFunnelEvent('quote_saved');
       if(currentUser?.guest && typeof saved.remaining==='number'){
         currentUser.guest_quotes_remaining=saved.remaining;
         const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='3 free quotes · '+saved.remaining+' remaining';
@@ -2597,6 +2598,7 @@ async function emailQuote(){
     });
     const result=await response.json();
     if(!response.ok) throw new Error(result.error||'The quote could not be emailed.');
+    trackFunnelEvent('quote_sent');
     showToast('Quote emailed from '+result.from+' ✓');
   }catch(error){
     showToast(error.message||'The quote could not be emailed.');
