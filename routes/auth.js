@@ -93,23 +93,36 @@ router.post('/register', async (req, res) => {
     const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email.toLowerCase()]);
     if (exists.rows.length) return res.status(400).json({ error: 'Email already registered' });
     const hash = await bcrypt.hash(password, 10);
-    const result = await pool.query(
-      `INSERT INTO users (name,email,password_hash,trade,trial_started_at)
-       VALUES ($1,$2,$3,$4,NOW())
-       RETURNING ${USER_FIELDS}`,
-      [name, email.toLowerCase(), hash, trade || '']
-    );
-    const user = result.rows[0];
-    if (guest_token) {
-      try {
-        const guest = jwt.verify(guest_token, process.env.JWT_SECRET);
-        if (guest.guest && guest.id) {
-          await pool.query('UPDATE quotes SET user_id=$1,guest_id=NULL WHERE guest_id=$2', [user.id, guest.id]);
-          await pool.query('UPDATE guest_sessions SET converted_user_id=$1,last_active_at=NOW() WHERE id=$2 AND converted_user_id IS NULL', [user.id, guest.id]);
-          await pool.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('guest_converted',$1,'guest',jsonb_build_object('guest_id',$2::text))", [user.id, guest.id]);
-        }
-      } catch(e) { console.warn('Guest transfer skipped:', e.message); }
+    let guest=null;
+    if(guest_token){
+      try{ guest=jwt.verify(guest_token,process.env.JWT_SECRET); }
+      catch(e){ return res.status(400).json({error:'Your guest session has expired. Please return to your quote before signing up.'}); }
+      if(!guest.guest||!guest.id) return res.status(400).json({error:'Invalid guest session.'});
     }
+    const client=await pool.connect();
+    let user;
+    try{
+      await client.query('BEGIN');
+      if(guest){
+        const session=await client.query('SELECT id FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL FOR UPDATE',[guest.id]);
+        if(!session.rows.length) throw new Error('Your guest session is no longer available. Please sign in if you already created an account.');
+      }
+      const result=await client.query(
+        `INSERT INTO users (name,email,password_hash,trade,trial_started_at)
+         VALUES ($1,$2,$3,$4,NOW()) RETURNING ${USER_FIELDS}`,
+        [name,email.toLowerCase(),hash,trade||'']
+      );
+      user=result.rows[0];
+      if(guest){
+        await client.query('UPDATE quotes SET user_id=$1,guest_id=NULL WHERE guest_id=$2',[user.id,guest.id]);
+        await client.query('UPDATE guest_sessions SET converted_user_id=$1,last_active_at=NOW() WHERE id=$2',[user.id,guest.id]);
+        await client.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('guest_converted',$1,'guest',jsonb_build_object('guest_id',$2::text))",[user.id,guest.id]);
+      }
+      await client.query('COMMIT');
+    }catch(error){
+      await client.query('ROLLBACK');
+      throw error;
+    }finally{ client.release(); }
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     res.json({ token, user });
