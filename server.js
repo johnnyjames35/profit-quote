@@ -16,6 +16,8 @@ app.locals.pool = pool;
 
 // Middleware
 app.use(cors({ origin: '*' }));
+app.set('trust proxy', 1);
+app.post('/api/billing/webhook',express.raw({type:'application/json'}),require('./routes/billing').webhook);
 app.use(express.json());
 // Consolidate public search signals and keep private application screens out of search.
 app.use((req, res, next) => {
@@ -34,6 +36,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
+app.use('/api/billing',require('./routes/billing').router);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/guest', require('./routes/guest'));
 app.use('/api/quotes', require('./routes/quotes'));
@@ -56,33 +59,12 @@ async function trialCheck(req, res, next) {
       if (!guest.rows.length) return res.status(402).json({ error: 'guest_limit', message: 'Create your free account to continue and keep your quotes.' });
       return next();
     }
-    const result = await pool.query(
-      'SELECT trial_started_at, paid_at FROM users WHERE id=$1',
-      [req.user.id]
-    );
-    const user = result.rows[0];
-    if (!user) return res.status(401).json({ error: 'User not found' });
-
-    // Already paid — always allow
-    if (user.paid_at) return next();
-
-    const started = new Date(user.trial_started_at);
-    const now = new Date();
-    const daysSince = Math.floor((now - started) / (1000 * 60 * 60 * 24));
-
-    if (daysSince <= 10) return next();
-
-    // Blocked
-    return res.status(402).json({
-      error: 'trial_expired',
-      message: isFreeOnboardingOfferActive()
-        ? 'Your free trial has ended. Subscribe by 30 September 2026 and your personal setup is included free.'
-        : 'Your free trial has ended. Please complete your onboarding to continue using ProfitQuote.',
-      onboardingUrl: isFreeOnboardingOfferActive() ? null : 'https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b',
-      subscriptionUrl: 'https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a'
-    });
+    const {access,limitError}=require('./utils/quote-access');
+    const a=await access(pool,req.user);
+    if(!a.subscribed&&a.remaining===0) throw limitError();
+    return next();
   } catch(e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(e.status||500).json({ error: e.message, code:e.code });
   }
 }
 

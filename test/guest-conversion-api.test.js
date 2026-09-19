@@ -56,7 +56,7 @@ test('guest signup transfers exact quote atomically, rejects reuse, and unlocks 
   assert.deepEqual(list[0].quote_data,quote.quote_data);assert.equal(Number(list[0].total),8698);
   assert.equal((await request('/api/auth/register',{...registration,email:'reuse@example.invalid'})).status,500);
   assert.equal((await db.query('SELECT * FROM users')).rows.length,1,'guest token cannot be converted twice');
-  const emailResponse=await request('/api/quotes/send-email',quote,account.token);assert.equal(emailResponse.status,200);
+  const emailResponse=await request('/api/quotes/send-email',{quote_id:saved.id},account.token);assert.equal(emailResponse.status,200);
   const delivered=sent.find(item=>item.subject.startsWith('Your quotation from'));
   assert.equal(delivered.sender.email,'hello@profitquote.co.uk');
   assert.equal(delivered.to[0].email,quote.customer_email);

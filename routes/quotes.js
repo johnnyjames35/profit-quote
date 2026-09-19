@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { sendToGA } = require('../utils/ga');
 const https = require('https');
+const {access,limitError,publicAccess,UUID}=require('../utils/quote-access');
 
 const CUSTOMER_EMAIL_FROM = 'hello@profitquote.co.uk';
 
@@ -77,65 +78,55 @@ router.get('/', auth, async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
-  const { customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, quote_data, total, profit_percent } = req.body;
-  try {
-    const pool = req.app.locals.pool;
-    if (req.user.guest) {
-      const client = await pool.connect();
-      let guestResult, used;
-      try {
-        await client.query('BEGIN');
-        const session = await client.query('SELECT ip_hash FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL FOR UPDATE', [req.user.id]);
-        if (!session.rows.length) {
-          await client.query('ROLLBACK');
-          return res.status(401).json({ error:'Guest session expired' });
-        }
-        const ipHash = session.rows[0].ip_hash;
-        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [ipHash]);
-        const usage = await client.query("SELECT COALESCE(SUM(quote_count),0)::int AS used FROM guest_sessions WHERE ip_hash=$1 AND created_at>NOW()-INTERVAL '30 days'", [ipHash]);
-        used = usage.rows[0].used;
-        if (used >= 3) {
-          await client.query('ROLLBACK');
-          return res.status(402).json({ error:'guest_limit', code:'guest_limit', message:'You have completed your 3 free quotes. Create an account to keep them and continue.' });
-        }
-        await client.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1', [req.user.id]);
-        guestResult = await client.query('INSERT INTO quotes (guest_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *', [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]);
-        used += 1;
-        await client.query('COMMIT');
-      } catch (e) {
-        await client.query('ROLLBACK').catch(() => {});
-        throw e;
-      } finally {
-        client.release();
-      }
-      await pool.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_number',$2::int,'total',$3::numeric))", [req.user.id, used, Number(total)||0]);
-      await pool.query("INSERT INTO events(event_type,source,meta) VALUES('quote_completed','guest',jsonb_build_object('guest_id',$1::text,'quote_id',$2::int,'total',$3::numeric))", [req.user.id, guestResult.rows[0].id, Number(total)||0]);
-      sendToGA('guest_quote_completed', null, 'guest').catch(() => {});
-      sendToGA('quote_completed', null, 'guest').catch(() => {});
-      return res.json({ ...guestResult.rows[0], guest_quotes_used:used, guest_quotes_remaining:3-used });
+  const data=req.body||{};
+  const {customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,total,profit_percent}=data;
+  const quote_data={...(data.quote_data||{}),customer_email:data.customer_email||data.quote_data?.customer_email||''};
+  const creationKey=UUID.test(data.creation_key||'')?data.creation_key:null;
+  const pool=req.app.locals.pool,client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const a=await access(client,req.user,true);
+    if(creationKey){
+      const previous=await client.query('SELECT * FROM quotes WHERE creation_key=$1 AND '+(req.user.guest?'guest_id':'user_id')+'=$2',[creationKey,req.user.id]);
+      if(previous.rows.length){await client.query('COMMIT');return res.json({...previous.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining});}
     }
-    const result = await pool.query(
-      'INSERT INTO quotes (user_id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *',
-      [req.user.id, customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, JSON.stringify(quote_data), total, profit_percent]
-    );
-    res.json(result.rows[0]);
+    if(!a.subscribed&&a.used>=3) throw limitError(req.user.guest);
+    const ownerField=req.user.guest?'guest_id':'user_id';
+    const saved=await client.query(
+      'INSERT INTO quotes ('+ownerField+',customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent,creation_key) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *',
+      [req.user.id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,JSON.stringify(quote_data),total,profit_percent,creationKey]);
+    if(!a.subscribed){await client.query('UPDATE quote_allowances SET used=used+1 WHERE id=$1',[a.trial_id]);a.used++;a.remaining=Math.max(0,3-a.used);}
+    if(req.user.guest) await client.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1',[req.user.id]);
+    await client.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_completed',$1,$2,$3)",[req.user.guest?null:req.user.id,req.user.guest?'guest':'dashboard',JSON.stringify({quote_id:saved.rows[0].id,...(req.user.guest?{guest_id:req.user.id}:{})})]);
+    if(req.user.guest) await client.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id,quote_number:a.used})]);
+    await client.query('COMMIT');
+    res.json({...saved.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining});
+  }catch(error){
+    await client.query('ROLLBACK');
+    res.status(error.status||500).json({error:error.message,code:error.code});
+  }finally{client.release();}
+});
 
-    logEvent(pool, 'quote_completed', req.user.id, 'dashboard');
-
-    const priorQuotes = await pool.query('SELECT id FROM quotes WHERE user_id=$1', [req.user.id]);
-    if (priorQuotes.rows.length === 1) {
-      logEvent(pool, 'first_quote', req.user.id, null);
-    }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+// Customer output must come from a counted, owned quote, never an arbitrary request body.
+router.get('/:id/export',auth,async(req,res)=>{
+  if(req.user.guest) return res.status(403).json({error:'Create an account to download your quote.'});
+  try{
+  const result=await req.app.locals.pool.query('SELECT * FROM quotes WHERE id=$1 AND user_id=$2',[req.params.id,req.user.id]);
+  if(!result.rows.length) return res.status(404).json({error:'Quote not found.'});
+  res.set('Cache-Control','no-store').json(result.rows[0]);
+  }catch(e){res.status(500).json({error:'Could not load your quote.'});}
 });
 
 router.post('/send-email', auth, async (req, res) => {
   if (req.user.guest) return res.status(403).json({ error: 'Create an account to send quotes directly.' });
-  const { customer_email, customer_name, job_description, total, quote_data } = req.body || {};
+  try {
+  const pool=req.app.locals.pool;
+  const saved=await pool.query('SELECT * FROM quotes WHERE id=$1 AND user_id=$2',[Number(req.body?.quote_id)||0,req.user.id]);
+  if(!saved.rows.length) return res.status(404).json({error:'Save this quote before emailing it.'});
+  const {customer_name,job_description,total,quote_data}=saved.rows[0];
+  const customer_email=quote_data?.customer_email;
   if (!validEmail(customer_email)) return res.status(400).json({ error: 'Enter a valid customer email address.' });
   if (!Number.isFinite(Number(total)) || Number(total) < 0 || Number(total) > 10000000) return res.status(400).json({ error: 'The quote total is invalid.' });
-  try {
-    const pool = req.app.locals.pool;
     const recent = await pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND user_id=$1 AND created_at >= NOW() - INTERVAL '1 hour'", [req.user.id]);
     if (recent.rows[0].c >= 10) return res.status(429).json({ error: 'Hourly email limit reached. Please try again later.' });
     const userResult = await pool.query('SELECT name,business_name,phone FROM users WHERE id=$1', [req.user.id]);
@@ -176,6 +167,7 @@ router.patch('/:id', auth, async (req, res) => {
   const { customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, quote_data, total, profit_percent } = req.body;
   try {
     const pool = req.app.locals.pool;
+    if(req.user.guest){ const session=await pool.query('SELECT id FROM guest_sessions WHERE id=$1 AND converted_user_id IS NULL AND expires_at>NOW()',[req.user.id]); if(!session.rows.length) return res.status(401).json({error:'Please sign in again.'}); }
     const ownerField = req.user.guest ? 'guest_id' : 'user_id';
     const result = await pool.query(
       `UPDATE quotes SET customer_name=$1,trade=$2,job_description=$3,spec_level=$4,skip_type=$5,skip_cost=$6,day_rate=$7,days=$8,markup_percent=$9,profit_target=$10,other_costs=$11,quote_data=$12,total=$13,profit_percent=$14 WHERE id=$15 AND ${ownerField}=$16 RETURNING id`,

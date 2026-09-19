@@ -15,5 +15,5 @@ test('free onboarding offer runs through the end of September 2026', () => {
 test('website and lifecycle messages describe the same onboarding offer', () => {
   assert.match(read('public/index.html'), /Personal setup included free until 30 September 2026\. £99 thereafter\./);
   assert.match(read('routes/auth.js'), /Personal setup included free until 30 September 2026/);
-  assert.match(read('server.js'), /Subscribe by 30 September 2026/);
+  assert.match(read('utils/trialEmails.js'), /Free onboarding is available until 30 September 2026/);
 });

@@ -69,6 +69,39 @@ CREATE TABLE IF NOT EXISTS quotes (
 ALTER TABLE quotes ADD COLUMN IF NOT EXISTS guest_id UUID REFERENCES guest_sessions(id) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS quotes_guest_id_idx ON quotes(guest_id);
 
+-- Durable free allowance: deleting a quote or opening another account never resets it.
+CREATE TABLE IF NOT EXISTS quote_allowances (
+  id UUID PRIMARY KEY,
+  used INTEGER NOT NULL DEFAULT 0 CHECK (used >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_id UUID REFERENCES quote_allowances(id);
+ALTER TABLE guest_sessions ADD COLUMN IF NOT EXISTS trial_id UUID REFERENCES quote_allowances(id);
+INSERT INTO quote_allowances(id,used)
+  SELECT md5('user:'||u.id)::uuid, COUNT(q.id)::int FROM users u LEFT JOIN quotes q ON q.user_id=u.id
+  WHERE u.trial_id IS NULL GROUP BY u.id ON CONFLICT DO NOTHING;
+UPDATE users SET trial_id=md5('user:'||id)::uuid WHERE trial_id IS NULL;
+INSERT INTO quote_allowances(id,used)
+  SELECT md5('guest:'||id)::uuid,quote_count FROM guest_sessions WHERE trial_id IS NULL AND converted_user_id IS NULL
+  ON CONFLICT DO NOTHING;
+UPDATE guest_sessions g SET trial_id=u.trial_id FROM users u WHERE g.converted_user_id=u.id AND g.trial_id IS NULL;
+UPDATE guest_sessions SET trial_id=md5('guest:'||id)::uuid WHERE trial_id IS NULL;
+CREATE TABLE IF NOT EXISTS trial_browsers (browser_hash TEXT PRIMARY KEY, trial_id UUID NOT NULL REFERENCES quote_allowances(id));
+INSERT INTO trial_browsers SELECT browser_hash,trial_id FROM guest_sessions ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS signup_attempts (ip_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX IF NOT EXISTS signup_attempts_ip_idx ON signup_attempts(ip_hash,created_at);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_reference UUID DEFAULT gen_random_uuid();
+CREATE UNIQUE INDEX IF NOT EXISTS users_billing_reference_idx ON users(billing_reference);
+CREATE TABLE IF NOT EXISTS billing_subscriptions (
+  id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending', period_end TIMESTAMPTZ, event_created BIGINT NOT NULL DEFAULT 0,
+  checkout_paid BOOLEAN NOT NULL DEFAULT false
+);
+CREATE TABLE IF NOT EXISTS billing_events (id TEXT PRIMARY KEY, processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_managed BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS creation_key UUID;
+CREATE UNIQUE INDEX IF NOT EXISTS quotes_creation_key_idx ON quotes(creation_key) WHERE creation_key IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS issues (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,

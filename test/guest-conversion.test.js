@@ -13,7 +13,7 @@ function harness(guest=true){
   const element=id=>elements[id]??={style:{},classList:{add(){},remove(){}},textContent:'',value:'',disabled:false};
   const context=vm.createContext({API:'',token:'test',currentUser:{guest,name:'Electrician'},currentQuoteData:structuredClone(quote),editingQuoteId:42,quotes:[structuredClone(quote)],currentBuilderStep:6,selectedRisk:'low',needsSkip:false,needsScaffold:false,
     document:{getElementById:element,querySelector:element},sessionStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null,removeItem:k=>storage.delete(k)},
-    fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:{ok:true,id:42});},
+    fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:url.endsWith('/export')?structuredClone(quote):{ok:true,id:42});},
     window:{open:(...args)=>{opened.push(args);return {document:{write(){},close(){}},focus(){},print(){}};}},
     trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
   vm.runInContext(functions+email+print+render,context);
@@ -58,7 +58,7 @@ test('registered Email retains server delivery and PDF opens print document',asy
   const h=harness(false);
   await vm.runInContext('emailQuote()',h.context);
   assert.equal(h.requests[0].url,'/api/quotes/send-email');
-  assert.deepEqual(JSON.parse(h.requests[0].options.body),quote);
+  assert.deepEqual(JSON.parse(h.requests[0].options.body),{quote_id:42});
   await vm.runInContext('printQuote()',h.context);
   assert.equal(h.opened.length,1);
   assert.deepEqual(h.events,['quote_sent','quote_downloaded']);

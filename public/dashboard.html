@@ -443,6 +443,15 @@ textarea.field-input{resize:vertical;min-height:80px;}
 </style>
 </head>
 <body>
+<dialog id="subscription-dialog" style="max-width:440px;width:calc(100% - 40px);border:1px solid #ffc20a;border-radius:16px;padding:28px;background:#15232c;color:white;">
+  <h2>Your three free quotes are used</h2>
+  <p>Subscribe for £49/month to create your next quote. Your existing quotes stay available, and the job you are working on is kept here.</p>
+  <p>Quotes created before signup count towards the same three-quote allowance.</p>
+  <button type="button" class="btn-next" onclick="startSubscription()">Subscribe — £49/month</button>
+  <button type="button" class="btn-action" onclick="refreshQuoteAccess(true)">I've paid — check access</button>
+  <button type="button" class="btn-action" onclick="document.getElementById('subscription-dialog').close()">Back to my quotes</button>
+  <p id="subscription-message" role="status"></p>
+</dialog>
 
 <!-- LOGIN -->
 <div id="login-screen">
@@ -1253,7 +1262,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div class="card">
         <div class="card-title">Subscription</div>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Upgrade whenever you’re ready to keep quoting and save your work.</p>
-        <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a" onclick="trackFunnelEvent('checkout_started')" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Start £49/month Subscription →</a>
+        <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a" onclick="event.preventDefault();startSubscription()" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Start £49/month Subscription →</a>
       </div>
     </div>
 
@@ -1311,7 +1320,7 @@ async function startGuest(){
     token=data.token; guestToken=data.token;
     localStorage.setItem('pq_token',token); localStorage.setItem('pq_guest_token',guestToken);
     initApp(true);
-  }catch(e){ showLogin(); alert('We could not start the free quote. Please try again.'); }
+  }catch(e){ showLogin(); alert(e.message||'We could not start the free quote. Please try again.'); }
 }
 
 function showGuestSignup(){
@@ -1637,7 +1646,7 @@ async function doRegister(){
   if(!name||!email||!password){ err.textContent='Please fill in all fields.'; err.style.display='block'; return; }
   btn.textContent='Creating account...'; btn.disabled=true;
   try{
-    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade,guest_token:localStorage.getItem('pq_guest_token')})});
+    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade,browser_id:getBrowserId(),guest_token:localStorage.getItem('pq_guest_token')})});
     const data=await res.json();
     if(!res.ok){ err.textContent=data.error||'Registration failed.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; return; }
     token=data.token; localStorage.setItem('pq_token',token); trackFunnelEvent('account_created'); initApp();
@@ -1672,6 +1681,8 @@ async function initApp(startInBuilder=false){
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='';
     localStorage.removeItem('pq_guest_token'); guestToken=null;
     returnToCompletedQuote();
+    if(new URLSearchParams(window.location.search).get('subscribe')==='1') switchTab('setup');
+    if(new URLSearchParams(window.location.search).get('billing')==='returned'){switchTab('builder');showSubscriptionPrompt();refreshQuoteAccess(true);}
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
@@ -1714,18 +1725,40 @@ function populateUserUI(){
     if(pill) pill.textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
     return;
   }
-  // Trial pill — days remaining
-  const pillEl=document.getElementById('trial-pill');
-  if(pillEl&&currentUser.trial_started_at&&!currentUser.paid_at){
-    const started=new Date(currentUser.trial_started_at);
-    const msLeft=(started.getTime()+(7*24*60*60*1000))-Date.now();
-    const daysLeft=Math.max(0,Math.ceil(msLeft/(24*60*60*1000)));
-    const dayNum=Math.min(7,7-daysLeft+1);
-    if(daysLeft<=0){ pillEl.textContent='3 Free Quotes Included'; }
-    else if(daysLeft===1){ pillEl.textContent='3 Free Quotes Included'; }
-    else { pillEl.textContent='3 Free Quotes Included'; }
-  }
+  updateAllowancePill();
 }
+
+function updateAllowancePill(){
+  const pill=document.getElementById('trial-pill');
+  if(pill&&!currentUser?.guest) pill.textContent=currentUser?.subscribed?'Subscription active':Math.max(0,currentUser?.quotes_remaining??3)+' of 3 free quotes remaining';
+}
+function showSubscriptionPrompt(){
+  saveBuilderDraft();
+  document.getElementById('subscription-dialog').showModal();
+}
+async function startSubscription(){
+  if(currentUser?.guest){showGuestSignup();return;}
+  const checkout=window.open('','_blank');
+  try{
+    const response=await fetch(API+'/api/billing/checkout',{method:'POST',headers:{Authorization:'Bearer '+token}});
+    const data=await response.json();
+    if(!response.ok) throw new Error(data.error||'Could not open checkout');
+    if(data.subscribed){checkout?.close();await refreshQuoteAccess(true);return;}
+    trackFunnelEvent('checkout_started');
+    if(checkout) checkout.location.href=data.url; else window.location.href=data.url;
+  }catch(error){checkout?.close();showToast(error.message);}
+}
+async function refreshQuoteAccess(showMessage=false){
+  if(!currentUser||currentUser.guest) return;
+  try{
+    const response=await fetch(API+'/api/billing/status',{headers:{Authorization:'Bearer '+token}});
+    if(!response.ok) throw new Error('Could not check your subscription. Please try again.');
+    Object.assign(currentUser,await response.json());updateAllowancePill();
+    if(currentUser.subscribed){document.getElementById('subscription-dialog').close();if(showMessage)showToast('Subscription active — you can generate your quote now.');}
+    else if(showMessage) document.getElementById('subscription-message').textContent='Payment has not been confirmed yet. If you have just paid, check again shortly.';
+  }catch(error){if(showMessage)document.getElementById('subscription-message').textContent=error.message;}
+}
+window.addEventListener('focus',()=>refreshQuoteAccess());
 
 function switchTab(tab){
   ['home','quotes','builder','issues','setup'].forEach(t=>{
@@ -2207,6 +2240,7 @@ function nextStep(n){
 }
 
 function resetBuilder(){
+  pendingCreationKey=null;
   if(currentUser?.guest && currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
   clearBuilderDraft();
   editingQuoteId=null;
@@ -2291,7 +2325,12 @@ function calcHealthScore(profitPct, contingency, risk, hasSkip, hasScaffold, des
   return Math.min(100,Math.max(0,score));
 }
 
+let generatingQuote=false;
+let pendingCreationKey=null;
 async function generateQuote(){
+  if(generatingQuote) return;
+  generatingQuote=true;
+  try{
   document.getElementById('ai-loading').style.display='block';
   document.getElementById('ai-output').style.display='none';
   document.getElementById('ai-warning-box').style.display='none';
@@ -2357,37 +2396,31 @@ async function generateQuote(){
     profit_percent:profitPct
   };
 
-  // A guest quote counts when it is generated, not only if the separate Save button is pressed.
-  // Store it now so PDF/email/printing cannot be used to bypass the three-quote allowance.
-  if(currentUser?.guest && !editingQuoteId){
-    try{
-      const claim=await fetch(API+'/api/quotes',{
-        method:'POST',
-        headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-        body:JSON.stringify(currentQuoteData)
-      });
-      const saved=await claim.json();
-      if(!claim.ok){
-        if(saved.code==='guest_limit'||saved.error==='guest_limit') showGuestSignup();
-        else { nextStep(5); showToast('Could not generate this quote: '+(saved.error||'please try again')); }
-        return;
-      }
-      editingQuoteId=saved.id;
-      currentUser.guest_quotes_remaining=saved.guest_quotes_remaining;
-      const pill=document.getElementById('trial-pill');
-      if(pill) pill.textContent='3 free quotes · '+saved.guest_quotes_remaining+' remaining';
-      document.getElementById('btn-save-quote').textContent='💾 Saved';
-      clearBuilderDraft();
-      loadQuotes();
-      showToast(saved.guest_quotes_remaining?'Quote generated and saved — '+saved.guest_quotes_remaining+' free remaining':'Third free quote generated — create an account for your next quote');
-    }catch(e){
-      nextStep(5);
-      showToast('Connection error — the quote was not generated');
+  // Every new quote is counted on the server before its completed output is shown.
+  if(!editingQuoteId){
+    pendingCreationKey=pendingCreationKey||crypto.randomUUID();
+    currentQuoteData.creation_key=pendingCreationKey;
+  }
+  try{
+    const response=await fetch(API+'/api/quotes'+(editingQuoteId?'/'+editingQuoteId:''),{
+      method:editingQuoteId?'PATCH':'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(currentQuoteData)
+    });
+    const saved=await response.json();
+    if(!response.ok){
+      if(saved.code==='subscription_required'){currentQuoteData=null;nextStep(5);showSubscriptionPrompt();}
+      else if(saved.code==='guest_limit'){nextStep(5);showGuestSignup();}
+      else {nextStep(5);showToast(saved.error||'Could not generate your quote');}
       return;
     }
-  }
+    editingQuoteId=editingQuoteId||saved.id;currentQuoteData.id=editingQuoteId;pendingCreationKey=null;
+    if(typeof saved.quotes_remaining==='number') Object.assign(currentUser,{quotes_remaining:saved.quotes_remaining,quotes_used:saved.quotes_used,subscribed:saved.subscribed,guest_quotes_remaining:saved.guest_quotes_remaining});
+    updateAllowancePill();
+    if(currentUser.guest) document.getElementById('trial-pill').textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
+    document.getElementById('btn-save-quote').textContent='💾 Saved';clearBuilderDraft();loadQuotes();
+  }catch(error){nextStep(5);showToast('Connection error — try generating again.');return;}
 
   renderCompletedQuote();
+  }finally{generatingQuote=false;}
 }
 
 function renderCompletedQuote(){
@@ -2522,7 +2555,8 @@ async function saveQuote(){
       if(!editingQuoteId && currentQuoteData?.quote_data?.profit){
         flashProfitHero(currentQuoteData.quote_data.profit);
       }
-      editingQuoteId=currentUser?.guest?(saved.id||editingQuoteId):null;
+      currentQuoteData.id=saved.id||editingQuoteId;
+      editingQuoteId=currentUser?.guest?currentQuoteData.id:null;
       document.getElementById('step-first-quote').className='step-num done';
       document.getElementById('step-first-quote').textContent='✓';
       document.getElementById('builder-title').textContent='New Quote';
@@ -2550,7 +2584,7 @@ async function emailQuote(){
     const response=await fetch(API+'/api/quotes/send-email',{
       method:'POST',
       headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify(currentQuoteData)
+      body:JSON.stringify({quote_id:editingQuoteId||currentQuoteData.id})
     });
     const result=await response.json();
     if(!response.ok) throw new Error(result.error||'The quote could not be emailed.');
@@ -2566,6 +2600,13 @@ async function emailQuote(){
 async function printQuote(){
   if(!currentQuoteData) return;
   if(!await requireQuoteAccount()) return;
+  const win=window.open('','_blank');
+  if(!win){showToast('Allow popups to download your PDF.');return;}
+  try{
+    const response=await fetch(API+'/api/quotes/'+(editingQuoteId||currentQuoteData.id)+'/export',{headers:{Authorization:'Bearer '+token}});
+    if(!response.ok) throw new Error('Could not load the saved quote. Please generate it again.');
+    currentQuoteData=await response.json();
+  }catch(error){win.close();showToast(error.message);return;}
   trackFunnelEvent('quote_downloaded');
   const customerName=currentQuoteData.customer_name||'Customer';
   // Prioritise business_name from settings over personal name
@@ -2726,7 +2767,6 @@ async function printQuote(){
 </body>
 </html>`;
 
-  const win=window.open('','_blank');
   win.document.write(html);
   win.document.close();
   win.focus();

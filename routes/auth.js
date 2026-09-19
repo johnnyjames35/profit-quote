@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
 const crypto = require('crypto');
+const {browserTrial,setTrialCookie,access,publicAccess,ipHash}=require('../utils/quote-access');
 const { sendToGA } = require('../utils/ga');
 const { isFreeOnboardingOfferActive } = require('../utils/onboarding-offer');
 
@@ -41,16 +42,16 @@ function sendWelcomeEmail(name, email) {
     ? '<li>Personal setup included free until 30 September 2026</li>'
     : '<li>£99 one-off onboarding fee</li>';
   return sendBrevoEmail(email,
-    'Welcome to ProfitQuote — your 7-day free trial starts now',
+    'Welcome to ProfitQuote — your first three quotes are included',
     `<p>Hi ${name},</p>
-<p>Welcome to ProfitQuote! Your 7-day free trial has started.</p>
+<p>Welcome to ProfitQuote! Your first three quotes are included. Quotes created before signup count towards the same allowance.</p>
 <p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
-<p>After your trial, you'll need:</p>
+<p>To create quote four and keep quoting, you'll need:</p>
 <ul>
 ${onboardingItem}
 <li>£49/month subscription</li>
 </ul>
-<p>I'll be in touch before your trial ends to get you set up personally.</p>
+<p>Your existing quotes stay available when your free allowance is used.</p>
 <p>John James<br>ProfitQuote | Cambrian Digital</p>`
   );
 }
@@ -62,7 +63,7 @@ function sendNotifyJohnEmail(name, email) {
     `<p>New user signed up for ProfitQuote:</p>
 <p><strong>Name:</strong> ${name}<br>
 <strong>Email:</strong> ${email}</p>
-<p>Their 7-day trial starts today. Chase them on day 6!</p>`
+<p>Their three-quote free allowance is available now. Guest quotes count towards the same allowance.</p>`
   );
 }
 
@@ -90,6 +91,7 @@ router.post('/register', async (req, res) => {
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
   try {
     const pool = req.app.locals.pool;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<6) return res.status(400).json({error:'Enter a valid email and a password of at least six characters.'});
     const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email.toLowerCase()]);
     if (exists.rows.length) return res.status(400).json({ error: 'Email already registered' });
     const hash = await bcrypt.hash(password, 10);
@@ -103,16 +105,25 @@ router.post('/register', async (req, res) => {
     let user;
     try{
       await client.query('BEGIN');
+      const network=ipHash(req);
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[network]);
+      const attempts=await client.query("SELECT COUNT(*)::int AS n FROM signup_attempts WHERE ip_hash=$1 AND created_at>NOW()-INTERVAL '24 hours'",[network]);
+      if(attempts.rows[0].n>=5) throw Object.assign(new Error('Too many accounts created from this connection today. Please sign in or try again tomorrow.'),{status:429});
+      let trialId;
       if(guest){
-        const session=await client.query('SELECT id FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL FOR UPDATE',[guest.id]);
+        const session=await client.query('SELECT id,trial_id FROM guest_sessions WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL FOR UPDATE',[guest.id]);
         if(!session.rows.length) throw new Error('Your guest session is no longer available. Please sign in if you already created an account.');
       }
+      if(guest){ const a=await access(client,guest,true); trialId=a.trial_id; setTrialCookie(res,trialId); }
+      else trialId=await browserTrial(client,req,res);
       const result=await client.query(
         `INSERT INTO users (name,email,password_hash,trade,trial_started_at)
          VALUES ($1,$2,$3,$4,NOW()) RETURNING ${USER_FIELDS}`,
         [name,email.toLowerCase(),hash,trade||'']
       );
       user=result.rows[0];
+      await client.query('UPDATE users SET trial_id=$1 WHERE id=$2',[trialId,user.id]);
+      await client.query('INSERT INTO signup_attempts(ip_hash) VALUES($1)',[network]);
       if(guest){
         await client.query('UPDATE quotes SET user_id=$1,guest_id=NULL WHERE guest_id=$2',[user.id,guest.id]);
         await client.query('UPDATE guest_sessions SET converted_user_id=$1,last_active_at=NOW() WHERE id=$2',[user.id,guest.id]);
@@ -132,7 +143,7 @@ router.post('/register', async (req, res) => {
     sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
 
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    res.status(e.status||500).json({ error: e.message });
   }
 });
 
@@ -212,17 +223,16 @@ router.post('/reset-password', async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
-    if (req.user.guest) {
-      const result = await pool.query("SELECT COALESCE(SUM(other.quote_count),0)::int AS used FROM guest_sessions current_session JOIN guest_sessions other ON other.ip_hash=current_session.ip_hash AND other.created_at>NOW()-INTERVAL '30 days' WHERE current_session.id=$1 AND current_session.expires_at>NOW() AND current_session.converted_user_id IS NULL GROUP BY current_session.id", [req.user.id]);
-      if (!result.rows.length) return res.status(401).json({ error: 'Guest session expired' });
-      const used = result.rows[0].used;
-      return res.json({ id:req.user.id,guest:true,name:'Guest',trade:'',plan:'guest',day_rate:200,hourly_rate:35,overhead_per_day:50,markup_percent:20,profit_target:30,vat_rate:0,business_name:'',phone:'',contact_email:'',town:'',is_guest:true,guest_quotes_used:used,guest_quotes_remaining:Math.max(0,3-used) });
-    }
+    const client=await pool.connect();
+    let a;
+    try{await client.query('BEGIN');a=await access(client,req.user,true);await client.query('COMMIT');}
+    catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
+    if(req.user.guest) return res.json({id:req.user.id,guest:true,name:'Guest',trade:'',plan:'guest',day_rate:200,hourly_rate:35,overhead_per_day:50,markup_percent:20,profit_target:30,vat_rate:0,business_name:'',phone:'',contact_email:'',town:'',guest_quotes_used:a.used,guest_quotes_remaining:a.remaining,...publicAccess(a)});
     const result = await pool.query(
       `SELECT ${USER_FIELDS} FROM users WHERE id=$1`,
       [req.user.id]
     );
-    res.json(result.rows[0]);
+    res.json({...result.rows[0],...publicAccess(a)});
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
