@@ -789,7 +789,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
     <!-- QUOTE BUILDER -->
     <div class="section" id="sec-builder">
       <div class="builder-header">
-        <button class="btn-back" onclick="switchTab('home')">← Back</button>
+        <button class="btn-back" onclick="currentBuilderStep>1?nextStep(currentBuilderStep-1):switchTab('home')">← Back</button>
         <span class="builder-title" id="builder-title">New Quote</span>
         <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
@@ -1012,6 +1012,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         </div>
         <div id="ai-loading" class="ai-box"><div class="ai-loading">🤖 Building your quote...</div></div>
         <div id="ai-output" style="display:none;">
+          <button class="btn-prev" style="margin:0 0 14px;color:var(--amber);border-color:var(--amber);" onclick="nextStep(1)">← Review / edit quote</button>
 
           <!-- Quote Health Score -->
           <div id="health-card" class="health-card green">
