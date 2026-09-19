@@ -440,6 +440,10 @@ textarea.field-input{resize:vertical;min-height:80px;}
 /* TOAST */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--amber);color:var(--black);padding:10px 20px;border-radius:20px;font-size:0.85rem;font-weight:800;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#subscription-dialog{margin:auto;max-height:calc(100dvh - 40px);overflow:auto;}
+#subscription-dialog::backdrop{background:rgba(0,0,0,.55);}
+#subscription-dialog p{margin:12px 0;line-height:1.5;}
+#subscription-dialog .btn-action{margin-top:8px;}
 </style>
 </head>
 <body>
@@ -449,7 +453,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
   <p>Quotes created before signup count towards the same three-quote allowance.</p>
   <button type="button" class="btn-next" onclick="startSubscription()">Subscribe — £49/month</button>
   <button type="button" class="btn-action" onclick="refreshQuoteAccess(true)">I've paid — check access</button>
-  <button type="button" class="btn-action" onclick="document.getElementById('subscription-dialog').close()">Back to my quotes</button>
+  <button type="button" class="btn-action" onclick="document.getElementById('subscription-dialog').close()">Back to my draft</button>
   <p id="subscription-message" role="status"></p>
 </dialog>
 
@@ -903,8 +907,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="card">
           <div class="card-title">Labour</div>
           <p class="field-hint" id="labour-nudge" role="status" aria-live="polite" hidden></p>
-          <div class="field-group"><label class="field-label">Number of Days</label><input class="field-input" id="q-days" oninput="updateProfitNudges()" type="number" placeholder="e.g. 5" min="0.5" step="0.5"></div>
-          <div class="field-group"><label class="field-label">Daily Labour Cost (£)</label><input class="field-input" id="q-day-rate" type="number" min="0" placeholder="e.g. 200"><div class="field-hint">What one working day genuinely costs the business, including your wage.</div></div>
+          <div class="field-group"><label class="field-label" for="q-days">Number of Days</label><input class="field-input" id="q-days" oninput="updateProfitNudges()" type="number" placeholder="e.g. 5" min="0.5" step="0.5"><div class="field-hint">Working days on this job, including preparation, testing and finishing.</div></div>
+          <div class="field-group"><label class="field-label" for="q-day-rate">Daily Labour Cost (£)</label><input class="field-input" id="q-day-rate" type="number" min="0" placeholder="e.g. 400"><div class="field-hint">Include everyone working that day: your wage plus any apprentice or helper. For example, £250 + £150 = £400 per day. If help is part-time, spread its total cost across the job days.</div></div>
           <div class="field-group"><label class="field-label">Daily Overhead Allowance (£)</label><input class="field-input" id="q-overhead" type="number" min="0" placeholder="e.g. 50"><div class="field-hint">Insurance, vehicle, tools, office and other running costs spread across working days.</div></div>
         </div>
         <button class="btn-next" onclick="nextStep(4)">Next →</button>
@@ -935,8 +939,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group">
             <label class="field-label">Does this job require a skip?</label>
             <div class="risk-row">
-              <button class="risk-btn" id="skip-no" onclick="setSkip(false)" style="flex:1;">No Skip Needed</button>
-              <button class="risk-btn active-low" id="skip-yes" onclick="setSkip(true)" style="flex:1;">Yes — Add Skip</button>
+              <button class="risk-btn active-low" id="skip-no" onclick="setSkip(false)" style="flex:1;">No Skip Needed</button>
+              <button class="risk-btn" id="skip-yes" onclick="setSkip(true)" style="flex:1;">Yes — Add Skip</button>
             </div>
           </div>
           <div id="skip-fields" style="display:none;">
@@ -993,7 +997,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
           </div>
           <div class="field-group"><label class="field-label">Contingency %</label><input class="field-input" id="q-contingency" type="number" placeholder="e.g. 10" value="10"></div>
-          <div class="field-group"><label class="field-label">Profit Target %</label><input class="field-input" id="q-profit-target" oninput="updateProfitNudges()" type="number" min="0" max="80" placeholder="e.g. 30" value="30"></div>
+          <div class="field-group"><label class="field-label" for="q-profit-target">Profit Target %</label><input class="field-input" id="q-profit-target" oninput="updateProfitNudges()" type="number" min="0" max="80" placeholder="e.g. 30" value="30"><div class="field-hint">Your profit margin: the share of the selling price left after job costs, overheads and contingency, before VAT.</div></div>
           <p class="field-hint" id="profit-nudge" role="status" aria-live="polite" hidden></p>
         </div>
         <button class="btn-next" onclick="nextStep(6)">Generate Quote →</button>
@@ -1399,7 +1403,7 @@ let quotes = [];
 let filteredQuotes = [];
 let selectedRisk = 'low';
 let currentQuoteData = null;
-let needsSkip = true;
+let needsSkip = false;
 let needsScaffold = false;
 let clientSuppliesMaterials = false;
 let editingQuoteId = null; // null = new quote, number = editing existing
@@ -2374,8 +2378,8 @@ function resetBuilder(){
   renderScopeTasks();
   updateGuidedDescription();
   document.getElementById('q-skip-quantity').value=1;
-  needsSkip=true; needsScaffold=false; clientSuppliesMaterials=false;
-  setSkip(true); setScaffold(false); setClientMaterials(false);
+  needsSkip=false; needsScaffold=false; clientSuppliesMaterials=false;
+  setSkip(false); setScaffold(false); setClientMaterials(false);
   document.getElementById('q-client-materials').value='';
   updateSkipTotal();
   ['length-m-conv','length-ft-conv','width-m-conv','width-ft-conv','height-m-conv','height-ft-conv'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=''; });
@@ -2545,7 +2549,7 @@ async function generateQuote(){
     if(typeof saved.quotes_remaining==='number') Object.assign(currentUser,{quotes_remaining:saved.quotes_remaining,quotes_used:saved.quotes_used,subscribed:saved.subscribed,guest_quotes_remaining:saved.guest_quotes_remaining});
     updateAllowancePill();
     if(currentUser.guest) document.getElementById('trial-pill').textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
-    document.getElementById('btn-save-quote').textContent='💾 Saved';clearBuilderDraft();loadQuotes();
+    document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save':'💾 Saved';clearBuilderDraft();loadQuotes();
   }catch(error){nextStep(5);showToast('Connection error — try generating again.');return;}
 
   renderCompletedQuote();
@@ -2647,6 +2651,7 @@ function flashProfitHero(profitAmt){
 
 async function saveQuote(){
   if(!currentQuoteData) return;
+  if(!await requireQuoteAccount()) return;
   try{
     let res;
     if(editingQuoteId){
@@ -2721,7 +2726,8 @@ async function emailQuote(){
 
 async function printQuote(){
   if(!currentQuoteData) return;
-  if(!await requireQuoteAccount()) return;
+  if(currentUser?.guest){await requireQuoteAccount();return;}
+  // Open during the click itself so mobile popup blockers retain the user gesture.
   const win=window.open('','_blank');
   if(!win){showToast('Allow popups to download your PDF.');return;}
   try{
@@ -2730,26 +2736,29 @@ async function printQuote(){
     currentQuoteData=await response.json();
   }catch(error){win.close();showToast(error.message);return;}
   trackFunnelEvent('quote_downloaded');
-  const customerName=currentQuoteData.customer_name||'Customer';
+  const escapeHtml=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const customerName=escapeHtml(currentQuoteData.customer_name||'Customer');
   // Prioritise business_name from settings over personal name
-  const bizName=currentUser?.business_name||(currentUser?.name?currentUser.name+' Building Services':'');
-  const bizPhone=currentUser?.phone||'';
-  const bizEmail=currentUser?.contact_email||'';
-  const bizTown=currentUser?.town||'';
+  const bizName=escapeHtml(currentUser?.business_name||currentUser?.name||'');
+  const bizPhone=escapeHtml(currentUser?.phone||'');
+  const bizEmail=escapeHtml(currentUser?.contact_email||'');
+  const bizTown=escapeHtml(currentUser?.town||'');
   const total=currentQuoteData.total||0;
   const desc=currentQuoteData.job_description||'';
   const qd=currentQuoteData.quote_data||{};
   const skipDisplay=qd.skipPrice??qd.skipCost??0;
   const scaffoldDisplay=qd.scaffoldPrice??qd.scaffoldCost??0;
   const contingencyDisplay=qd.contingencyPrice??qd.contingencyAmt??0;
-  const date=new Date().toLocaleDateString('en-GB');
-  const ref='QUO-'+Date.now().toString().slice(-5);
+  const date=new Date(currentQuoteData.created_at||Date.now()).toLocaleDateString('en-GB');
+  const ref='QUO-'+escapeHtml(currentQuoteData.id||editingQuoteId);
 
-  // Smarter bullet splitting — split on commas, semicolons, newlines,
-  // AND on action verbs that naturally start new items
-  const verbSplit=desc.replace(/\b(replace|install|remove|fit|supply|fix|repair|add|build|lay|tile|paint|plaster|wire|connect|upgrade|renew|relocate|provide)\b/gi,(m)=>'\n'+m);
-  const rawItems=verbSplit.split(/,|;|\n/).map(s=>s.trim()).filter(s=>s.length>4);
-  const bulletItems=rawItems.map(s=>`<li>${(s.charAt(0).toUpperCase()+s.slice(1)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('');
+  // Preserve exclusions and short measurements; never split a sentence at an action verb.
+  const scope=qd.jobScope;
+  const scopeText=scope?[scope.scale,scope.propertyType,scope.roomCount?'approximately '+scope.roomCount+' rooms':'',scope.details].filter(Boolean).join(' · '):'';
+  const rawItems=Array.isArray(qd.scopeTasks)&&qd.scopeTasks.length
+    ? [...qd.scopeTasks,scopeText?'Job scope: '+scopeText:'',qd.extraNotes?'Additional details: '+qd.extraNotes:''].filter(Boolean)
+    : [desc];
+  const bulletItems=rawItems.map(s=>`<li>${escapeHtml(s)}</li>`).join('');
   const safeClientItems=String(qd.clientSuppliedItems||'Materials agreed separately')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const clientSupplyNote=qd.clientSuppliesMaterials
@@ -2787,7 +2796,7 @@ async function printQuote(){
   .biz-name{font-size:13px;font-weight:800;color:#1a1a1a;}
   .biz-contact{font-size:11px;color:#666;margin-top:3px;line-height:1.6;}
 .badge{display:inline-block;background:#FFC20A;color:#10202B;font-size:10px;font-weight:800;padding:3px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
-  .meta{font-size:11px;color:#888;margin-bottom:14px;display:flex;gap:20px;}
+  .meta{font-size:11px;color:#888;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px 20px;}
   .greeting{font-size:14px;color:#1a1a1a;margin-bottom:4px;font-weight:600;}
   .intro{font-size:12px;color:#555;margin-bottom:16px;}
   .section-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #eee;}
@@ -2812,6 +2821,14 @@ async function printQuote(){
   .sign-underline{flex:1;border-bottom:1px solid #ccc;height:16px;}
   .footer{border-top:1px solid #eee;padding-top:10px;text-align:center;font-size:10px;color:#aaa;}
 .shield{color:#FFC20A;}
+  .page{overflow-wrap:anywhere;}
+  .total-box,.sign-section,.breakdown-row{break-inside:avoid;}
+  @media screen and (max-width:480px){
+    .page{padding:20px 16px;}
+    .header{gap:12px;flex-wrap:wrap;}
+    .two-col{flex-direction:column;}
+    .includes{flex:auto;}
+  }
   @media print{
     body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .page{padding:20px 28px;}
