@@ -1913,26 +1913,42 @@ function rememberAppPage(){
   updateBackButtons();
 }
 function updateBackButtons(){
-  const atStart=appRoute().tab==='home'&&!(history.state?.depth>0);
   document.querySelectorAll('#sec-home > button[onclick="appBack()"]').forEach(button=>{
-    button.disabled=atStart;
-    button.textContent=atStart?'← Back — you’re at the start':'← Back';
-    button.style.opacity=atStart?'0.55':'';
-    button.style.cursor=atStart?'default':'';
+    button.disabled=false;
+    button.textContent='← Back to quote';
+    button.style.opacity='';
+    button.style.cursor='pointer';
   });
+}
+function returnToQuote(){
+  if(editingQuoteId!==null){
+    switchTab('builder');
+    nextStep(Math.min(currentBuilderStep,5));
+    return;
+  }
+  if(restoreBuilderDraft()){switchTab('builder');return;}
+  const saved=quotes.find(q=>q.id===currentQuoteData?.id)||quotes[0];
+  if(saved){editQuote(saved.id);return;}
+  switchTab('builder');
 }
 function appBack(){
   const route=appRoute();
+  if(route.tab==='home'){returnToQuote();return;}
   if(route.tab==='builder'){
     saveBuilderDraft();
-
+    // Quote steps are sequential even after reloading or reopening a saved quote.
+    replayingNavigation=true;
+    try{
+      if(currentBuilderStep>1) nextStep(currentBuilderStep-1);
+      else switchTab('home');
+      history.replaceState({...appRoute(),depth:history.state?.depth||0},'');
+    }finally{replayingNavigation=false;updateBackButtons();}
+    return;
   }
   if(route.tab==='issues'&&document.getElementById('issue-form').style.display!=='none'){
     resetIssues();return;
   }
   if(history.state?.pq&&history.state.depth>0){history.back();return;}
-  if(route.tab==='builder'&&currentBuilderStep>1){nextStep(currentBuilderStep-1);return;}
-  if(route.tab==='home'){updateBackButtons();return;}
   // A fallback is a return to the start, never another forward history entry.
   replayingNavigation=true;
   try{switchTab('home');history.replaceState({...appRoute(),depth:0},'');}
