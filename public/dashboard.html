@@ -649,6 +649,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
     <!-- DASHBOARD -->
     <div class="section active" id="sec-home">
+      <button class="btn-back" style="margin-bottom:12px;" onclick="appBack()">← Back</button>
 
       <!-- HERO -->
       <div class="home-hero" style="position:relative;">
@@ -772,11 +773,12 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div id="recent-quotes-list"></div>
       </div>
 
+      <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
 
     <!-- QUOTES LIST -->
     <div class="section" id="sec-quotes">
-      <button class="btn-back" style="margin-bottom:12px;" onclick="switchTab('home')">← Back to dashboard</button>
+      <button class="btn-back" style="margin-bottom:12px;" onclick="appBack()">← Back</button>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h2 class="section-heading">Quote Library</h2>
         <button onclick="switchTab('builder')" style="background:var(--amber);color:var(--black);border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;font-size:0.85rem;font-family:var(--font);">+ New</button>
@@ -785,13 +787,13 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div id="quotes-list">
         <div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes yet</div><p>Tap New to build your first profit-protected quote.</p></div>
       </div>
-      <button class="btn-prev" onclick="switchTab('home')">← Back to dashboard</button>
+      <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
 
     <!-- QUOTE BUILDER -->
     <div class="section" id="sec-builder">
       <div class="builder-header">
-        <button class="btn-back" onclick="saveBuilderDraft();currentBuilderStep>1?nextStep(currentBuilderStep-1):switchTab('home')">← Back</button>
+        <button class="btn-back" onclick="appBack()">← Back</button>
         <span class="builder-title" id="builder-title">New Quote</span>
         <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
@@ -843,7 +845,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group"><label class="field-label">Postcode</label><input class="field-input" id="q-postcode" placeholder="e.g. SA1 1AB"></div>
         </div>
         <button class="btn-next" onclick="nextStep(2)">Next →</button>
-        <button class="btn-prev" onclick="saveBuilderDraft();switchTab('home')">← Back</button>
+        <button class="btn-prev" onclick="appBack()">← Back</button>
       </div>
 
       <!-- Step 2: Trade-aware job scope -->
@@ -902,7 +904,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           </div>
         </div>
         <button class="btn-next" onclick="nextStep(3)">Next →</button>
-        <button class="btn-prev" onclick="nextStep(1)">← Back</button>
+        <button class="btn-prev" onclick="appBack()">← Back</button>
       </div>
 
       <!-- Step 3: Labour -->
@@ -915,7 +917,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group"><label class="field-label">Daily Overhead Allowance (£)</label><input class="field-input" id="q-overhead" type="number" min="0" placeholder="e.g. 50"><div class="field-hint">Insurance, vehicle, tools, office and other running costs spread across working days.</div></div>
         </div>
         <button class="btn-next" onclick="nextStep(4)">Next →</button>
-        <button class="btn-prev" onclick="nextStep(2)">← Back</button>
+        <button class="btn-prev" onclick="appBack()">← Back</button>
       </div>
 
       <!-- Step 4: Materials -->
@@ -984,7 +986,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           </div>
         </div>
         <button class="btn-next" onclick="nextStep(5)">Next →</button>
-        <button class="btn-prev" onclick="nextStep(3)">← Back</button>
+        <button class="btn-prev" onclick="appBack()">← Back</button>
       </div>
 
       <!-- Step 5: Risk -->
@@ -1004,7 +1006,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <p class="field-hint" id="profit-nudge" role="status" aria-live="polite" hidden></p>
         </div>
         <button class="btn-next" onclick="nextStep(6)">Generate Quote →</button>
-        <button class="btn-prev" onclick="nextStep(4)">← Back</button>
+        <button class="btn-prev" onclick="appBack()">← Back</button>
       </div>
 
       <!-- Step 6: Result -->
@@ -1108,12 +1110,13 @@ textarea.field-input{resize:vertical;min-height:80px;}
           </div>
 
         </div>
-        <button class="btn-prev" style="margin-top:8px;" onclick="nextStep(5)">← Back</button>
+        <button class="btn-prev" style="margin-top:8px;" onclick="appBack()">← Back</button>
       </div>
     </div>
 
     <!-- VARIATIONS -->
     <div class="section" id="sec-issues">
+      <button class="btn-back" style="margin-bottom:12px;" onclick="appBack()">← Back</button>
 
       <!-- form screen -->
       <div id="issues-home">
@@ -1254,10 +1257,12 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <button class="btn-var-new" onclick="resetIssues()">← New Notice</button>
         </div>
       </div>
+      <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
 
     <!-- BUSINESS SETTINGS -->
     <div class="section" id="sec-setup">
+      <button class="btn-back" style="margin-bottom:12px;" onclick="appBack()">← Back</button>
       <div class="setup-avatar" id="setup-avatar">JJ</div>
       <div class="setup-name" id="setup-name"></div>
       <div class="setup-trade" id="setup-trade"></div>
@@ -1284,6 +1289,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Upgrade whenever you’re ready to keep quoting and save your work.</p>
         <a href="https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a" onclick="event.preventDefault();startSubscription()" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Start £49/month Subscription →</a>
       </div>
+      <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
 
   </div><!-- end page -->
@@ -1894,6 +1900,43 @@ async function refreshQuoteAccess(showMessage=false){
 }
 window.addEventListener('focus',()=>refreshQuoteAccess());
 
+let replayingNavigation=false;
+function appRoute(){
+  const tab=document.querySelector('.section.active')?.id.replace('sec-','')||'home';
+  return {pq:true,tab,step:tab==='builder'?currentBuilderStep:null};
+}
+function rememberAppPage(){
+  if(replayingNavigation||restoringBuilderDraft) return;
+  const route=appRoute(), previous=history.state;
+  if(previous?.pq&&previous.tab===route.tab&&previous.step===route.step) return;
+  history.pushState({...route,depth:(previous?.pq?previous.depth||0:0)+1},'');
+}
+function appBack(){
+  const route=appRoute();
+  if(route.tab==='builder'){
+    saveBuilderDraft();
+
+  }
+  if(route.tab==='issues'&&document.getElementById('issue-form').style.display!=='none'){
+    resetIssues();return;
+  }
+  if(history.state?.pq&&history.state.depth>0){history.back();return;}
+  if(route.tab==='builder'&&currentBuilderStep>1){nextStep(currentBuilderStep-1);return;}
+  switchTab(route.tab==='home'?'quotes':'home');
+}
+window.addEventListener('popstate',event=>{
+  const route=event.state;
+  if(!route?.pq) return;
+  saveBuilderDraft();
+  replayingNavigation=true;
+  try{
+    switchTab(route.tab);
+    // Revisiting a result must never generate or charge for another quote.
+    if(route.tab==='builder') nextStep(Math.min(route.step||1,5));
+  }finally{replayingNavigation=false;}
+});
+history.replaceState({...appRoute(),depth:history.state?.pq?history.state.depth||0:0},'');
+
 function switchTab(tab){
   if(tab!=='builder'&&document.getElementById('sec-builder')?.classList.contains('active')&&currentBuilderStep<6) saveBuilderDraft();
   ['home','quotes','builder','issues','setup'].forEach(t=>{
@@ -1914,6 +1957,7 @@ function switchTab(tab){
     if(!restored&&!document.getElementById('q-job-type').value) applyTradeDefault();
     configureJobScope();
   }
+  rememberAppPage();
 }
 
 async function loadQuotes(){
@@ -2384,6 +2428,7 @@ function nextStep(n){
   }
   document.querySelector('.page').scrollTop=0;
   saveBuilderDraft();
+  rememberAppPage();
   if(n===6) generateQuote();
 }
 
@@ -3076,3 +3121,4 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 </script>
 </body>
 </html>
+
