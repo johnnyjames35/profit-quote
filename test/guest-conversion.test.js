@@ -17,7 +17,8 @@ function harness(guest=true){
     window:{open:(...args)=>{opened.push(args);return {document:{write(){},close(){}},focus(){},print(){}};}},
     trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
   const nudge=html.slice(html.indexOf('function labourNudge('),html.indexOf('function updateProfitNudges('));
-  vm.runInContext(functions+email+print+nudge+render,context);
+  const checklist=html.slice(html.indexOf('const COST_CHECK_KEYS='),html.indexOf('function renderCompletedQuote(){'));
+  vm.runInContext(functions+email+print+nudge+checklist+render,context);
   return {context,elements,storage,requests,opened,events};
 }
 for(const action of ['printQuote','emailQuote']) test(`guest ${action} saves latest quote and gates output`,async()=>{

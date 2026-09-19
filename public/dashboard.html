@@ -1048,16 +1048,17 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
           <!-- Forgotten Costs Checklist -->
           <div class="checklist-card">
-            <div class="checklist-title">✅ Forgotten Costs Checklist — have you included these?</div>
+            <div class="checklist-title">Forgotten Costs Checklist — have you reviewed these?</div>
+            <p class="field-hint">Tick each cost once included in your figures or confirmed not applicable. Ticking does not add costs. Save the quote to keep your checks.</p>
             <div class="checklist-items">
-              <label class="checklist-item"><input type="checkbox"> <label>Fuel</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>Parking</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>Waste disposal</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>Consumables</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>Collection time</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>Insurance</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>Tool wear</label></label>
-              <label class="checklist-item"><input type="checkbox"> <label>VAT</label></label>
+              <label class="checklist-item"><input id="cost-check-fuel" type="checkbox" onchange="updateCostChecks()"> <span>Fuel</span></label>
+              <label class="checklist-item"><input id="cost-check-parking" type="checkbox" onchange="updateCostChecks()"> <span>Parking</span></label>
+              <label class="checklist-item"><input id="cost-check-waste" type="checkbox" onchange="updateCostChecks()"> <span>Waste disposal</span></label>
+              <label class="checklist-item"><input id="cost-check-consumables" type="checkbox" onchange="updateCostChecks()"> <span>Consumables</span></label>
+              <label class="checklist-item"><input id="cost-check-collection" type="checkbox" onchange="updateCostChecks()"> <span>Collection time</span></label>
+              <label class="checklist-item"><input id="cost-check-insurance" type="checkbox" onchange="updateCostChecks()"> <span>Insurance</span></label>
+              <label class="checklist-item"><input id="cost-check-tools" type="checkbox" onchange="updateCostChecks()"> <span>Tool wear</span></label>
+              <label class="checklist-item"><input id="cost-check-vat" type="checkbox" onchange="updateCostChecks()"> <span>VAT</span></label>
             </div>
           </div>
 
@@ -1068,21 +1069,21 @@ textarea.field-input{resize:vertical;min-height:80px;}
               <div style="font-size:1.4rem;">🛡</div>
               <div>
                 <div style="font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;">ProfitQuote</div>
-                <div style="font-size:1rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;">Profit Protected</div>
+                <div style="font-size:1rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;" id="cost-review-title">Cost review needed</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
-                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">AI Confidence</div>
-                <div id="sig-confidence" style="font-size:1.4rem;font-weight:900;color:var(--amber);">—</div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Cost review</div>
+                <div id="sig-review" style="font-size:1.4rem;font-weight:900;color:var(--amber);">—</div>
               </div>
               <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
-                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Estimated Risk</div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Your selected risk</div>
                 <div id="sig-risk" style="font-size:1.4rem;font-weight:900;color:var(--green);">LOW</div>
               </div>
               <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
                 <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Forgotten Costs Checked</div>
-                <div id="sig-costs" style="font-size:1.4rem;font-weight:900;color:var(--white);">8 / 8</div>
+                <div id="sig-costs" style="font-size:1.4rem;font-weight:900;color:var(--white);" role="status" aria-live="polite">0 / 8</div>
               </div>
               <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;">
                 <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Margin</div>
@@ -2047,6 +2048,7 @@ function editQuote(id){
 
   // Load saved data back into fields
   const qd=q.quote_data||{};
+  restoreCostChecks(qd.costChecks);
   
   const savedDescription=q.job_description||qd.job_description||'';
   document.getElementById('q-job-type').value=qd.jobType||'other';
@@ -2363,6 +2365,7 @@ function nextStep(n){
 function resetBuilder(){
   pendingCreationKey=null;
   if(currentUser?.guest && currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
+  restoreCostChecks([]);
   clearBuilderDraft();
   editingQuoteId=null;
   ['q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -2517,7 +2520,7 @@ async function generateQuote(){
     markup_percent:markup,
     profit_target:profitTarget,
     other_costs:scaffoldCost>0?'Scaffolding: £'+scaffoldCost:null,
-    quote_data:{customer_email:document.getElementById('q-email').value,pricingVersion:2,labour,materials,mats,directLabourCost,overheadPerDay,overheadCost,knownCost,protectedCost,subtotalExVat,contingencyAmt,contingencyPrice,vatRate,vatAmount,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,jobScope,scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipPrice,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,scaffoldPrice,lenM,widM,lenFt,widFt,heightM,postcode:document.getElementById('q-postcode').value},
+    quote_data:{customer_email:document.getElementById('q-email').value,pricingVersion:2,labour,materials,mats,directLabourCost,overheadPerDay,overheadCost,knownCost,protectedCost,subtotalExVat,contingencyAmt,contingencyPrice,vatRate,vatAmount,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,jobScope,costChecks:readCostChecks(),scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipPrice,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,scaffoldPrice,lenM,widM,lenFt,widFt,heightM,postcode:document.getElementById('q-postcode').value},
     total:total,
     profit_percent:profitPct
   };
@@ -2549,6 +2552,40 @@ async function generateQuote(){
   }finally{generatingQuote=false;}
 }
 
+const COST_CHECK_KEYS=['fuel','parking','waste','consumables','collection','insurance','tools','vat'];
+
+function readCostChecks(){
+  return COST_CHECK_KEYS.filter(key=>document.getElementById('cost-check-'+key).checked);
+}
+
+function restoreCostChecks(saved){
+  const checks=Array.isArray(saved)?saved:[];
+  COST_CHECK_KEYS.forEach(key=>{document.getElementById('cost-check-'+key).checked=checks.includes(key);});
+  renderCostReview();
+}
+
+function updateCostChecks(){
+  if(currentQuoteData){
+    currentQuoteData.quote_data.costChecks=readCostChecks();
+    document.getElementById('btn-save-quote').textContent='💾 Save checks';
+  }
+  renderCostReview();
+}
+
+function renderCostReview(){
+  const count=readCostChecks().length;
+  const complete=count===COST_CHECK_KEYS.length;
+  document.getElementById('sig-costs').textContent=count+' / '+COST_CHECK_KEYS.length;
+  document.getElementById('sig-review').textContent=complete?'Complete':'Review needed';
+  document.getElementById('cost-review-title').textContent=complete?'Cost review complete':'Cost review needed';
+  const score=Number(document.getElementById('health-score-num').textContent)||0;
+  const card=document.getElementById('health-card');
+  card.className='health-card';
+  card.classList.add(score<60?'red':!complete||score<80?'amber':'green');
+  document.getElementById('health-verdict').textContent=!complete?'Review costs — '+count+' of '+COST_CHECK_KEYS.length+' checked':
+    score>=80?'Strong margin — costs reviewed':score>=60?'Costs reviewed — review your margins':'Costs reviewed — review your pricing';
+}
+
 function renderCompletedQuote(){
   const {labour,mats,contingencyPrice,total,profit,profitPct,protectedCost,subtotalExVat,vatAmount,vatRate,builderDetails,roomSummary,skipCost,skipPrice,skipQuantity,scaffoldCost,scaffoldPrice,contingency}=currentQuoteData.quote_data;
   const desc=currentQuoteData.job_description||'';
@@ -2578,14 +2615,8 @@ function renderCompletedQuote(){
 
   // Quote Health Score
   const healthScore=calcHealthScore(profitPct,contingency,selectedRisk,needsSkip,needsScaffold,desc);
-  const hCard=document.getElementById('health-card');
   const hNum=document.getElementById('health-score-num');
-  const hVerdict=document.getElementById('health-verdict');
   hNum.textContent=healthScore;
-  hCard.className='health-card';
-  if(healthScore>=80){ hCard.classList.add('green'); hVerdict.textContent='Strong — profit well protected'; }
-  else if(healthScore>=60){ hCard.classList.add('amber'); hVerdict.textContent='Moderate — review your margins'; }
-  else { hCard.classList.add('red'); hVerdict.textContent='High risk of underquoting'; }
 
   const labourNote=labourNudge(currentQuoteData.quote_data.jobScope,desc,days);
   document.getElementById('ai-warning-text').textContent=labourNote;
@@ -2595,12 +2626,11 @@ function renderCompletedQuote(){
   document.getElementById('ai-output').style.display='block';
 
   // Populate Profit Protected signature block
-  const sigConfidence=Math.min(99,Math.round(healthScore*0.97+Math.random()*3));
+  restoreCostChecks(currentQuoteData.quote_data.costChecks);
   const sigRiskEl=document.getElementById('sig-risk');
   const sigRiskColors={low:'var(--green)',med:'var(--amber-warn)',high:'var(--red)'};
   const sigRiskLabels={low:'LOW',med:'MEDIUM',high:'HIGH'};
   if(sigRiskEl){ sigRiskEl.textContent=sigRiskLabels[selectedRisk]||'LOW'; sigRiskEl.style.color=sigRiskColors[selectedRisk]||'var(--green)'; }
-  const sigConf=document.getElementById('sig-confidence'); if(sigConf) sigConf.textContent=sigConfidence+'%';
   const sigMarginEl=document.getElementById('sig-margin');
   if(sigMarginEl){ sigMarginEl.textContent=profitPct+'%'; sigMarginEl.style.color=profitPct>=25?'var(--green)':profitPct>=15?'var(--amber-warn)':'var(--red)'; }
   const sigHealth=document.getElementById('sig-health'); if(sigHealth) sigHealth.innerHTML=healthScore+'<span style="font-size:0.9rem;font-weight:600;color:var(--muted);">/100</span>';

@@ -92,14 +92,36 @@ const {EventEmitter}=require('node:events');
     assert.doesNotMatch(await popup.locator('body').innerText(),/lowers expected profit|Worth double-checking/);
     if(process.env.PQ_OUTPUT_DIR)await popup.pdf({path:path.join(process.env.PQ_OUTPUT_DIR,'electrician-test-quote.pdf'),format:'A4'});
     await popup.close();
+    // Cost checks must describe the user's review, not a fixed success claim.
+    assert.equal(await page.locator('#sig-costs').innerText(),'0 / 8');
+    assert.match(await page.locator('#health-verdict').innerText(),/Review costs/);
+    assert.equal(await page.locator('#sig-review').innerText(),'Review needed');
+    const checkboxes=page.locator('.checklist-item input');
+    await page.locator('#cost-check-fuel').check();
+    assert.equal(await page.locator('#sig-costs').innerText(),'1 / 8');
+    await page.locator('#cost-check-fuel').uncheck();
+    assert.equal(await page.locator('#sig-costs').innerText(),'0 / 8');
+    for(const checkbox of await checkboxes.all())await checkbox.check();
+    assert.equal(await page.locator('#sig-costs').innerText(),'8 / 8');
+    assert.equal(await page.locator('#sig-review').innerText(),'Complete');
+    for(const checkbox of (await checkboxes.all()).slice(1))await checkbox.uncheck();
+    assert.equal(await page.locator('#sig-costs').innerText(),'1 / 8');
+    assert.equal(await page.locator('#result-total').innerText(),'£5,794','checks do not add money');
+    const reviewSaved=page.waitForResponse(r=>r.request().method()==='PATCH'&&r.url().endsWith('/api/quotes/'+quote.id));
+    await page.locator('#btn-save-quote').click();assert.equal((await reviewSaved).status(),200);
+    assert.deepEqual((await db.query('SELECT quote_data FROM quotes WHERE id=$1',[quote.id])).rows[0].quote_data.costChecks,['fuel']);
     await page.reload();await page.locator('#app-screen').waitFor({state:'visible'});
     await page.evaluate(id=>editQuote(id),quote.id);
+    assert.equal(await page.locator('#cost-check-fuel').isChecked(),true);
+    assert.equal(await page.locator('#cost-check-vat').isChecked(),false);
     assert.equal(await page.locator('#q-job-scale').inputValue(),'Whole property');assert.equal(await page.locator('#q-room-count').inputValue(),'8');
     // Editing updates the same saved quote and must not consume another free quote.
     await page.evaluate(()=>nextStep(5));const patched=page.waitForResponse(r=>r.request().method()==='PATCH'&&r.url().endsWith('/api/quotes/'+quote.id));
     await page.locator('#step-5 .btn-next').click();assert.equal((await patched).status(),200);await page.locator('#ai-output').waitFor({state:'visible'});
     const me=await (await fetch(base+'/api/auth/me',{headers:{Authorization:'Bearer '+account.token}})).json();assert.equal(me.quotes_remaining,2);
     await page.evaluate(()=>resetBuilder());assert.equal(await page.locator('#q-job-type').inputValue(),'electrical');assert.equal(await page.locator('#q-room-count').inputValue(),'');
+    assert.equal(await checkboxes.filter({visible:true}).count(),0);
+    assert.equal(await page.locator('#cost-check-fuel').isChecked(),false);
     // Saved trades with useful dimensions retain conversion and quote measurements.
     for(const trade of ['Tiler','Decorator','Landscaper']){
       await page.evaluate(trade=>{currentUser.trade=trade;resetBuilder();nextStep(2);},trade);
