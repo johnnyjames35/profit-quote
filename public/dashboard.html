@@ -776,6 +776,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
 
     <!-- QUOTES LIST -->
     <div class="section" id="sec-quotes">
+      <button class="btn-back" style="margin-bottom:12px;" onclick="switchTab('home')">← Back to dashboard</button>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h2 class="section-heading">Quote Library</h2>
         <button onclick="switchTab('builder')" style="background:var(--amber);color:var(--black);border:none;padding:9px 18px;border-radius:8px;font-weight:800;cursor:pointer;font-size:0.85rem;font-family:var(--font);">+ New</button>
@@ -784,16 +785,17 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div id="quotes-list">
         <div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes yet</div><p>Tap New to build your first profit-protected quote.</p></div>
       </div>
+      <button class="btn-prev" onclick="switchTab('home')">← Back to dashboard</button>
     </div>
 
     <!-- QUOTE BUILDER -->
     <div class="section" id="sec-builder">
       <div class="builder-header">
-        <button class="btn-back" onclick="currentBuilderStep>1?nextStep(currentBuilderStep-1):switchTab('home')">← Back</button>
+        <button class="btn-back" onclick="saveBuilderDraft();currentBuilderStep>1?nextStep(currentBuilderStep-1):switchTab('home')">← Back</button>
         <span class="builder-title" id="builder-title">New Quote</span>
         <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
-      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;">Your progress is saved automatically. <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')){ clearBuilderDraft(); resetBuilder(); }" style="color:var(--amber);">Clear &amp; start over</a></div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;"><span id="draft-save-status" role="status">Progress saves on this device as you go. Generate the quote to save the updated total.</span> <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')){ clearBuilderDraft(); resetBuilder(); }" style="color:var(--amber);">Clear &amp; start over</a></div>
       <div class="step-dots">
         <div class="dot active" id="dot-1"></div>
         <div class="dot" id="dot-2"></div>
@@ -841,6 +843,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group"><label class="field-label">Postcode</label><input class="field-input" id="q-postcode" placeholder="e.g. SA1 1AB"></div>
         </div>
         <button class="btn-next" onclick="nextStep(2)">Next →</button>
+        <button class="btn-prev" onclick="saveBuilderDraft();switchTab('home')">← Back</button>
       </div>
 
       <!-- Step 2: Trade-aware job scope -->
@@ -1410,36 +1413,39 @@ let clientSuppliesMaterials = false;
 let editingQuoteId = null; // null = new quote, number = editing existing
 let currentBuilderStep = 1;
 const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
+let restoringBuilderDraft=false;
 const BUILDER_STEP_FIELDS = ['q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
   'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
   'q-days','q-day-rate','q-overhead','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
   'q-contingency','q-profit-target'];
 
 function saveBuilderDraft(){
-  if(editingQuoteId) return; // don't autosave over an existing quote being edited
-  const draft = { step: currentBuilderStep, needsSkip, needsScaffold, clientSuppliesMaterials, selectedRisk, fields: {} };
+  if(restoringBuilderDraft||!currentUser) return;
+  const draft = { owner:String(currentUser.id), quoteId:editingQuoteId, costChecks:readCostChecks(), step: currentBuilderStep, needsSkip, needsScaffold, clientSuppliesMaterials, selectedRisk, fields: {} };
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el = document.getElementById(id);
     if(el) draft.fields[id] = el.value;
   });
-  try{ localStorage.setItem(BUILDER_DRAFT_KEY, JSON.stringify(draft)); }catch(e){}
+  const status=document.getElementById('draft-save-status');
+  try{
+    localStorage.setItem(BUILDER_DRAFT_KEY, JSON.stringify(draft));
+    if(status) status.textContent='Progress saved on this device. Generate the quote to save the updated total.';
+  }catch(e){if(status) status.textContent='This browser could not save your progress. Keep this page open until you generate your quote.';}
 }
 
 function restoreBuilderDraft(){
-  if(editingQuoteId) return false;
   let raw;
   try{ raw = localStorage.getItem(BUILDER_DRAFT_KEY); }catch(e){ return false; }
   if(!raw) return false;
   try{
     const draft = JSON.parse(raw);
-    // Rates and defaults are saved automatically, but they do not make a real draft.
-    // Only resume a later page when the visitor has actually described a job.
-    const jobDescription = String(draft.fields?.['q-desc'] || '').trim();
-    if(!jobDescription){
-      clearBuilderDraft();
-      nextStep(1);
-      return false;
-    }
+    if(draft.owner&&draft.owner!==String(currentUser?.id)) return false;
+    if(editingQuoteId&&draft.quoteId!==editingQuoteId) return false;
+    const saved=draft.quoteId?quotes.find(q=>q.id===draft.quoteId):null;
+    if(draft.quoteId&&!saved) return false;
+    restoringBuilderDraft=true;
+    editingQuoteId=draft.quoteId||null;
+    currentQuoteData=saved?{...saved,quote_data:{...saved.quote_data}}:null;
     document.getElementById('q-job-type').value=draft.fields?.['q-job-type']||'';
     configureJobScope();
     Object.entries(draft.fields||{}).forEach(([id, val])=>{
@@ -1451,9 +1457,13 @@ function restoreBuilderDraft(){
     if(typeof draft.needsScaffold==='boolean') setScaffold(draft.needsScaffold);
     if(typeof draft.clientSuppliesMaterials==='boolean') setClientMaterials(draft.clientSuppliesMaterials);
     if(draft.selectedRisk) setRisk(draft.selectedRisk);
-    nextStep(Math.min(draft.step || 1, 5));
+    restoreCostChecks(draft.costChecks||saved?.quote_data?.costChecks);
+    document.getElementById('builder-title').textContent=editingQuoteId?'Edit Quote':'New Quote';
+    document.getElementById('edit-badge').style.display=editingQuoteId?'inline-flex':'none';
+    nextStep(Math.max(1,Math.min(draft.step || 1, 5)));
     return true;
   }catch(e){ return false; }
+  finally{restoringBuilderDraft=false;}
 }
 
 function clearBuilderDraft(){
@@ -1803,7 +1813,14 @@ async function initApp(startInBuilder=false){
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
-    if(el) el.addEventListener('input', ()=>{saveBuilderDraft();updateProfitNudges();});
+    if(el){
+      el.oninputDraftSave=()=>{saveBuilderDraft();updateProfitNudges();};
+      if(!el.dataset.draftSaveBound){
+        el.addEventListener('input',()=>el.oninputDraftSave());
+        el.addEventListener('change',()=>el.oninputDraftSave());
+        el.dataset.draftSaveBound='true';
+      }
+    }
   });
 }
 
@@ -1878,6 +1895,7 @@ async function refreshQuoteAccess(showMessage=false){
 window.addEventListener('focus',()=>refreshQuoteAccess());
 
 function switchTab(tab){
+  if(tab!=='builder'&&document.getElementById('sec-builder')?.classList.contains('active')&&currentBuilderStep<6) saveBuilderDraft();
   ['home','quotes','builder','issues','setup'].forEach(t=>{
     document.getElementById('sec-'+t)?.classList.remove('active');
     document.getElementById('nav-'+t)?.classList.remove('active');
@@ -2049,6 +2067,7 @@ async function deletePhoto(id){
 function editQuote(id){
   const q=quotes.find(x=>x.id===id);
   if(!q) return;
+  restoringBuilderDraft=true;
   editingQuoteId=id;
 
   // Load saved data back into fields
@@ -2120,7 +2139,8 @@ document.getElementById('q-materials').value=qd.materials||q.materials||0;
   document.getElementById('ai-warning-box').style.display='none';
 
   switchTab('builder');
-  nextStep(1);
+  restoringBuilderDraft=false;
+  if(!restoreBuilderDraft()) nextStep(1);
 }
 
 function updateHomeStats(){
@@ -2575,6 +2595,7 @@ function updateCostChecks(){
     document.getElementById('btn-save-quote').textContent='💾 Save checks';
   }
   renderCostReview();
+  saveBuilderDraft();
 }
 
 function renderCostReview(){
