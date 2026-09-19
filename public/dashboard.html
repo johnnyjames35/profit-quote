@@ -1908,8 +1908,18 @@ function appRoute(){
 function rememberAppPage(){
   if(replayingNavigation||restoringBuilderDraft) return;
   const route=appRoute(), previous=history.state;
-  if(previous?.pq&&previous.tab===route.tab&&previous.step===route.step) return;
+  if(previous?.pq&&previous.tab===route.tab&&previous.step===route.step){updateBackButtons();return;}
   history.pushState({...route,depth:(previous?.pq?previous.depth||0:0)+1},'');
+  updateBackButtons();
+}
+function updateBackButtons(){
+  const atStart=appRoute().tab==='home'&&!(history.state?.depth>0);
+  document.querySelectorAll('#sec-home > button[onclick="appBack()"]').forEach(button=>{
+    button.disabled=atStart;
+    button.textContent=atStart?'← Back — you’re at the start':'← Back';
+    button.style.opacity=atStart?'0.55':'';
+    button.style.cursor=atStart?'default':'';
+  });
 }
 function appBack(){
   const route=appRoute();
@@ -1922,7 +1932,11 @@ function appBack(){
   }
   if(history.state?.pq&&history.state.depth>0){history.back();return;}
   if(route.tab==='builder'&&currentBuilderStep>1){nextStep(currentBuilderStep-1);return;}
-  switchTab(route.tab==='home'?'quotes':'home');
+  if(route.tab==='home'){updateBackButtons();return;}
+  // A fallback is a return to the start, never another forward history entry.
+  replayingNavigation=true;
+  try{switchTab('home');history.replaceState({...appRoute(),depth:0},'');}
+  finally{replayingNavigation=false;updateBackButtons();}
 }
 window.addEventListener('popstate',event=>{
   const route=event.state;
@@ -1933,9 +1947,11 @@ window.addEventListener('popstate',event=>{
     switchTab(route.tab);
     // Revisiting a result must never generate or charge for another quote.
     if(route.tab==='builder') nextStep(Math.min(route.step||1,5));
-  }finally{replayingNavigation=false;}
+  }finally{replayingNavigation=false;updateBackButtons();}
 });
-history.replaceState({...appRoute(),depth:history.state?.pq?history.state.depth||0:0},'');
+// A reload starts a fresh app journey; do not inherit the old circular fallback.
+history.replaceState({...appRoute(),depth:0},'');
+updateBackButtons();
 
 function switchTab(tab){
   if(tab!=='builder'&&document.getElementById('sec-builder')?.classList.contains('active')&&currentBuilderStep<6) saveBuilderDraft();
