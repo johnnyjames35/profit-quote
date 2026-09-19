@@ -16,7 +16,8 @@ function harness(guest=true){
     fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:url.endsWith('/export')?structuredClone(quote):{ok:true,id:42});},
     window:{open:(...args)=>{opened.push(args);return {document:{write(){},close(){}},focus(){},print(){}};}},
     trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
-  vm.runInContext(functions+email+print+render,context);
+  const nudge=html.slice(html.indexOf('function labourNudge('),html.indexOf('function updateProfitNudges('));
+  vm.runInContext(functions+email+print+nudge+render,context);
   return {context,elements,storage,requests,opened,events};
 }
 for(const action of ['printQuote','emailQuote']) test(`guest ${action} saves latest quote and gates output`,async()=>{

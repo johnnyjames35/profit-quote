@@ -556,7 +556,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <option value="">Select your trade...</option>
           <option>Plumber</option><option>Electrician</option><option>Builder</option>
           <option>Roofer</option><option>Bathroom Fitter</option><option>Kitchen Fitter</option>
-          <option>Decorator</option><option>Landscaper</option><option>Carpenter</option>
+          <option>Decorator</option><option>Tiler</option><option>Landscaper</option><option>Carpenter</option>
           <option>Window Fitter</option><option>HVAC Engineer</option><option>Other</option>
         </select>
       </div>
@@ -839,10 +839,18 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <button class="btn-next" onclick="nextStep(2)">Next →</button>
       </div>
 
-      <!-- Step 2: Room Size -->
+      <!-- Step 2: Trade-aware job scope -->
       <div id="step-2" style="display:none;">
         <div class="card">
-          <div class="card-title">Room / Area Size</div>
+          <div class="card-title">How big is the job?</div>
+          <p class="field-hint" id="job-size-hint"></p>
+          <div id="job-scope-fields">
+            <div class="field-group"><label class="field-label" for="q-job-scale">Job scope</label><select class="field-input" id="q-job-scale" onchange="updateJobScope()"></select></div>
+            <div class="field-group" id="property-type-group"><label class="field-label" for="q-property-type">Property type</label><select class="field-input" id="q-property-type" onchange="updateJobScope()"><option value="">Choose if known</option><option>House</option><option>Flat</option><option>Bungalow</option><option>Commercial premises</option><option>Other</option></select></div>
+            <div class="field-group" id="room-count-group"><label class="field-label" for="q-room-count">Approximate number of rooms</label><input class="field-input" id="q-room-count" type="number" min="1" max="1000" step="1" placeholder="e.g. 8" oninput="updateJobScope()"><div class="field-hint">Count rooms involved, including kitchen and bathrooms. An estimate is fine.</div></div>
+            <div class="field-group"><label class="field-label" for="q-scope-details" id="scope-details-label">Scope details (optional)</label><input class="field-input" id="q-scope-details" maxlength="500" oninput="updateJobScope()"></div>
+          </div>
+          <div id="dimension-fields">
           <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">Enter in metres OR feet — we'll convert automatically.</p>
           <div class="field-group">
             <label class="field-label">Length</label>
@@ -884,6 +892,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
           </div>
           <div id="room-area" style="font-size:0.85rem;color:var(--amber);font-weight:700;margin-top:8px;"></div>
+          </div>
         </div>
         <button class="btn-next" onclick="nextStep(3)">Next →</button>
         <button class="btn-prev" onclick="nextStep(1)">← Back</button>
@@ -893,7 +902,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div id="step-3" style="display:none;">
         <div class="card">
           <div class="card-title">Labour</div>
-          <div class="field-group"><label class="field-label">Number of Days</label><input class="field-input" id="q-days" type="number" placeholder="e.g. 5" min="0.5" step="0.5"></div>
+          <p class="field-hint" id="labour-nudge" role="status" aria-live="polite" hidden></p>
+          <div class="field-group"><label class="field-label">Number of Days</label><input class="field-input" id="q-days" oninput="updateProfitNudges()" type="number" placeholder="e.g. 5" min="0.5" step="0.5"></div>
           <div class="field-group"><label class="field-label">Daily Labour Cost (£)</label><input class="field-input" id="q-day-rate" type="number" min="0" placeholder="e.g. 200"><div class="field-hint">What one working day genuinely costs the business, including your wage.</div></div>
           <div class="field-group"><label class="field-label">Daily Overhead Allowance (£)</label><input class="field-input" id="q-overhead" type="number" min="0" placeholder="e.g. 50"><div class="field-hint">Insurance, vehicle, tools, office and other running costs spread across working days.</div></div>
         </div>
@@ -983,7 +993,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
           </div>
           <div class="field-group"><label class="field-label">Contingency %</label><input class="field-input" id="q-contingency" type="number" placeholder="e.g. 10" value="10"></div>
-          <div class="field-group"><label class="field-label">Profit Target %</label><input class="field-input" id="q-profit-target" type="number" placeholder="e.g. 30" value="30"></div>
+          <div class="field-group"><label class="field-label">Profit Target %</label><input class="field-input" id="q-profit-target" oninput="updateProfitNudges()" type="number" min="0" max="80" placeholder="e.g. 30" value="30"></div>
+          <p class="field-hint" id="profit-nudge" role="status" aria-live="polite" hidden></p>
         </div>
         <button class="btn-next" onclick="nextStep(6)">Generate Quote →</button>
         <button class="btn-prev" onclick="nextStep(4)">← Back</button>
@@ -992,7 +1003,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <!-- Step 6: Result -->
       <div id="step-6" style="display:none;">
         <div id="ai-warning-box" class="ai-warning" style="display:none;">
-          <div class="ai-warning-title">⚠️ Warning — Check Your Quote</div>
+          <div class="ai-warning-title">💡 Worth a quick check</div>
           <div class="ai-warning-text" id="ai-warning-text"></div>
         </div>
         <div id="ai-loading" class="ai-box"><div class="ai-loading">🤖 Building your quote...</div></div>
@@ -1393,7 +1404,7 @@ let clientSuppliesMaterials = false;
 let editingQuoteId = null; // null = new quote, number = editing existing
 let currentBuilderStep = 1;
 const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
-const BUILDER_STEP_FIELDS = ['q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
+const BUILDER_STEP_FIELDS = ['q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
   'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
   'q-days','q-day-rate','q-overhead','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
   'q-contingency','q-profit-target'];
@@ -1423,9 +1434,11 @@ function restoreBuilderDraft(){
       nextStep(1);
       return false;
     }
+    document.getElementById('q-job-type').value=draft.fields?.['q-job-type']||'';
+    configureJobScope();
     Object.entries(draft.fields||{}).forEach(([id, val])=>{
       const el = document.getElementById(id);
-      if(el && val) el.value = val;
+      if(el && val!=null) el.value = val;
     });
     restoreGuidedScope();
     if(typeof draft.needsSkip==='boolean') setSkip(draft.needsSkip);
@@ -1470,9 +1483,105 @@ const JOB_SCOPE_OPTIONS={
 };
 let selectedScopeTasks=[];
 
+// Saved trade supplies the starting job type; the tradesperson can change it.
+function applyTradeDefault(){
+  const trade=(currentUser?.trade||'').toLowerCase();
+  const defaults=[[/electric/,'electrical'],[/plumb|hvac/,'plumbing'],[/bathroom/,'bathroom'],[/kitchen/,'kitchen'],[/decorat|paint/,'decorating'],[/roof/,'roofing']];
+  document.getElementById('q-job-type').value=defaults.find(([pattern])=>pattern.test(trade))?.[1]||(trade?'other':'');
+  selectJobType();
+}
+
+function usesDimensions(){
+  const type=document.getElementById('q-job-type').value;
+  return ['decorating','bathroom','kitchen','roofing','extension'].includes(type)||
+    (['other',''].includes(type)&&/tiler|tiling|landscap|plaster|floor/i.test(currentUser?.trade||''));
+}
+
+function configureJobScope(){
+  const type=document.getElementById('q-job-type').value;
+  const dimensions=usesDimensions();
+  document.getElementById('dimension-fields').hidden=!dimensions;
+  document.getElementById('job-scope-fields').hidden=dimensions;
+  document.getElementById('job-size-hint').textContent=dimensions?'Dimensions help estimate the area for this work. Add them if useful.':
+    type==='electrical'?'Tell us how much of the property is involved. No room measurements needed.':
+    type==='plumbing'?'Tell us which rooms, fittings or systems are involved.':'Describe the areas or items involved, rather than measuring an unrelated room.';
+  const choices=type==='electrical'?['Whole property','Several rooms','Single room','Extension/Annex','Other']:
+    type==='plumbing'?['Whole property / system','Several rooms','Single room','Single fitting / repair','Other']:
+    ['Whole property','Several areas','Single area / item','Extension/Annex','Other'];
+  const select=document.getElementById('q-job-scale');
+  const previous=select.value;
+  if(select.dataset.scopeType!==type){
+    select.innerHTML='<option value="">Choose the job scope</option>'+choices.map(choice=>'<option>'+choice+'</option>').join('');
+    select.value=choices.includes(previous)?previous:'';
+    select.dataset.scopeType=type;
+  }
+  const scale=select.value;
+  document.getElementById('property-type-group').hidden=!scale||scale==='Other'||scale.includes('fitting')||scale.includes('item');
+  document.getElementById('room-count-group').hidden=!/Whole property|Several rooms|Extension/.test(scale);
+  document.getElementById('scope-details-label').textContent=scale==='Single room'?'Which room?':scale==='Other'?'What does the job cover?':'Scope details (optional)';
+  document.getElementById('q-scope-details').placeholder=type==='electrical'?'e.g. Full rewire, occupied house, loft access':type==='plumbing'?'e.g. Replace boiler and 8 radiators':'e.g. Fit 6 internal doors';
+}
+
+function readJobScope(){
+  if(usesDimensions()) return null;
+  const scale=document.getElementById('q-job-scale').value;
+  return {scale,propertyType:document.getElementById('property-type-group').hidden?'':document.getElementById('q-property-type').value,
+    roomCount:document.getElementById('room-count-group').hidden?null:Math.max(0,Math.min(1000,parseInt(document.getElementById('q-room-count').value,10)||0))||null,
+    details:document.getElementById('q-scope-details').value.trim()};
+}
+
+function jobScopeSummary(){
+  const scope=readJobScope();
+  return scope?[scope.scale,scope.propertyType,scope.roomCount?'approximately '+scope.roomCount+' rooms':'',scope.details].filter(Boolean).join(' · '):'';
+}
+
+function updateJobScope(){
+  configureJobScope();
+  updateGuidedDescription();
+  updateProfitNudges();
+}
+
+// These are prompts to review an estimate, not industry minimum durations.
+// Avoid adding durations for overlapping tasks or presenting a staffing assumption as fact.
+function labourNudge(scope,description,days){
+  if(!(days>0)) return '';
+  const rewire=/\brewir(?:e|ing)\b|full electrics/i.test(description);
+  const whole=scope?.scale==='Whole property'||/\b(?:full|whole[- ](?:house|property)|complete)\s+rewir/i.test(description);
+  if(rewire&&whole&&days<Math.max(8,Math.min(15,Number(scope?.roomCount)||0))){
+    return 'This looks like a full rewire'+(scope?.roomCount?' across approximately '+scope.roomCount+' rooms':'')+'. Worth double-checking your '+days+' days covers access, first and second fix, testing and making good. Crew size and site conditions can change the time needed — you decide.';
+  }
+  const reviewCases=[[/loft conversion|dormer|house extension|rear extension|side extension/i,15],
+    [/bathroom|ensuite|wet room/i,5],[/full kitchen|kitchen refurb|install kitchen units/i,4]];
+  if(reviewCases.some(([pattern,reviewBelow])=>pattern.test(description)&&days<reviewBelow))
+    return 'Worth double-checking your '+days+' days covers preparation, installation and finishing for this scope. Crew size, access and any specialist work can change the time needed — you decide.';
+  if(days<2&&/rewir|renovation|refurbishment|extension/i.test(description)) return 'Worth double-checking your '+days+' days covers all the work, preparation and finishing. You know the job best.';
+  return '';
+}
+
+function updateProfitNudges(){
+  const value=id=>Math.max(0,parseFloat(document.getElementById(id).value)||0);
+  const labour=labourNudge(readJobScope(),document.getElementById('q-desc').value,value('q-days'));
+  const labourEl=document.getElementById('labour-nudge');
+  labourEl.textContent=labour;labourEl.hidden=!labour;
+  const target=Math.min(80,value('q-profit-target'));
+  const profitEl=document.getElementById('profit-nudge');
+  profitEl.hidden=target>=30;
+  if(target>=30){profitEl.textContent='';return;}
+  const inputs={days:value('q-days')||1,dayRate:value('q-day-rate'),overheadPerDay:value('q-overhead'),materials:value('q-materials'),markup:value('q-markup'),
+    skipCost:needsSkip?Math.max(1,Math.min(20,parseInt(document.getElementById('q-skip-quantity').value,10)||1))*value('q-skip-cost'):0,
+    scaffoldCost:needsScaffold?value('q-scaffold-cost'):0,contingency:value('q-contingency'),vatRate:0};
+  const normal=calculateProtectedPrice({...inputs,profitTarget:30});
+  const reduced=calculateProtectedPrice({...inputs,profitTarget:target});
+  const impact=Math.max(0,Math.round(normal.profit-reduced.profit));
+  profitEl.textContent='The normal profit target is 30%. '+(normal.protectedCost>0?
+    (impact>0?'Reducing it to '+target+'% lowers expected profit by approximately £'+impact.toLocaleString('en-GB')+' before VAT.':'At '+target+'%, your minimum materials markup currently keeps the price and expected profit unchanged.'):
+    'Add your costs to see the approximate £ impact of reducing it to '+target+'%.')+' You decide what is right for this job.';
+}
+
 function selectJobType(){
   selectedScopeTasks=[];
   document.getElementById('q-scope-tasks').value='[]';
+  configureJobScope();
   renderScopeTasks();
   updateGuidedDescription();
 }
@@ -1503,6 +1612,8 @@ function updateGuidedDescription(){
   const parts=[];
   if(typeLabel&&select.value) parts.push(typeLabel+'.');
   if(selectedScopeTasks.length) parts.push('Work included: '+selectedScopeTasks.join('; ')+'.');
+  const scopeSummary=jobScopeSummary();
+  if(scopeSummary) parts.push('Job scope: '+scopeSummary+'.');
   if(extra) parts.push('Additional details: '+extra);
   const description=parts.join(' ');
   document.getElementById('q-desc').value=description;
@@ -1686,7 +1797,7 @@ async function initApp(startInBuilder=false){
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
-    if(el) el.addEventListener('input', saveBuilderDraft);
+    if(el) el.addEventListener('input', ()=>{saveBuilderDraft();updateProfitNudges();});
   });
 }
 
@@ -1775,7 +1886,9 @@ function switchTab(tab){
     document.getElementById('builder-title').textContent='New Quote';
     document.getElementById('edit-badge').style.display='none';
     document.getElementById('btn-save-quote').textContent='💾 Save';
-    restoreBuilderDraft();
+    const restored=restoreBuilderDraft();
+    if(!restored&&!document.getElementById('q-job-type').value) applyTradeDefault();
+    configureJobScope();
   }
 }
 
@@ -1939,6 +2052,11 @@ function editQuote(id){
   document.getElementById('q-job-type').value=qd.jobType||'other';
   document.getElementById('q-scope-tasks').value=JSON.stringify(Array.isArray(qd.scopeTasks)?qd.scopeTasks:[]);
   document.getElementById('q-extra').value=qd.extraNotes||(qd.jobType?'':savedDescription);
+  configureJobScope();
+  const scope=qd.jobScope||{};
+  ['scale','propertyType','roomCount','details'].forEach((key,i)=>{document.getElementById(['q-job-scale','q-property-type','q-room-count','q-scope-details'][i]).value=scope[key]??'';});
+  configureJobScope();
+  ['length','width','height'].forEach(dim=>['m','ft'].forEach(unit=>{document.getElementById('q-'+dim+'-'+unit).value='';}));
   restoreGuidedScope();
 document.getElementById('q-customer').value=q.customer_name||qd.customer_name||'';
 document.getElementById('q-email').value=q.customer_email||qd.customer_email||'';
@@ -1958,6 +2076,7 @@ document.getElementById('q-materials').value=qd.materials||q.materials||0;
   if(qd.widM){ document.getElementById('q-width-m').value=qd.widM; convertRoom('m','width'); }
   if(qd.lenFt&&!qd.lenM){ document.getElementById('q-length-ft').value=qd.lenFt; convertRoom('ft','length'); }
   if(qd.widFt&&!qd.widM){ document.getElementById('q-width-ft').value=qd.widFt; convertRoom('ft','width'); }
+  if(qd.heightM){ document.getElementById('q-height-m').value=qd.heightM; convertRoom('m','height'); }
 
   // Skip
   const hasSkip=!!(q.skip_cost&&q.skip_cost>0);
@@ -2228,6 +2347,8 @@ function setRisk(r){
 
 function nextStep(n){
   if(n===2 && currentBuilderStep===1 && !editingQuoteId) trackFunnelEvent('quote_started');
+  configureJobScope();
+  updateProfitNudges();
   currentBuilderStep = n;
   for(let i=1;i<=6;i++) document.getElementById('step-'+i).style.display=(i===n)?'block':'none';
   for(let i=1;i<=6;i++){
@@ -2244,7 +2365,7 @@ function resetBuilder(){
   if(currentUser?.guest && currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
   clearBuilderDraft();
   editingQuoteId=null;
-  ['q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   selectedScopeTasks=[];
   document.getElementById('q-scope-tasks').value='[]';
   renderScopeTasks();
@@ -2268,6 +2389,7 @@ function resetBuilder(){
   document.getElementById('builder-title').textContent='New Quote';
   document.getElementById('edit-badge').style.display='none';
   document.getElementById('btn-save-quote').textContent='💾 Save';
+  applyTradeDefault();
   nextStep(1);
 }
 
@@ -2355,15 +2477,19 @@ async function generateQuote(){
   const {directLabourCost,overheadCost,knownCost,contingencyAmt,protectedCost,subtotalExVat,labour,mats,skipPrice,scaffoldPrice,contingencyPrice,profit,profitPct,vatAmount,total}=calculateProtectedPrice({days,dayRate,overheadPerDay,materials,markup,skipCost,scaffoldCost,contingency,profitTarget,vatRate});
 
   // Room summary
-  const lenM=parseFloat(document.getElementById('q-length-m').value)||0;
-  const widM=parseFloat(document.getElementById('q-width-m').value)||0;
-  const lenFt=parseFloat(document.getElementById('q-length-ft').value)||0;
-  const widFt=parseFloat(document.getElementById('q-width-ft').value)||0;
+  const jobScope=readJobScope();
+  const hasDimensions=usesDimensions();
+  const lenM=hasDimensions?(parseFloat(document.getElementById('q-length-m').value)||0):0;
+  const widM=hasDimensions?(parseFloat(document.getElementById('q-width-m').value)||0):0;
+  const lenFt=hasDimensions?(parseFloat(document.getElementById('q-length-ft').value)||0):0;
+  const widFt=hasDimensions?(parseFloat(document.getElementById('q-width-ft').value)||0):0;
+  const heightM=hasDimensions?(parseFloat(document.getElementById('q-height-m').value)||0):0;
   let roomSummary='';
   if(lenM>0&&widM>0){
     const area=(lenM*widM).toFixed(2);
     const areaFt=((lenFt||lenM*3.28084)*(widFt||widM*3.28084)).toFixed(1);
     roomSummary='Room: '+lenM+'m × '+widM+'m ('+area+' m² / '+areaFt+' ft²)';
+    if(heightM>0) roomSummary+=' · Height: '+heightM+'m';
   }
 
   // Builder details
@@ -2391,7 +2517,7 @@ async function generateQuote(){
     markup_percent:markup,
     profit_target:profitTarget,
     other_costs:scaffoldCost>0?'Scaffolding: £'+scaffoldCost:null,
-    quote_data:{customer_email:document.getElementById('q-email').value,pricingVersion:2,labour,materials,mats,directLabourCost,overheadPerDay,overheadCost,knownCost,protectedCost,subtotalExVat,contingencyAmt,contingencyPrice,vatRate,vatAmount,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipPrice,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,scaffoldPrice,lenM,widM,lenFt,widFt,contingency,postcode:document.getElementById('q-postcode').value},
+    quote_data:{customer_email:document.getElementById('q-email').value,pricingVersion:2,labour,materials,mats,directLabourCost,overheadPerDay,overheadCost,knownCost,protectedCost,subtotalExVat,contingencyAmt,contingencyPrice,vatRate,vatAmount,total,profit,profitPct,markup,contingency,risk:selectedRisk,roomSummary,builderDetails,jobType,jobScope,scopeTasks:[...selectedScopeTasks],extraNotes,skipCost,skipPrice,skipUnitCost,skipQuantity,clientSuppliesMaterials,clientSuppliedItems,scaffoldCost,scaffoldPrice,lenM,widM,lenFt,widFt,heightM,postcode:document.getElementById('q-postcode').value},
     total:total,
     profit_percent:profitPct
   };
@@ -2461,43 +2587,9 @@ function renderCompletedQuote(){
   else if(healthScore>=60){ hCard.classList.add('amber'); hVerdict.textContent='Moderate — review your margins'; }
   else { hCard.classList.add('red'); hVerdict.textContent='High risk of underquoting'; }
 
-  // Keyword scoring warning
-  const jobLower=desc.toLowerCase();
-  const taskGroups=[
-    {group:'structure',tasks:[
-      {keywords:['dormer','loft conversion','loft extension','loft room'],days:25,label:'dormer/loft conversion'},
-      {keywords:['rear extension','side extension','house extension'],days:20,label:'extension'},
-    ]},
-    {group:'wet',tasks:[
-      {keywords:['ensuite','en suite','wetroom','wet room'],days:8,label:'ensuite/wetroom'},
-      {keywords:['bathroom','new bathroom'],days:7,label:'bathroom'},
-      {keywords:['kitchen refurb','full kitchen','kitchen cupboard','kitchen units'],days:6,label:'kitchen'},
-    ]},
-    {group:'heating',tasks:[{keywords:['underfloor heating','ufh'],days:3,label:'underfloor heating'}]},
-    {group:'electrics',tasks:[
-      {keywords:['rewire','full electrics','new electrics'],days:6,label:'full rewire'},
-      {keywords:['electrical','electrics','sockets','downlight','downlighter'],days:2,label:'electrics'},
-    ]},
-    {group:'plaster',tasks:[{keywords:['plasterboard','plaster board','plastering','skimming','skim'],days:3,label:'plastering/skimming'}]},
-    {group:'tiling',tasks:[{keywords:['tiling','tiled','tiles'],days:2,label:'tiling'}]},
-    {group:'doors',tasks:[{keywords:['bifold','bi-fold','bi fold'],days:2,label:'bifold doors'}]},
-    {group:'flooring',tasks:[{keywords:['flooring','laminate','vinyl','carpet'],days:1,label:'flooring'}]},
-    {group:'ceiling',tasks:[{keywords:['new ceiling','ceiling'],days:2,label:'new ceiling'}]},
-  ];
-  let minDays=0; let detectedTasks=[];
-  taskGroups.forEach(group=>{
-    let bestMatch=null;
-    group.tasks.forEach(task=>{
-      if(task.keywords.some(kw=>jobLower.includes(kw))){
-        if(!bestMatch||task.days>bestMatch.days) bestMatch=task;
-      }
-    });
-    if(bestMatch){ minDays+=bestMatch.days; detectedTasks.push(bestMatch.label+' (min '+bestMatch.days+' days)'); }
-  });
-  if(minDays>0&&days<minDays*0.75){
-    document.getElementById('ai-warning-text').textContent='⚠️ This job contains complex tasks — please double-check your day estimate covers ALL the work before submitting this quote. Tasks detected: '+detectedTasks.join(', ')+'. Underquoting is the #1 reason tradespeople lose money.';
-    document.getElementById('ai-warning-box').style.display='block';
-  }
+  const labourNote=labourNudge(currentQuoteData.quote_data.jobScope,desc,days);
+  document.getElementById('ai-warning-text').textContent=labourNote;
+  document.getElementById('ai-warning-box').style.display=labourNote?'block':'none';
 
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-output').style.display='block';
@@ -2627,7 +2719,7 @@ async function printQuote(){
   // AND on action verbs that naturally start new items
   const verbSplit=desc.replace(/\b(replace|install|remove|fit|supply|fix|repair|add|build|lay|tile|paint|plaster|wire|connect|upgrade|renew|relocate|provide)\b/gi,(m)=>'\n'+m);
   const rawItems=verbSplit.split(/,|;|\n/).map(s=>s.trim()).filter(s=>s.length>4);
-  const bulletItems=rawItems.map(s=>`<li>${s.charAt(0).toUpperCase()+s.slice(1)}</li>`).join('');
+  const bulletItems=rawItems.map(s=>`<li>${(s.charAt(0).toUpperCase()+s.slice(1)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('');
   const safeClientItems=String(qd.clientSuppliedItems||'Materials agreed separately')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const clientSupplyNote=qd.clientSuppliesMaterials

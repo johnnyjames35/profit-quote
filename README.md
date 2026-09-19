@@ -8,6 +8,12 @@ AI Quote Builder for UK Tradespeople — by Cambrian Digital / Big Bulldog UK Lt
 - JWT authentication
 - Hosted on Railway
 
+## Trade-aware quote verification
+
+The saved trade supplies the starting job type. Electricians select property/room scope; plumbing uses rooms, systems or fittings. Dimensions remain available for area-based work, including decorating and tiling. Job scope is retained in drafts, saved quotes and customer descriptions. Labour prompts are review heuristics, not minimum-duration claims; the tradesperson remains in control. The margin nudge compares the existing pricing calculation at 30% with the chosen target, including contingency, whole-pound rounding and the materials markup floor, before VAT.
+
+Run `npm test` and `npm run test:e2e` after installing development dependencies and a Playwright Chromium browser (`npx playwright install chromium`). Alternatively set `PQ_BROWSER_PATH` to an installed Chrome executable. The end-to-end test uses real auth/quote routes and disposable PostgreSQL, simulates signup email, blocks external browser requests and does not touch production. Set `PQ_OUTPUT_DIR` to save mobile screenshots and the sample PDF. Automated completion time verifies the flow has no blocking delay; it is not a human usability timing study.
+
 ## Setup
 1. Clone the repo
 2. Add environment variables in Railway (see env.example)
