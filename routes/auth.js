@@ -49,7 +49,7 @@ function sendWelcomeEmail(name, email) {
 <p>To create quote four and keep quoting, you'll need:</p>
 <ul>
 ${onboardingItem}
-<li>£49/month subscription</li>
+<li>£37/month subscription</li>
 </ul>
 <p>Your existing quotes stay available when your free allowance is used.</p>
 <p>John James<br>ProfitQuote | Cambrian Digital</p>`

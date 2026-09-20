@@ -76,12 +76,12 @@ function day3Email(name, email, activated) {
 function day7Email(name, email, activated, now = new Date()) {
   const paymentSteps = isFreeOnboardingOfferActive(now)
     ? `<p><strong>Free onboarding is available until 30 September 2026.</strong> There is no £99 setup fee during the offer.</p>
-<p><strong>Continue with your £49/month subscription:</strong><br>
-<a href="https://profitquote.co.uk/dashboard?subscribe=1">Start £49/month subscription</a></p>`
+<p><strong>Continue with your £37/month subscription:</strong><br>
+<a href="https://profitquote.co.uk/dashboard?subscribe=1">Start £37/month subscription</a></p>`
     : `<p><strong>Step 1 — Pay the £99 one-off onboarding fee:</strong><br>
 <a href="https://buy.stripe.com/eVq00d6z96TcdzN9QUc3m0b">Pay £99 onboarding fee</a></p>
-<p><strong>Step 2 — Set up your £49/month subscription:</strong><br>
-<a href="https://profitquote.co.uk/dashboard?subscribe=1">Start £49/month subscription</a></p>`;
+<p><strong>Step 2 — Set up your £37/month subscription:</strong><br>
+<a href="https://profitquote.co.uk/dashboard?subscribe=1">Start £37/month subscription</a></p>`;
 
   const intro = activated
     ? `<p>Your free allowance includes three quotes, with a subscription required to create quote four. If ProfitQuote has been useful, here's how to keep going:</p>`

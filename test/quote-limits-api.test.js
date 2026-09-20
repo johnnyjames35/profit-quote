@@ -9,7 +9,10 @@ const https=require('node:https');
 const {EventEmitter}=require('node:events');
 const {PGlite}=require('@electric-sql/pglite');
 
-test('three lifetime free quotes, browser sharing, signed billing and saved-only output',async(t)=>{
+for (const billingPlan of [
+  {name:'legacy £49',price:'price_1TZX0w8466uzy1MNeVvWz2Ew',link:'plink_1TZX128466uzy1MNZEoilqdL'},
+  {name:'current £37',price:'price_1UHgUj8466uzy1MNcCnTWJbi',link:'plink_1UHgWz8466uzy1MNDtQyGajQ'}
+]) test('three lifetime free quotes, signed billing and saved-only output — '+billingPlan.name,async(t)=>{
   process.env.JWT_SECRET='limits-test-only';process.env.STRIPE_WEBHOOK_SECRET='webhook-test-only';delete process.env.GA_API_SECRET;
   const original=https.request;const sent=[];
   https.request=(options,cb)=>{const r=new EventEmitter();let body='';r.write=x=>body+=x;r.end=()=>{sent.push(JSON.parse(body));const res=new EventEmitter();res.statusCode=201;cb(res);queueMicrotask(()=>res.emit('end'));};return r;};
@@ -56,6 +59,7 @@ test('three lifetime free quotes, browser sharing, signed billing and saved-only
   assert.equal((await request('/api/quotes/send-email',{quote_id:first.id,total:1,customer_email:'wrong@example.invalid'},token,cookie)).status,200);
   assert.equal(sent.at(-1).to[0].email,'customer@example.invalid');assert.match(sent.at(-1).textContent,/8,698/);
   const checkout=await (await request('/api/billing/checkout',{},token,cookie)).json();
+  assert.equal(new URL(checkout.url).pathname,'/14AcMZf5F4L453h8MQc3m0x','new checkouts use the £37 payment link');
   const reference=new URL(checkout.url).searchParams.get('client_reference_id');assert.ok(reference);
   const now=Math.floor(Date.now()/1000);let sequence=0;
   const postEvent=async(type,object,created=now,signature=true)=>{
@@ -63,13 +67,13 @@ test('three lifetime free quotes, browser sharing, signed billing and saved-only
     const signatureValue=crypto.createHmac('sha256',process.env.STRIPE_WEBHOOK_SECRET).update(now+'.'+raw).digest('hex');
     return fetch(base+'/api/billing/webhook',{method:'POST',headers:{'Content-Type':'application/json','stripe-signature':`t=${now},v1=${signature?signatureValue:'0'.repeat(64)}`},body:raw});
   };
-  const sub={id:'sub_test_pq',customer:'cus_test',status:'active',items:{data:[{price:{id:'price_1TZX0w8466uzy1MNeVvWz2Ew'},current_period_end:now+86400}]}};
+  const sub={id:'sub_test_pq',customer:'cus_test',status:'active',items:{data:[{price:{id:billingPlan.price},current_period_end:now+86400}]}};
   assert.equal((await postEvent('customer.subscription.created',sub,now,false)).status,400);
   assert.equal((await postEvent('customer.subscription.created',{...sub,status:'incomplete'})).status,200);
   await postEvent('customer.subscription.updated',sub);
   await postEvent('customer.subscription.created',{...sub,status:'incomplete'});
   assert.equal((await request('/api/quotes',quote(),token,cookie)).status,402,'subscription not bound to a paid checkout yet');
-  const session={subscription:sub.id,customer:sub.customer,payment_link:'plink_1TZX128466uzy1MNZEoilqdL',mode:'subscription',payment_status:'paid',client_reference_id:reference};
+  const session={subscription:sub.id,customer:sub.customer,payment_link:billingPlan.link,mode:'subscription',payment_status:'paid',client_reference_id:reference};
   assert.equal((await postEvent('checkout.session.completed',{...session,payment_link:'unrelated_link'})).status,200);
   assert.equal((await request('/api/quotes',quote(),token,cookie)).status,402);
   assert.equal((await postEvent('checkout.session.completed',session)).status,200);

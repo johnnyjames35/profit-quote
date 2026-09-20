@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const LIMIT = 3;
-const MONTHLY_LINK = 'https://buy.stripe.com/4gMdR32iTb9s67l2osc3m0a';
+const MONTHLY_LINK = 'https://buy.stripe.com/14AcMZf5F4L453h8MQc3m0x';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const digest = value => crypto.createHash('sha256').update(String(value)).digest('hex');
 const ipHash = req => digest(`${process.env.JWT_SECRET}|signup-ip|${req.ip||''}`);

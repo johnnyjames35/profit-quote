@@ -3,8 +3,9 @@ const crypto=require('crypto');
 const auth=require('../middleware/auth');
 const {access,publicAccess,MONTHLY_LINK,UUID}=require('../utils/quote-access');
 const router=express.Router();
-const PRICE='price_1TZX0w8466uzy1MNeVvWz2Ew';
-const PAYMENT_LINK='plink_1TZX128466uzy1MNZEoilqdL';
+// Keep recognising existing subscriptions while new checkouts use £37/month.
+const PRICES=new Set(['price_1TZX0w8466uzy1MNeVvWz2Ew','price_1UHgUj8466uzy1MNcCnTWJbi']);
+const PAYMENT_LINKS=new Set(['plink_1TZX128466uzy1MNZEoilqdL','plink_1UHgWz8466uzy1MNDtQyGajQ']);
 router.get('/status',auth,async(req,res)=>{
   try{res.set('Cache-Control','no-store').json(publicAccess(await access(req.app.locals.pool,req.user)));}
   catch(e){res.status(e.status||500).json({error:e.message});}
@@ -44,8 +45,8 @@ async function webhook(req,res){
   const subscriptionEvent=['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','customer.subscription.paused','customer.subscription.resumed'].includes(event.type);
   const checkoutEvent=['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(event.type);
   if(!subscriptionEvent&&!checkoutEvent) return res.json({received:true});
-  if(subscriptionEvent&&!object.items?.data?.some(item=>item.price?.id===PRICE)) return res.json({received:true});
-  if(checkoutEvent&&(object.payment_link!==PAYMENT_LINK||object.mode!=='subscription'||object.payment_status!=='paid'||!UUID.test(object.client_reference_id||''))) return res.json({received:true});
+  if(subscriptionEvent&&!object.items?.data?.some(item=>PRICES.has(item.price?.id))) return res.json({received:true});
+  if(checkoutEvent&&(!PAYMENT_LINKS.has(object.payment_link)||object.mode!=='subscription'||object.payment_status!=='paid'||!UUID.test(object.client_reference_id||''))) return res.json({received:true});
   const subId=subscriptionEvent?object.id:object.subscription;
   if(typeof subId!=='string'||!subId.startsWith('sub_')||typeof object.customer!=='string') return res.status(400).json({error:'Invalid subscription'});
   const client=await req.app.locals.pool.connect();
@@ -63,7 +64,7 @@ async function webhook(req,res){
         await client.query("INSERT INTO events(event_type,user_id,source) VALUES('subscription_started',$1,'stripe_webhook')",[user.id]);
       }
     }else{
-      const item=object.items.data.find(item=>item.price?.id===PRICE);
+      const item=object.items.data.find(item=>PRICES.has(item.price?.id));
       const periodEnd=item.current_period_end||object.current_period_end;
       const status=event.type==='customer.subscription.deleted'?'canceled':object.pause_collection?'paused':object.status;
       await client.query("UPDATE billing_subscriptions SET status=$1,period_end=$2,event_created=$3 WHERE id=$4 AND event_created<=$3 AND (status<>'canceled' OR $1='canceled') AND (NOT $5 OR event_created=0)",[status,periodEnd?new Date(periodEnd*1000):null,event.created,subId,event.type==='customer.subscription.created']);
