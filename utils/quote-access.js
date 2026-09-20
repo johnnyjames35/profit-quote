@@ -45,7 +45,9 @@ async function access(db, user, lock=false) {
   if(!user.guest){
     const paid=await db.query("SELECT 1 FROM billing_subscriptions WHERE user_id=$1 AND status='active' AND checkout_paid=true AND period_end>NOW() LIMIT 1",[user.id]);
     // Preserve explicit existing admin grants; Stripe-managed accounts must have a live entitlement.
-    subscribed=!!paid.rows.length||(!owner.billing_managed&&!!owner.paid_at);
+    const bundle=await db.query('SELECT enabled,valid_until FROM trade_bundle_access WHERE user_id=$1',[user.id]);
+    subscribed=bundle.rows.length ? bundle.rows[0].enabled&&new Date(bundle.rows[0].valid_until)>new Date()
+      : !!paid.rows.length||(!owner.billing_managed&&!!owner.paid_at);
   }
   return {owner,trial_id:owner.trial_id,used:allowance.used,remaining:Math.max(0,LIMIT-allowance.used),subscribed};
 }

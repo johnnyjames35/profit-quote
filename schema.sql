@@ -150,3 +150,11 @@ CREATE TABLE IF NOT EXISTS template_downloads (
   source VARCHAR(100),
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS trade_bundle_access (
+ user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+ subscription_id TEXT UNIQUE NOT NULL,customer_id TEXT NOT NULL,
+ enabled BOOLEAN NOT NULL DEFAULT FALSE,valid_until TIMESTAMPTZ,
+ plan TEXT NOT NULL DEFAULT 'starter',allowance INTEGER NOT NULL DEFAULT 0,
+ stripe_status TEXT NOT NULL DEFAULT 'pending',warning TEXT NOT NULL DEFAULT '',checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

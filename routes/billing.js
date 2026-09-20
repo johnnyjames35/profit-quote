@@ -15,6 +15,7 @@ router.post('/checkout',auth,async(req,res)=>{
   try{
     const a=await access(req.app.locals.pool,req.user);
     if(a.subscribed) return res.json({subscribed:true});
+    if((await req.app.locals.pool.query('SELECT 1 FROM trade_bundle_access WHERE user_id=$1',[req.user.id])).rows.length) return res.status(409).json({error:'Your account is linked to Trade Toolkit. Please contact support before starting another subscription.'});
     const url=new URL(MONTHLY_LINK);
     url.searchParams.set('client_reference_id',a.owner.billing_reference);
     url.searchParams.set('prefilled_email',a.owner.email);

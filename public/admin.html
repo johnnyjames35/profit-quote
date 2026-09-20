@@ -846,7 +846,7 @@ function renderUsers(users) {
       <td class="td-date">${lastActiveStr}</td>
       <td class="td-quotes">${u.quote_count || 0}</td>
       <td class="td-date">${dateStr}</td>
-      <td><div class="action-btns">${actionBtn}<button class="btn-delete" onclick="deleteUser('${u.id}', '${safeName}')">Delete</button></div></td>
+      <td><div class="action-btns">${actionBtn}<button onclick="manageTradeBundle('${u.id}')">Trade Toolkit</button><button class="btn-delete" onclick="deleteUser('${u.id}', '${safeName}')">Delete</button></div></td>
     </tr>`;
   }).join('');
 }
@@ -872,7 +872,7 @@ async function markPaid(id, name) {
 }
 
 async function markCancelled(id, name) {
-  const confirmed = confirm('Mark ' + name + ' as cancelled? This logs the cancellation but does not remove their access.');
+  const confirmed = confirm('Mark ' + name + ' as cancelled? This removes their manual paid access and keeps their saved quotes. Stripe subscriptions must be cancelled in Stripe.');
   if (!confirmed) return;
   try {
     const res = await fetch(API + '/api/admin/users/' + id + '/mark-cancelled', {
@@ -885,7 +885,7 @@ async function markCancelled(id, name) {
       alert('Could not mark as cancelled: ' + (data.error || 'Unknown error'));
       return;
     }
-    alert(name + ' marked as cancelled. Their access has NOT been removed — do that manually when you\'re ready.');
+    alert(name + ' manual paid access removed. Saved quotes have been kept.'); loadUsers();
   } catch(e) {
     alert('Connection error — could not mark as cancelled.');
   }
@@ -998,5 +998,6 @@ function esc(s) {
 }
 </script>
 
+<script src="/bundle-admin.js"></script>
 </body>
 </html>

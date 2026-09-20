@@ -24,6 +24,12 @@ function logEvent(pool, eventType, userId, source) {
   ).catch(e => console.error('Event log error:', e.message));
 }
 
+router.use((req,res,next)=>{
+  if(!req.app.locals.bundleBilling)return next();
+  if(!req.app.locals.bundleRouter){const b=require('express').Router();req.app.locals.bundleBilling.register(b,requireAdmin,'/users');req.app.locals.bundleRouter=b;}
+  req.app.locals.bundleRouter(req,res,next);
+});
+
 router.post('/login', (req, res) => {
   const { password } = req.body;
   if (!password || password !== ADMIN_PASSWORD) {
@@ -162,7 +168,7 @@ router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
-      'UPDATE users SET paid_at = NOW() WHERE id = $1 RETURNING id',
+      'UPDATE users SET paid_at = NOW() WHERE id = $1 AND NOT EXISTS(SELECT 1 FROM trade_bundle_access WHERE user_id=$1) RETURNING id',
       [id]
     );
     if (result.rows.length === 0) {
@@ -175,15 +181,18 @@ router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
   }
 });
 
-// Mark a user as cancelled — admin only (logs event, does not remove access)
+// Mark a user as cancelled — admin only (revokes manual access; preserves saved quotes)
 router.patch('/users/:id/mark-cancelled', requireAdmin, async (req, res) => {
   const pool = req.app.locals.pool;
   const { id } = req.params;
   try {
-    const exists = await pool.query('SELECT id FROM users WHERE id=$1', [id]);
+    if(await req.app.locals.bundleBilling?.hasBinding(Number(id))) return res.status(409).json({error:'Cancel Trade Toolkit in Stripe; linked access will follow it.'});
+    const exists = await pool.query('SELECT id,billing_managed FROM users WHERE id=$1', [id]);
     if (exists.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    if(exists.rows[0].billing_managed) return res.status(409).json({error:'Cancel this subscription in Stripe. This control only removes manual access.'});
+    await pool.query('UPDATE users SET paid_at=NULL WHERE id=$1',[id]);
     res.json({ success: true });
     logEvent(pool, 'subscription_cancelled', id, null);
   } catch(e) {

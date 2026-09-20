@@ -13,6 +13,10 @@ const PORT = process.env.PORT || 3000;
 // Database
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 app.locals.pool = pool;
+const {migrate:migrateBundle,createBundleBilling}=require('./bundle-billing');
+const Stripe=require('stripe');
+const bundleStripe=process.env.STRIPE_SECRET_KEY?new Stripe(process.env.STRIPE_SECRET_KEY,{apiVersion:'2026-08-26.dahlia',maxNetworkRetries:2}):null;
+app.locals.bundleBilling=createBundleBilling({db:pool,stripe:bundleStripe,app:'profitquote'});
 
 // Middleware
 app.use(cors({ origin: '*' }));
@@ -110,6 +114,9 @@ async function init() {
     const fs = require('fs');
     const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     await pool.query(schema);
+    await migrateBundle(pool);
+    const bundleTimer=setInterval(()=>app.locals.bundleBilling.reconcile().catch(e=>console.error('Bundle check failed:',e.message)),60000);
+    bundleTimer.unref();
     console.log('Database ready');
     startDailyTrafficEmailScheduler(pool);
         startTrialEmailScheduler(pool);
