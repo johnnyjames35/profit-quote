@@ -83,7 +83,8 @@ router.get('/funnel', requireAdmin, async (req, res) => {
     const [
       visitors, linkedinVisitors, googleVisitors, trialClicks, accountsCreated,
       firstQuotes, totalQuotes, paidCustomers, activePaidCustomers,
-      guestStarts, guestQuotes, guestConversions, quoteStarts, quoteSends, quoteDownloads
+      guestStarts, guestQuotes, guestConversions, quoteStarts, quoteSends, quoteDownloads,
+      signupViews, signupAttempts, signupFailures
     ] = await Promise.all([
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='linkedin' AND ${legacyCondition('created_at')}`),
@@ -99,7 +100,10 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL AND ${zonedCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_started' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND ${legacyCondition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_downloaded' AND ${legacyCondition('created_at')}`)
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_downloaded' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='signup_screen_viewed' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='signup_attempted' AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='signup_failed' AND ${legacyCondition('created_at')}`)
     ]);
 
     const activePaidCount = activePaidCustomers.rows[0].c;
@@ -125,6 +129,9 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       quoteCompletions: totalQuotes.rows[0].c,
       quoteSends: quoteSends.rows[0].c,
       quoteDownloads: quoteDownloads.rows[0].c,
+      signupViews: signupViews.rows[0].c,
+      signupAttempts: signupAttempts.rows[0].c,
+      signupFailures: signupFailures.rows[0].c,
       mrr: activePaidCount * 37
     });
   } catch(e) {
