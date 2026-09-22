@@ -454,6 +454,18 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val amber" id="f-accounts">—</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Signup Screen Shown</div>
+          <div class="stat-val cyan" id="f-signup-views">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Signup Attempts</div>
+          <div class="stat-val amber" id="f-signup-attempts">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Signup Failures</div>
+          <div class="stat-val red" id="f-signup-failures">—</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">Quotes Created</div>
           <div class="stat-val cyan" id="f-quotes">—</div>
         </div>
@@ -939,6 +951,9 @@ async function loadFunnel() {
     document.getElementById('f-google').textContent = data.googleVisitors;
     document.getElementById('f-trial-clicks').textContent = data.trialClicks;
     document.getElementById('f-accounts').textContent = data.accountsCreated;
+    document.getElementById('f-signup-views').textContent = data.signupViews;
+    document.getElementById('f-signup-attempts').textContent = data.signupAttempts;
+    document.getElementById('f-signup-failures').textContent = data.signupFailures;
     document.getElementById('f-quotes').textContent = data.totalQuotes;
     document.getElementById('f-quote-starts').textContent = data.quoteStarts;
     document.getElementById('f-quote-sends').textContent = data.quoteSends;
