@@ -125,7 +125,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       quoteCompletions: totalQuotes.rows[0].c,
       quoteSends: quoteSends.rows[0].c,
       quoteDownloads: quoteDownloads.rows[0].c,
-      mrr: activePaidCount * 49
+      mrr: activePaidCount * 37
     });
   } catch(e) {
     res.status(500).json({ error: e.message });
