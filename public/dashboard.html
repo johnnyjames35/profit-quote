@@ -1353,6 +1353,7 @@ function showGuestSignup(){
   document.getElementById('app-screen').style.display='none';
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='flex';
+  trackFunnelEvent('signup_screen_viewed');
   const h=document.querySelector('#register-screen .auth-left-headline');
   const sub=document.querySelector('#register-screen .auth-left-sub');
   if(h) h.innerHTML='Keep your quotes.<br><span>Create your account.</span>';
@@ -1776,14 +1777,36 @@ async function doRegister(){
   const err=document.getElementById('reg-err');
   const btn=document.getElementById('reg-btn');
   err.style.display='none';
-  if(!name||!email||!password){ err.textContent='Please fill in all fields.'; err.style.display='block'; return; }
+  if(!name||!email||!password){
+    err.textContent='Please fill in all fields.';
+    err.style.display='block';
+    trackFunnelEvent('signup_failed');
+    return;
+  }
+  trackFunnelEvent('signup_attempted');
   btn.textContent='Creating account...'; btn.disabled=true;
   try{
     const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,trade,browser_id:getBrowserId(),guest_token:localStorage.getItem('pq_guest_token')})});
     const data=await res.json();
-    if(!res.ok){ err.textContent=data.error||'Registration failed.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; return; }
-    token=data.token; localStorage.setItem('pq_token',token); trackFunnelEvent('account_created'); initApp();
-  }catch(e){ err.textContent='Connection error.'; err.style.display='block'; btn.textContent='Create Account →'; btn.disabled=false; }
+    if(!res.ok){
+      err.textContent=data.error||'Registration failed.';
+      err.style.display='block';
+      trackFunnelEvent('signup_failed');
+      btn.textContent='Create Account →';
+      btn.disabled=false;
+      return;
+    }
+    token=data.token;
+    localStorage.setItem('pq_token',token);
+    trackFunnelEvent('account_created');
+    initApp();
+  }catch(e){
+    err.textContent='Connection error.';
+    err.style.display='block';
+    trackFunnelEvent('signup_failed');
+    btn.textContent='Create Account →';
+    btn.disabled=false;
+  }
 }
 
 async function initApp(startInBuilder=false){
