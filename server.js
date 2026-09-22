@@ -37,6 +37,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use(require('./routes/commercial-pages'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
