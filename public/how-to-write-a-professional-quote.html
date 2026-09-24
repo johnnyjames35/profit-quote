@@ -225,7 +225,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
       <a href="/#pricing">Pricing</a>
       <a href="/knowledge-centre.html">Trade Guides</a>
       <a href="/dashboard">Sign In</a>
-      <a class="btn-nav" href="/dashboard?try=1&amp;source=builder-quote-template">Create 3 Quotes Free</a>
+      <a class="btn-nav" href="/dashboard?signup=1&amp;source=builder-quote-template">Create 3 Quotes Free</a>
     </div>
   </div>
 </nav>
@@ -236,8 +236,8 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
     <h1 class="article-h1">Free Builder Quote Template: How to Write a Professional Job Quote</h1>
     <div class="article-meta"><strong>By John James</strong> &middot; Founder of ProfitQuote &middot; 8 min read &middot; Last updated: 1 September 2026</div>
     <div class="hero-action">
-      <a class="btn-cta" href="/dashboard?try=1&amp;source=builder-quote-template">Create a Profit-Checked Quote Free &rarr;</a>
-      <span class="hero-note">No signup or card required for your first three quotes.</span>
+      <a class="btn-cta" href="/dashboard?signup=1&amp;source=builder-quote-template">Create a Profit-Checked Quote Free &rarr;</a>
+      <span class="hero-note">7-day unlimited free trial with an account. No card required.</span>
     </div>
   </div>
 </section>
@@ -394,7 +394,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 24
 <div class="cta-box">
   <div class="cta-title">Stop Creating Quotes Manually</div>
   <div class="cta-sub">ProfitQuote generates professional, branded quotations in minutes &mdash; with your margin built in automatically, every time.</div>
-  <a class="btn-cta" href="/dashboard?try=1&amp;source=builder-quote-template">Create Your First of 3 Free Quotes &rarr;</a>
+  <a class="btn-cta" href="/dashboard?signup=1&amp;source=builder-quote-template">Create Your First of 3 Free Quotes &rarr;</a>
 </div>
 
 <h2>Frequently Asked Questions</h2>
@@ -672,7 +672,7 @@ if (generateBtn) {
 
 // Record only the hand-off from this high-intent guide into the free product.
 // sendBeacon keeps the navigation fast; fetch is the compatibility fallback.
-document.querySelectorAll('a[href^="/dashboard?try=1"]').forEach((link) => {
+document.querySelectorAll('a[href^="/dashboard?signup=1"]').forEach((link) => {
   link.addEventListener('click', () => {
     const body = JSON.stringify({ event_type: 'trial_click', source: 'builder-quote-template' });
     if (navigator.sendBeacon) {

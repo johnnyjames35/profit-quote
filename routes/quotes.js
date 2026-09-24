@@ -2,7 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { sendToGA } = require('../utils/ga');
 const https = require('https');
-const {access,limitError,publicAccess,UUID}=require('../utils/quote-access');
+const {access,consume,limitError,publicAccess,UUID}=require('../utils/quote-access');
 
 const CUSTOMER_EMAIL_FROM = 'hello@profitquote.co.uk';
 
@@ -90,12 +90,13 @@ router.post('/', auth, async (req, res) => {
       const previous=await client.query('SELECT * FROM quotes WHERE creation_key=$1 AND '+(req.user.guest?'guest_id':'user_id')+'=$2',[creationKey,req.user.id]);
       if(previous.rows.length){await client.query('COMMIT');return res.json({...previous.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining});}
     }
-    if(!a.subscribed&&a.used>=3) throw limitError(req.user.guest);
+    if(!a.can_create) throw limitError(req.user.guest);
     const ownerField=req.user.guest?'guest_id':'user_id';
     const saved=await client.query(
       'INSERT INTO quotes ('+ownerField+',customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,quote_data,total,profit_percent,creation_key) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *',
       [req.user.id,customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,JSON.stringify(quote_data),total,profit_percent,creationKey]);
-    if(!a.subscribed){await client.query('UPDATE quote_allowances SET used=used+1 WHERE id=$1',[a.trial_id]);a.used++;a.remaining=Math.max(0,3-a.used);}
+    await consume(client,a,req.user);
+    Object.assign(a,await access(client,req.user));
     if(req.user.guest) await client.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1',[req.user.id]);
     await client.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_completed',$1,$2,$3)",[req.user.guest?null:req.user.id,req.user.guest?'guest':'dashboard',JSON.stringify({quote_id:saved.rows[0].id,...(req.user.guest?{guest_id:req.user.id}:{})})]);
     if(req.user.guest) await client.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id,quote_number:a.used})]);

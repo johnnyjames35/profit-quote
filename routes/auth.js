@@ -29,31 +29,18 @@ function sendBrevoEmail(to, subject, html) {
     const req = https.request(options, res => {
       let body = '';
       res.on('data', chunk => body += chunk);
-      res.on('end', () => resolve(body));
+      res.on('end', () => res.statusCode>=200&&res.statusCode<300?resolve(body):reject(new Error('Email delivery failed: '+res.statusCode)));
     });
     req.on('error', reject);
+    req.setTimeout?.(20000,()=>req.destroy(new Error('Email delivery timed out')));
     req.write(data);
     req.end();
   });
 }
 
-function sendWelcomeEmail(name, email) {
-  const onboardingItem = isFreeOnboardingOfferActive()
-    ? '<li>Personal setup included free until 30 September 2026</li>'
-    : '<li>£99 one-off onboarding fee</li>';
-  return sendBrevoEmail(email,
-    'Welcome to ProfitQuote — your first three quotes are included',
-    `<p>Hi ${name},</p>
-<p>Welcome to ProfitQuote! Your first three quotes are included. Quotes created before signup count towards the same allowance.</p>
-<p>You can log in any time at <a href="https://profitquote.co.uk">profitquote.co.uk</a></p>
-<p>To create quote four and keep quoting, you'll need:</p>
-<ul>
-${onboardingItem}
-<li>£37/month subscription</li>
-</ul>
-<p>Your existing quotes stay available when your free allowance is used.</p>
-<p>John James<br>ProfitQuote | Cambrian Digital</p>`
-  );
+function sendWelcomeEmail(name,email){
+  const msg=require('../utils/trial-message').message('welcome',String(name||'').split(' ')[0]);
+  return sendBrevoEmail(email,msg.subject,msg.html);
 }
 
 function sendNotifyJohnEmail(name, email) {
@@ -63,7 +50,7 @@ function sendNotifyJohnEmail(name, email) {
     `<p>New user signed up for ProfitQuote:</p>
 <p><strong>Name:</strong> ${name}<br>
 <strong>Email:</strong> ${email}</p>
-<p>Their three-quote free allowance is available now. Guest quotes count towards the same allowance.</p>`
+<p>Their seven-day unlimited trial is available now.</p>`
   );
 }
 
@@ -122,7 +109,8 @@ router.post('/register', async (req, res) => {
         [name,email.toLowerCase(),hash,trade||'']
       );
       user=result.rows[0];
-      await client.query('UPDATE users SET trial_id=$1 WHERE id=$2',[trialId,user.id]);
+      await client.query('UPDATE quote_allowances SET trial_started_at=COALESCE(trial_started_at,NOW()) WHERE id=$1',[trialId]);
+      await client.query('UPDATE users SET trial_id=$1,trial_started_at=(SELECT trial_started_at FROM quote_allowances WHERE id=$1) WHERE id=$2',[trialId,user.id]);
       await client.query('INSERT INTO signup_attempts(ip_hash) VALUES($1)',[network]);
       if(guest){
         await client.query('UPDATE quotes SET user_id=$1,guest_id=NULL WHERE guest_id=$2',[user.id,guest.id]);

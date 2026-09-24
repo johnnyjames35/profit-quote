@@ -16,8 +16,8 @@ test('commercial URLs serve crawlable HTML, canonical redirects and isolated 404
   assert.ok(html.includes('href="https://profitquote.co.uk/'+slug+'"'));
   titles.add(html.match(/<title>(.*?)<\/title>/)[1]);descriptions.add(html.match(/name="description" content="(.*?)"/)[1]);
   const data=JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
-  assert.equal(data['@graph'].find(x=>x['@type']==='SoftwareApplication').offers.price,'37.00');
-  assert.match(html,/\/dashboard\?try=1&amp;source=/);assert.match(html,/index, follow/);
+  assert.deepEqual(data['@graph'].find(x=>x['@type']==='SoftwareApplication').offers.map(x=>x.price),['5.00','19.00','29.00']);
+  assert.match(html,/\/dashboard\?signup=1&amp;source=/);assert.match(html,/index, follow/);
   assert.ok(fs.readFileSync(path.join(root,'public/sitemap.xml'),'utf8').includes('https://profitquote.co.uk/'+slug));
   for(const suffix of ['.html','/']){
    const redirect=await fetch(base+'/'+slug+suffix+'?utm_source=test',{redirect:'manual'});
@@ -29,7 +29,7 @@ test('commercial URLs serve crawlable HTML, canonical redirects and isolated 404
    const linked=await fetch(base+url);assert.equal(linked.status,200,slug+' broken link '+url);
   }
  }
- assert.equal(titles.size,5);assert.equal(descriptions.size,5);
+ assert.equal(titles.size,slugs.length);assert.equal(descriptions.size,slugs.length);
  for(const url of ['/not-a-page','/quoting-software-for-roofers','/api/unknown'])assert.equal((await fetch(base+url)).status,404);
 });
 

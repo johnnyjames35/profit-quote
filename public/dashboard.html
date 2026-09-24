@@ -448,10 +448,12 @@ textarea.field-input{resize:vertical;min-height:80px;}
 </head>
 <body>
 <dialog id="subscription-dialog" style="max-width:440px;width:calc(100% - 40px);border:1px solid #ffc20a;border-radius:16px;padding:28px;background:#15232c;color:white;">
-  <h2>Your three free quotes are used</h2>
-  <p>Subscribe for £37/month to create your next quote. Your existing quotes stay available, and the job you are working on is kept here.</p>
-  <p>Quotes created before signup count towards the same three-quote allowance.</p>
-  <button type="button" class="btn-next" onclick="startSubscription()">Subscribe — £37/month</button>
+  <h2>Choose how you keep quoting</h2>
+  <p id="plan-explanation">Your saved quotes stay available and your current draft is kept here.</p>
+  <button type="button" class="btn-next" onclick="startSubscription('payg')">Pay £5 — one quote</button>
+  <button type="button" class="btn-next" onclick="startSubscription('starter')">Starter £19/month — 6 quotes</button>
+  <button type="button" class="btn-next" onclick="startSubscription('pro')">Pro £29/month — unlimited</button>
+  <p>No setup fee. Subscriptions renew monthly until cancelled. Starter includes 6 new quotes per billing month, without rollover. Saving a new quote uses one allowance; viewing and downloading it do not.</p>
   <button type="button" class="btn-action" onclick="refreshQuoteAccess(true)">I've paid — check access</button>
   <button type="button" class="btn-action" onclick="document.getElementById('subscription-dialog').close()">Back to my draft</button>
   <p id="subscription-message" role="status"></p>
@@ -536,7 +538,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
     </div>
     <div class="auth-benefit">
       <div class="auth-benefit-icon">🎯</div>
-      <div class="auth-benefit-text"><strong>Your first 3 quotes stay with you</strong><span>No card needed. No commitment. Cancel anytime.</span></div>
+      <div class="auth-benefit-text"><strong>Your saved quotes stay with you</strong><span>No card needed. No commitment. Cancel anytime.</span></div>
     </div>
     <div class="auth-left-footer">
       <div class="auth-left-footer-item"><div class="icon">🔒</div><strong>Secure &amp; Private</strong><span>Always protected</span></div>
@@ -549,7 +551,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
     <div class="login-card">
       <div class="login-logo"><div class="login-logo-icon">£</div><span class="login-logo-text">Profit<span>Quote</span></span></div>
       <div class="login-title">Create your free account</div>
-      <div class="login-sub">Your first 3 quotes are included — no card needed</div>
+      <div class="login-sub">7 days of unlimited quotes — no card needed</div>
       <div id="quote-signup-prompt" class="login-sub" style="display:none;">Your quote is ready. Create your free account to save it, download the PDF and send it to your customer. No card required. Takes about 30 seconds.<br><button type="button" class="btn-action" onclick="backToGuestQuote()">Back to my quote</button></div>
       <div class="login-err" id="reg-err"></div>
       <div class="lfield"><label>Your Name</label><input type="text" id="reg-name" placeholder="e.g. Dave Morris"></div>
@@ -686,7 +688,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
             <div class="hero-right-status" id="hero-health-status">—</div>
           </div>
         </div>
-        <div class="trial-pill" id="trial-pill">🔓 3 Free Quotes Included</div>
+        <div class="trial-pill" id="trial-pill">🔓 7-day unlimited trial</div>
       </div>
 
       <!-- 4 KPI CARDS -->
@@ -733,7 +735,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="started-title">Get started</div>
         <div class="started-step">
           <div class="step-num done">✓</div>
-          <div><div class="step-label">Account created</div><div class="step-sub">You're in. Your first 3 quotes are included.</div></div>
+          <div><div class="step-label">Account created</div><div class="step-sub">You're in. Your account is ready.</div></div>
         </div>
         <div class="started-step">
           <div class="step-num active" id="step-rates">2</div>
@@ -1287,7 +1289,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div class="card">
         <div class="card-title">Subscription</div>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Upgrade whenever you’re ready to keep quoting and save your work.</p>
-        <a href="https://buy.stripe.com/14AcMZf5F4L453h8MQc3m0x" onclick="event.preventDefault();startSubscription()" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Start £37/month Subscription →</a>
+        <a href="#" onclick="event.preventDefault();showSubscriptionPrompt()" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Choose £5 / £19 / £29 →</a>
+        <button id="manage-plan" style="display:none;margin:12px auto" onclick="startSubscription(currentUser.billing_plan)">Manage or cancel subscription</button>
       </div>
       <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
@@ -1682,7 +1685,7 @@ if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; wind
 const resetTokenFromUrl = urlParams.get('reset');
 
 if(resetTokenFromUrl){ showReset(resetTokenFromUrl); }
-else if(token){ initApp(urlParams.get('try')==='1'); } else if(urlParams.get('try')==='1'){ startGuest(); } else { showLogin(); }
+else if(token){ initApp(urlParams.get('try')==='1'); } else if(urlParams.get('signup')==='1'){ showRegister(); } else if(urlParams.get('try')==='1'){ startGuest(); } else { showLogin(); }
 
 function showLogin(){
   document.getElementById('login-screen').style.display='flex';
@@ -1826,7 +1829,7 @@ async function initApp(startInBuilder=false){
     document.body.classList.add('guest-mode');
     ['nav-issues','nav-setup'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='none';
-    const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
+    const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='Guest preview · '+currentUser.guest_quotes_remaining+' remaining';
     const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent='Build your first professional quote — no signup needed';
     if(currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
     if(startInBuilder || quotes.length===0) switchTab('builder');
@@ -1837,7 +1840,8 @@ async function initApp(startInBuilder=false){
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='';
     localStorage.removeItem('pq_guest_token'); guestToken=null;
     returnToCompletedQuote();
-    if(new URLSearchParams(window.location.search).get('subscribe')==='1') switchTab('setup');
+    if(new URLSearchParams(window.location.search).get('subscribe')==='1'){switchTab('setup');showSubscriptionPrompt();}
+    refreshQuoteAccess();
     if(new URLSearchParams(window.location.search).get('billing')==='returned'){switchTab('builder');showSubscriptionPrompt();refreshQuoteAccess(true);}
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
@@ -1885,25 +1889,28 @@ function populateUserUI(){
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
   if(currentUser.guest){
     const pill=document.getElementById('trial-pill');
-    if(pill) pill.textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
+    if(pill) pill.textContent='Guest preview · '+currentUser.guest_quotes_remaining+' remaining';
     return;
   }
   updateAllowancePill();
 }
 
 function updateAllowancePill(){
+  const manage=document.getElementById('manage-plan');
+  if(manage)manage.style.display=['starter','pro'].includes(currentUser?.billing_plan)?'block':'none';
   const pill=document.getElementById('trial-pill');
-  if(pill&&!currentUser?.guest) pill.textContent=currentUser?.subscribed?'Subscription active':Math.max(0,currentUser?.quotes_remaining??3)+' of 3 free quotes remaining';
+  if(pill&&!currentUser?.guest) pill.textContent=currentUser?.trial_active?'Unlimited trial until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):currentUser?.unlimited?'Unlimited quoting active':currentUser?.billing_plan==='starter'?'Starter · '+Math.max(0,6-currentUser.period_quotes_used)+' of 6 monthly quotes left':(currentUser?.payg_credits||0)+' paid quote credits';
 }
 function showSubscriptionPrompt(){
   saveBuilderDraft();
+  document.getElementById('plan-explanation').textContent=currentUser?.billing_plan==='starter'?'Upgrade to Pro for £10 more per month and keep quoting without limits. Stripe shows any adjustment before you confirm. Your saved quotes stay available.':'Your saved quotes stay available and your current draft is kept here. Choose an option to continue.';
   document.getElementById('subscription-dialog').showModal();
 }
-async function startSubscription(){
+async function startSubscription(plan='pro'){
   if(currentUser?.guest){showGuestSignup();return;}
   const checkout=window.open('','_blank');
   try{
-    const response=await fetch(API+'/api/billing/checkout',{method:'POST',headers:{Authorization:'Bearer '+token}});
+    const response=await fetch(API+'/api/billing/checkout',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({plan})});
     const data=await response.json();
     if(!response.ok) throw new Error(data.error||'Could not open checkout');
     if(data.subscribed){checkout?.close();await refreshQuoteAccess(true);return;}
@@ -1914,10 +1921,15 @@ async function startSubscription(){
 async function refreshQuoteAccess(showMessage=false){
   if(!currentUser||currentUser.guest) return;
   try{
+    const params=new URLSearchParams(location.search),session=params.get('session_id');
+    if(session){
+      const verified=await fetch(API+'/api/billing/confirm',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({session_id:session})});
+      if(verified.ok){params.delete('session_id');history.replaceState(null,'',location.pathname+(params.size?'?'+params:''));}
+    }
     const response=await fetch(API+'/api/billing/status',{headers:{Authorization:'Bearer '+token}});
     if(!response.ok) throw new Error('Could not check your subscription. Please try again.');
     Object.assign(currentUser,await response.json());updateAllowancePill();
-    if(currentUser.subscribed){document.getElementById('subscription-dialog').close();if(showMessage)showToast('Subscription active — you can generate your quote now.');}
+    if(currentUser.can_create){document.getElementById('subscription-dialog').close();if(showMessage)showToast('Access confirmed — you can create your quote now.');}
     else if(showMessage) document.getElementById('subscription-message').textContent='Payment has not been confirmed yet. If you have just paid, check again shortly.';
   }catch(error){if(showMessage)document.getElementById('subscription-message').textContent=error.message;}
 }
@@ -2488,6 +2500,7 @@ function nextStep(n){
 }
 
 function resetBuilder(){
+  if(!currentUser?.guest&&currentUser?.can_create===false){showSubscriptionPrompt();return;}
   pendingCreationKey=null;
   if(currentUser?.guest && currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
   restoreCostChecks([]);
@@ -2667,9 +2680,9 @@ async function generateQuote(){
       return;
     }
     editingQuoteId=editingQuoteId||saved.id;currentQuoteData.id=editingQuoteId;pendingCreationKey=null;
-    if(typeof saved.quotes_remaining==='number') Object.assign(currentUser,{quotes_remaining:saved.quotes_remaining,quotes_used:saved.quotes_used,subscribed:saved.subscribed,guest_quotes_remaining:saved.guest_quotes_remaining});
+    Object.assign(currentUser,...['quotes_remaining','quotes_used','subscribed','guest_quotes_remaining','can_create','unlimited','billing_plan','trial_active','trial_ends_at','period_quotes_used','payg_credits'].map(key=>({[key]:saved[key]})));
     updateAllowancePill();
-    if(currentUser.guest) document.getElementById('trial-pill').textContent='3 free quotes · '+currentUser.guest_quotes_remaining+' remaining';
+    if(currentUser.guest) document.getElementById('trial-pill').textContent='Guest preview · '+currentUser.guest_quotes_remaining+' remaining';
     document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save':'💾 Saved';clearBuilderDraft();loadQuotes();
   }catch(error){nextStep(5);showToast('Connection error — try generating again.');return;}
 
@@ -2796,7 +2809,7 @@ async function saveQuote(){
       if(!editingQuoteId) trackFunnelEvent('quote_saved');
       if(currentUser?.guest && typeof saved.remaining==='number'){
         currentUser.guest_quotes_remaining=saved.remaining;
-        const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='3 free quotes · '+saved.remaining+' remaining';
+        const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='Guest preview · '+saved.remaining+' remaining';
         showToast(saved.remaining ? 'Quote saved — '+saved.remaining+' free remaining' : 'Third quote saved — create your account to keep going');
       } else showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
       clearBuilderDraft();

@@ -98,6 +98,32 @@ CREATE TABLE IF NOT EXISTS billing_subscriptions (
   checkout_paid BOOLEAN NOT NULL DEFAULT false
 );
 CREATE TABLE IF NOT EXISTS billing_events (id TEXT PRIMARY KEY, processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+-- Commercial model v2. Shared trial dates survive account/quote deletion.
+ALTER TABLE quote_allowances ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ;
+UPDATE quote_allowances a SET trial_started_at=u.started FROM
+ (SELECT trial_id,MIN(trial_started_at) AS started FROM users GROUP BY trial_id) u
+ WHERE a.id=u.trial_id AND a.trial_started_at IS NULL;
+CREATE TABLE IF NOT EXISTS commercial_subscriptions (
+ id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ customer_id TEXT NOT NULL, plan TEXT NOT NULL CHECK(plan IN ('starter','pro')),
+ status TEXT NOT NULL, period_start TIMESTAMPTZ NOT NULL, period_end TIMESTAMPTZ NOT NULL,
+ verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS commercial_payments (
+ session_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ amount INTEGER NOT NULL, credit_available BOOLEAN NOT NULL DEFAULT TRUE,
+ payment_intent TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS commercial_usage (
+ id BIGSERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ subscription_id TEXT NOT NULL, period_start TIMESTAMPTZ NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS commercial_usage_period ON commercial_usage(user_id,subscription_id,period_start);
+CREATE TABLE IF NOT EXISTS commercial_checkouts (
+ user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+ session_id TEXT NOT NULL, plan TEXT NOT NULL
+);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_managed BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE quotes ADD COLUMN IF NOT EXISTS creation_key UUID;
 CREATE UNIQUE INDEX IF NOT EXISTS quotes_creation_key_idx ON quotes(creation_key) WHERE creation_key IS NOT NULL;
@@ -158,3 +184,6 @@ CREATE TABLE IF NOT EXISTS trade_bundle_access (
  plan TEXT NOT NULL DEFAULT 'starter',allowance INTEGER NOT NULL DEFAULT 0,
  stripe_status TEXT NOT NULL DEFAULT 'pending',warning TEXT NOT NULL DEFAULT '',checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_emails_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+CREATE TABLE IF NOT EXISTS trial_campaign_log(user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,stage TEXT NOT NULL,sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(user_id,stage));

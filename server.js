@@ -66,7 +66,7 @@ async function trialCheck(req, res, next) {
     }
     const {access,limitError}=require('./utils/quote-access');
     const a=await access(pool,req.user);
-    if(!a.subscribed&&a.remaining===0) throw limitError();
+    if(!a.can_create) throw limitError();
     return next();
   } catch(e) {
     return res.status(e.status||500).json({ error: e.message, code:e.code });

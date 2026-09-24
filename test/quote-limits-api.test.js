@@ -12,7 +12,7 @@ const {PGlite}=require('@electric-sql/pglite');
 for (const billingPlan of [
   {name:'legacy £49',price:'price_1TZX0w8466uzy1MNeVvWz2Ew',link:'plink_1TZX128466uzy1MNZEoilqdL'},
   {name:'current £37',price:'price_1UHgUj8466uzy1MNcCnTWJbi',link:'plink_1UHgWz8466uzy1MNDtQyGajQ'}
-]) test('three lifetime free quotes, signed billing and saved-only output — '+billingPlan.name,async(t)=>{
+]) test('guest preview, seven-day trial, legacy signed billing and saved-only output — '+billingPlan.name,async(t)=>{
   process.env.JWT_SECRET='limits-test-only';process.env.STRIPE_WEBHOOK_SECRET='webhook-test-only';delete process.env.GA_API_SECRET;
   const original=https.request;const sent=[];
   https.request=(options,cb)=>{const r=new EventEmitter();let body='';r.write=x=>body+=x;r.end=()=>{sent.push(JSON.parse(body));const res=new EventEmitter();res.statusCode=201;cb(res);queueMicrotask(()=>res.emit('end'));};return r;};
@@ -36,13 +36,14 @@ for (const billingPlan of [
   const duplicate=await (await request('/api/quotes',firstBody,guest,cookie)).json();assert.equal(duplicate.id,first.id);assert.equal(duplicate.quotes_remaining,2);
   const reg=await request('/api/auth/register',{name:'User one',email:'first@example.invalid',password:'test-password',guest_token:guest,browser_id:browser},null,cookie);assert.equal(reg.status,200);
   const account=await reg.json();const token=account.token;
-  const me=await (await request('/api/auth/me',null,token,cookie,'GET')).json();assert.equal(me.quotes_remaining,2,'signup must not reset guest use');
+  const me=await (await request('/api/auth/me',null,token,cookie,'GET')).json();assert.equal(me.quotes_remaining,null,'registration starts unlimited trial');assert.equal(me.trial_active,true);
   assert.equal((await request('/api/quotes',quote(),guest,cookie)).status,401,'converted guest token revoked');
-  const second=await (await request('/api/quotes',quote(),token,cookie)).json();assert.equal(second.quotes_remaining,1);
+  const second=await (await request('/api/quotes',quote(),token,cookie)).json();assert.equal(second.quotes_remaining,null);
   const race=await Promise.all([request('/api/quotes',quote(),token,cookie),request('/api/quotes',quote(),token,cookie)]);
-  assert.deepEqual(race.map(r=>r.status).sort(),[200,402]);
+  assert.deepEqual(race.map(r=>r.status).sort(),[200,200]);
   await request('/api/quotes/'+second.id,null,token,cookie,'DELETE');
-  assert.equal((await request('/api/quotes',quote(),token,cookie)).status,402,'deletion does not refund credits');
+  await db.query("UPDATE quote_allowances SET trial_started_at=NOW()-INTERVAL '8 days' WHERE id=(SELECT trial_id FROM users WHERE id=$1)",[account.user.id]);
+  assert.equal((await request('/api/quotes',quote(),token,cookie)).status,402,'expired trial blocks new quotes');
   await db.exec(schema);
   assert.equal((await request('/api/quotes',quote(),token,cookie)).status,402,'migration/restart does not reset counters');
   const repeat=await request('/api/auth/register',{name:'Repeat',email:'repeat@example.invalid',password:'test-password',browser_id:'different-browser-id'},null,cookie);
@@ -58,9 +59,7 @@ for (const billingPlan of [
   process.env.BREVO_API_KEY='test';
   assert.equal((await request('/api/quotes/send-email',{quote_id:first.id,total:1,customer_email:'wrong@example.invalid'},token,cookie)).status,200);
   assert.equal(sent.at(-1).to[0].email,'customer@example.invalid');assert.match(sent.at(-1).textContent,/8,698/);
-  const checkout=await (await request('/api/billing/checkout',{},token,cookie)).json();
-  assert.equal(new URL(checkout.url).pathname,'/14AcMZf5F4L453h8MQc3m0x','new checkouts use the £37 payment link');
-  const reference=new URL(checkout.url).searchParams.get('client_reference_id');assert.ok(reference);
+  const reference=(await db.query('SELECT billing_reference FROM users WHERE id=$1',[account.user.id])).rows[0].billing_reference;
   const now=Math.floor(Date.now()/1000);let sequence=0;
   const postEvent=async(type,object,created=now,signature=true)=>{
     const raw=JSON.stringify({id:'evt_test_'+(++sequence),livemode:true,created,type,data:{object}});

@@ -37,10 +37,10 @@ async function access(db, user, lock=false) {
   if(!owner.trial_id){
     owner.trial_id=crypto.randomUUID();
     const count=await db.query(`SELECT COUNT(*)::int AS used FROM quotes WHERE ${user.guest?'guest_id':'user_id'}=$1`,[user.id]);
-    await db.query('INSERT INTO quote_allowances(id,used) VALUES($1,$2)',[owner.trial_id,user.guest?Math.max(owner.quote_count,count.rows[0].used):count.rows[0].used]);
+    await db.query('INSERT INTO quote_allowances(id,used,trial_started_at) VALUES($1,$2,$3)',[owner.trial_id,user.guest?Math.max(owner.quote_count,count.rows[0].used):count.rows[0].used,user.guest?null:owner.trial_started_at]);
     await db.query(`UPDATE ${table} SET trial_id=$1 WHERE id=$2`,[owner.trial_id,user.id]);
   }
-  const allowance=(await db.query(`SELECT used FROM quote_allowances WHERE id=$1${lock?' FOR UPDATE':''}`,[owner.trial_id])).rows[0];
+  const allowance=(await db.query(`SELECT used,trial_started_at FROM quote_allowances WHERE id=$1${lock?' FOR UPDATE':''}`,[owner.trial_id])).rows[0];
   let subscribed=false;
   if(!user.guest){
     const paid=await db.query("SELECT 1 FROM billing_subscriptions WHERE user_id=$1 AND status='active' AND checkout_paid=true AND period_end>NOW() LIMIT 1",[user.id]);
@@ -49,9 +49,33 @@ async function access(db, user, lock=false) {
     subscribed=bundle.rows.length ? bundle.rows[0].enabled&&new Date(bundle.rows[0].valid_until)>new Date()
       : !!paid.rows.length||(!owner.billing_managed&&!!owner.paid_at);
   }
-  return {owner,trial_id:owner.trial_id,used:allowance.used,remaining:Math.max(0,LIMIT-allowance.used),subscribed};
+  const now=new Date();
+  const trialEnd=allowance.trial_started_at ? new Date(new Date(allowance.trial_started_at).getTime()+7*86400000) : null;
+  const trialActive=!user.guest && trialEnd && now<trialEnd;
+  const subscription=!user.guest && (await db.query("SELECT * FROM commercial_subscriptions WHERE user_id=$1 AND status='active' AND period_end>NOW() ORDER BY CASE plan WHEN 'pro' THEN 0 ELSE 1 END,period_end DESC LIMIT 1",[user.id])).rows[0];
+  const credits=user.guest?0:(await db.query('SELECT COUNT(*)::int AS n FROM commercial_payments WHERE user_id=$1 AND credit_available=true',[user.id])).rows[0].n;
+  const periodUsed=subscription?(await db.query('SELECT COUNT(*)::int AS n FROM commercial_usage WHERE user_id=$1 AND subscription_id=$2 AND period_start=$3',[user.id,subscription.id,subscription.period_start])).rows[0].n:0;
+  const unlimited=subscribed||trialActive||subscription?.plan==='pro';
+  const remaining=user.guest?Math.max(0,LIMIT-allowance.used):unlimited?null:Math.max(0,(subscription?6-periodUsed:0))+credits;
+  return {owner,trial_id:owner.trial_id,used:allowance.used,remaining,subscribed:subscribed||!!subscription,
+    can_create:unlimited||remaining>0,unlimited,trial_active:!!trialActive,trial_ends_at:trialEnd,
+    plan:subscribed?'legacy':subscription?.plan||(trialActive?'trial':'payg'),subscription,period_used:periodUsed,credits};
 }
 
-function limitError(guest=false){return Object.assign(new Error(guest?'Create your free account to keep your quotes and subscribe to continue.':'Your three free quotes are used. Subscribe to create your next quote.'),{status:402,code:guest?'guest_limit':'subscription_required'});}
-function publicAccess(a){return {quotes_used:a.used,quotes_remaining:a.remaining,subscribed:a.subscribed,subscription_required:!a.subscribed&&a.remaining===0};}
-module.exports={LIMIT,MONTHLY_LINK,UUID,digest,ipHash,browserTrial,setTrialCookie,access,limitError,publicAccess};
+function limitError(guest=false){return Object.assign(new Error(guest?'Create your free account to keep your quotes and start your 7-day unlimited trial.':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'guest_limit':'subscription_required'});}
+async function consume(db,a,user){
+  if(!a.can_create) throw limitError(user.guest);
+  if(user.guest){await db.query('UPDATE quote_allowances SET used=used+1 WHERE id=$1',[a.trial_id]);return;}
+  if(a.unlimited)return;
+  if(a.subscription && a.period_used<6){
+    await db.query('INSERT INTO commercial_usage(user_id,subscription_id,period_start) VALUES($1,$2,$3)',[user.id,a.subscription.id,a.subscription.period_start]);
+  }else{
+    const result=await db.query('UPDATE commercial_payments SET credit_available=false WHERE session_id=(SELECT session_id FROM commercial_payments WHERE user_id=$1 AND credit_available=true ORDER BY created_at LIMIT 1 FOR UPDATE) RETURNING session_id',[user.id]);
+    if(!result.rows.length)throw limitError();
+  }
+}
+function publicAccess(a){return {quotes_used:a.used,quotes_remaining:a.remaining,subscribed:a.subscribed,
+  can_create:a.can_create,unlimited:a.unlimited,billing_plan:a.plan,trial_active:a.trial_active,trial_ends_at:a.trial_ends_at,
+  period_quotes_used:a.period_used,payg_credits:a.credits,period_ends_at:a.subscription?.period_end||null,
+  subscription_required:!a.can_create};}
+module.exports={LIMIT,MONTHLY_LINK,UUID,digest,ipHash,browserTrial,setTrialCookie,access,consume,limitError,publicAccess};

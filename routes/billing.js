@@ -3,24 +3,40 @@ const crypto=require('crypto');
 const auth=require('../middleware/auth');
 const {access,publicAccess,MONTHLY_LINK,UUID}=require('../utils/quote-access');
 const router=express.Router();
-// Keep recognising existing subscriptions while new checkouts use £37/month.
+// Keep recognising existing subscriptions while new checkouts use the commercial v2 plans.
 const PRICES=new Set(['price_1TZX0w8466uzy1MNeVvWz2Ew','price_1UHgUj8466uzy1MNcCnTWJbi']);
 const PAYMENT_LINKS=new Set(['plink_1TZX128466uzy1MNZEoilqdL','plink_1UHgWz8466uzy1MNDtQyGajQ']);
+router.get('/email-preferences',async(req,res)=>{
+  const {optoutToken}=require('../utils/trialEmails');
+  const id=Number(req.query.id),token=String(req.query.token||'');
+  if(!Number.isSafeInteger(id)||id<1||!/^[a-f0-9]{64}$/.test(token)||!crypto.timingSafeEqual(Buffer.from(token),Buffer.from(optoutToken(id))))return res.status(400).send('Invalid preferences link.');
+  try{
+    await req.app.locals.pool.query('UPDATE users SET trial_emails_enabled=false WHERE id=$1',[id]);
+    res.set('X-Robots-Tag','noindex').send('Your trial tips and reminders have been stopped. You can still use ProfitQuote and receive essential account emails.');
+  }catch(e){res.status(503).send('Please try again shortly.');}
+});
 router.get('/status',auth,async(req,res)=>{
-  try{res.set('Cache-Control','no-store').json(publicAccess(await access(req.app.locals.pool,req.user)));}
+  try{
+    if(!req.user.guest&&(process.env.STRIPE_SECRET_KEY||req.app.locals.commercialStripe)){
+      const billing=require('../utils/commercial-billing');
+      await billing.refresh(req.app.locals.pool,billing.stripeFor(req),req.user.id);
+    }
+    res.set('Cache-Control','no-store').json(publicAccess(await access(req.app.locals.pool,req.user)));
+  }
   catch(e){res.status(e.status||500).json({error:e.message});}
 });
 router.post('/checkout',auth,async(req,res)=>{
-  if(req.user.guest) return res.status(403).json({error:'Create your free account first.'});
+  try{await require('../utils/commercial-billing').checkout(req,res);}
+  catch(e){res.status(e.status||503).json({error:e.status?e.message:'Checkout is temporarily unavailable. Please try again or contact support.'});}
+});
+router.post('/confirm',auth,async(req,res)=>{
+  if(req.user.guest)return res.status(403).json({error:'Sign in first.'});
   try{
-    const a=await access(req.app.locals.pool,req.user);
-    if(a.subscribed) return res.json({subscribed:true});
-    if((await req.app.locals.pool.query('SELECT 1 FROM trade_bundle_access WHERE user_id=$1',[req.user.id])).rows.length) return res.status(409).json({error:'Your account is linked to Trade Toolkit. Please contact support before starting another subscription.'});
-    const url=new URL(MONTHLY_LINK);
-    url.searchParams.set('client_reference_id',a.owner.billing_reference);
-    url.searchParams.set('prefilled_email',a.owner.email);
-    res.json({url:url.toString()});
-  }catch(e){res.status(e.status||500).json({error:e.message});}
+    const billing=require('../utils/commercial-billing');
+    if(!/^cs_[a-zA-Z0-9_]+$/.test(req.body?.session_id||''))return res.status(400).json({error:'Invalid session.'});
+    await billing.fulfil(req.app.locals.pool,billing.stripeFor(req),req.body.session_id,req.user.id);
+    res.json(publicAccess(await access(req.app.locals.pool,req.user)));
+  }catch(e){res.status(503).json({error:'Payment verification is pending. Please try again.'});}
 });
 
 function verifySignature(raw,header,secret){
@@ -40,9 +56,11 @@ async function webhook(req,res){
   let event;
   try{event=verifySignature(req.body,req.headers['stripe-signature'],process.env.STRIPE_WEBHOOK_SECRET);}
   catch(e){return res.status(400).json({error:'Invalid webhook'});}
-  if(event.livemode!==true||!event.id||!Number.isInteger(event.created)) return res.status(400).json({error:'Invalid event'});
+  if(event.livemode!==(/^(sk|rk)_test_/.test(process.env.STRIPE_SECRET_KEY||'')?false:true)||!event.id||!Number.isInteger(event.created)) return res.status(400).json({error:'Invalid event'});
   const object=event.data?.object;
   if(!object) return res.status(400).json({error:'Missing event data'});
+  try{if(await require('../utils/commercial-billing').handleEvent(req,event))return res.json({received:true});}
+  catch(e){console.error('Commercial payment verification failed:',e.message);return res.status(500).json({error:'Payment verification pending'});}
   const subscriptionEvent=['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','customer.subscription.paused','customer.subscription.resumed'].includes(event.type);
   const checkoutEvent=['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(event.type);
   if(!subscriptionEvent&&!checkoutEvent) return res.json({received:true});
