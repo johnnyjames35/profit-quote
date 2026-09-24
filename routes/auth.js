@@ -38,8 +38,11 @@ function sendBrevoEmail(to, subject, html) {
   });
 }
 
-function sendWelcomeEmail(name,email){
-  const msg=require('../utils/trial-message').message('welcome',String(name||'').split(' ')[0]);
+function sendWelcomeEmail(name,email,started){
+  const end=new Date(new Date(started).getTime()+7*86400000);
+  const msg=require('../utils/trial-message').message(end>new Date()?'welcome':'expired',String(name||'').split(' ')[0]);
+  if(end>new Date())msg.html=msg.html.replace('Your 7-day unlimited trial is ready.','Your unlimited trial ends on '+end.toLocaleString('en-GB',{timeZone:'Europe/London'})+' UK time.');
+  msg.subject='Your ProfitQuote account is ready';
   return sendBrevoEmail(email,msg.subject,msg.html);
 }
 
@@ -110,7 +113,7 @@ router.post('/register', async (req, res) => {
       );
       user=result.rows[0];
       await client.query('UPDATE quote_allowances SET trial_started_at=COALESCE(trial_started_at,NOW()) WHERE id=$1',[trialId]);
-      await client.query('UPDATE users SET trial_id=$1,trial_started_at=(SELECT trial_started_at FROM quote_allowances WHERE id=$1) WHERE id=$2',[trialId,user.id]);
+      user.trial_started_at=(await client.query('UPDATE users SET trial_id=$1,trial_started_at=(SELECT trial_started_at FROM quote_allowances WHERE id=$1) WHERE id=$2 RETURNING trial_started_at',[trialId,user.id])).rows[0].trial_started_at;
       await client.query('INSERT INTO signup_attempts(ip_hash) VALUES($1)',[network]);
       if(guest){
         await client.query('UPDATE quotes SET user_id=$1,guest_id=NULL WHERE guest_id=$2',[user.id,guest.id]);
@@ -127,7 +130,7 @@ router.post('/register', async (req, res) => {
     res.json({ token, user });
 
     logEvent(pool, 'account_created', user.id, source);
-    sendWelcomeEmail(name, email).catch(e => console.error('Welcome email error:', e.message));
+    sendWelcomeEmail(name, email,user.trial_started_at).catch(e => console.error('Welcome email error:', e.message));
     sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
 
   } catch(e) {

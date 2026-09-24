@@ -53,13 +53,14 @@ async function access(db, user, lock=false) {
   const trialEnd=allowance.trial_started_at ? new Date(new Date(allowance.trial_started_at).getTime()+7*86400000) : null;
   const trialActive=!user.guest && trialEnd && now<trialEnd;
   const subscription=!user.guest && (await db.query("SELECT * FROM commercial_subscriptions WHERE user_id=$1 AND status='active' AND period_end>NOW() ORDER BY CASE plan WHEN 'pro' THEN 0 ELSE 1 END,period_end DESC LIMIT 1",[user.id])).rows[0];
+  const management=!user.guest && (await db.query("SELECT plan FROM commercial_subscriptions WHERE user_id=$1 AND status NOT IN ('canceled','incomplete_expired') ORDER BY verified_at DESC LIMIT 1",[user.id])).rows[0];
   const credits=user.guest?0:(await db.query('SELECT COUNT(*)::int AS n FROM commercial_payments WHERE user_id=$1 AND credit_available=true',[user.id])).rows[0].n;
   const periodUsed=subscription?(await db.query('SELECT COUNT(*)::int AS n FROM commercial_usage WHERE user_id=$1 AND subscription_id=$2 AND period_start=$3',[user.id,subscription.id,subscription.period_start])).rows[0].n:0;
   const unlimited=subscribed||trialActive||subscription?.plan==='pro';
   const remaining=user.guest?Math.max(0,LIMIT-allowance.used):unlimited?null:Math.max(0,(subscription?6-periodUsed:0))+credits;
   return {owner,trial_id:owner.trial_id,used:allowance.used,remaining,subscribed:subscribed||!!subscription,
     can_create:unlimited||remaining>0,unlimited,trial_active:!!trialActive,trial_ends_at:trialEnd,
-    plan:subscribed?'legacy':subscription?.plan||(trialActive?'trial':'payg'),subscription,period_used:periodUsed,credits};
+    plan:subscribed?'legacy':subscription?.plan||(trialActive?'trial':'payg'),management_plan:management?.plan||null,subscription,period_used:periodUsed,credits};
 }
 
 function limitError(guest=false){return Object.assign(new Error(guest?'Create your free account to keep your quotes and start your 7-day unlimited trial.':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'guest_limit':'subscription_required'});}
@@ -75,7 +76,7 @@ async function consume(db,a,user){
   }
 }
 function publicAccess(a){return {quotes_used:a.used,quotes_remaining:a.remaining,subscribed:a.subscribed,
-  can_create:a.can_create,unlimited:a.unlimited,billing_plan:a.plan,trial_active:a.trial_active,trial_ends_at:a.trial_ends_at,
+  can_create:a.can_create,unlimited:a.unlimited,billing_plan:a.plan,billing_management_plan:a.management_plan,trial_active:a.trial_active,trial_ends_at:a.trial_ends_at,
   period_quotes_used:a.period_used,payg_credits:a.credits,period_ends_at:a.subscription?.period_end||null,
   subscription_required:!a.can_create};}
 module.exports={LIMIT,MONTHLY_LINK,UUID,digest,ipHash,browserTrial,setTrialCookie,access,consume,limitError,publicAccess};

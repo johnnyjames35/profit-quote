@@ -1290,7 +1290,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <div class="card-title">Subscription</div>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Upgrade whenever you’re ready to keep quoting and save your work.</p>
         <a href="#" onclick="event.preventDefault();showSubscriptionPrompt()" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Choose £5 / £19 / £29 →</a>
-        <button id="manage-plan" style="display:none;margin:12px auto" onclick="startSubscription(currentUser.billing_plan)">Manage or cancel subscription</button>
+        <button id="manage-plan" style="display:none;margin:12px auto" onclick="startSubscription(currentUser.billing_management_plan)">Manage or cancel subscription</button>
       </div>
       <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
@@ -1815,7 +1815,7 @@ async function doRegister(){
 async function initApp(startInBuilder=false){
   try{
     const res=await fetch(API+'/api/auth/me',{headers:{Authorization:'Bearer '+token}});
-    if(!res.ok){ doLogout(); return; }
+    if(!res.ok){ doLogout(); if(urlParams.get('signup')==='1')showRegister(); return; }
     currentUser=await res.json();
   }catch(e){ doLogout(); return; }
   document.getElementById('login-screen').style.display='none';
@@ -1897,7 +1897,7 @@ function populateUserUI(){
 
 function updateAllowancePill(){
   const manage=document.getElementById('manage-plan');
-  if(manage)manage.style.display=['starter','pro'].includes(currentUser?.billing_plan)?'block':'none';
+  if(manage)manage.style.display=currentUser?.billing_management_plan?'block':'none';
   const pill=document.getElementById('trial-pill');
   if(pill&&!currentUser?.guest) pill.textContent=currentUser?.trial_active?'Unlimited trial until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):currentUser?.unlimited?'Unlimited quoting active':currentUser?.billing_plan==='starter'?'Starter · '+Math.max(0,6-currentUser.period_quotes_used)+' of 6 monthly quotes left':(currentUser?.payg_credits||0)+' paid quote credits';
 }
