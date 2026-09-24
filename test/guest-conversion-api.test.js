@@ -31,6 +31,7 @@ test('guest signup transfers exact quote atomically, rejects reuse, and unlocks 
   const pool={query,connect:async()=>({query,release(){}})};
   const app=express();app.use(express.json());app.locals.pool=pool;
   app.use('/api/auth',require('../routes/auth'));app.use('/api/quotes',require('../routes/quotes'));
+  app.use('/api/events',require('../routes/events'));
   const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});
   const base=`http://127.0.0.1:${server.address().port}`;
@@ -52,6 +53,11 @@ test('guest signup transfers exact quote atomically, rejects reuse, and unlocks 
   const response=await request('/api/auth/register',registration);assert.equal(response.status,200);
   const account=await response.json();
   const list=await (await request('/api/quotes',null,account.token,'GET')).json();
+  assert.equal((await db.query("SELECT COUNT(*)::int AS n FROM events WHERE event_type='account_created' AND user_id=$1",[account.user.id])).rows[0].n,1);
+  // Cached older dashboards and guest clients cannot duplicate server success.
+  assert.equal((await request('/api/events/funnel',{event_type:'account_created'},account.token)).status,400);
+  assert.equal((await request('/api/events/funnel',{event_type:'account_created'},guest)).status,400);
+  assert.equal((await db.query("SELECT COUNT(*)::int AS n FROM events WHERE event_type='account_created' AND user_id=$1",[account.user.id])).rows[0].n,1);
   assert.equal(list.length,1);assert.equal(list[0].id,saved.id);assert.equal(list[0].guest_id,null);
   assert.deepEqual(list[0].quote_data,quote.quote_data);assert.equal(Number(list[0].total),8698);
   assert.equal((await request('/api/auth/register',{...registration,email:'reuse@example.invalid'})).status,500);

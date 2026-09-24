@@ -1798,7 +1798,7 @@ async function doRegister(){
     }
     token=data.token;
     localStorage.setItem('pq_token',token);
-    trackFunnelEvent('account_created');
+    // Registration records account creation on the server exactly once.
     initApp();
   }catch(e){
     err.textContent='Connection error.';

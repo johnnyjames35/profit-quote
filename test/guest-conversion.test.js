@@ -33,7 +33,7 @@ for(const action of ['saveQuote','printQuote','emailQuote']) test(`guest ${actio
   assert.equal(h.elements['quote-signup-prompt'].style.display,'block');
   assert.match(h.elements['#register-screen .auth-left-sub'].textContent,/No card required/);
   assert.equal(h.opened.length,0);
-  assert.equal(h.events.length,0);
+  assert.deepEqual(h.events,['signup_screen_viewed']);
 });
 test('failed save keeps guest quote intact and does not enter signup',async()=>{
   const h=harness(); h.context.fetch=async()=>Response.json({error:'Save failed'},{status:500});

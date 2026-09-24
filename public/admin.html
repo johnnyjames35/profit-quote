@@ -434,7 +434,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val amber" id="f-guest-quotes">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Free → Account</div>
+          <div class="stat-label">Free → Account Still Present</div>
           <div class="stat-val green" id="f-guest-conversions">—</div>
         </div>
         <div class="stat-card">
@@ -450,8 +450,9 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val amber" id="f-trial-clicks">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Accounts Created</div>
+          <div class="stat-label">New Accounts Still Present</div>
           <div class="stat-val amber" id="f-accounts">—</div>
+          <div class="stat-sub">Created in this period; deleted accounts excluded.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Signup Screen Shown</div>
@@ -497,6 +498,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
       <div class="funnel-card">
         <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
+        <p class="stat-sub">Account counts exclude deleted accounts. Signup attempts and failures are recorded browser events, can include test activity, and remain after an account is deleted. A missing failure event does not prove a signup succeeded.</p>
         <div id="funnel-bars"></div>
       </div>
 
@@ -987,7 +989,7 @@ function renderFunnelBars(data) {
     { label: 'Quotes Sent', value: data.quoteSends },
     { label: 'PDF Downloads', value: data.quoteDownloads },
     { label: 'Trial Clicks', value: data.trialClicks },
-    { label: 'Accounts Created', value: data.accountsCreated },
+    { label: 'New Accounts Still Present', value: data.accountsCreated },
     { label: 'First Quotes', value: data.firstQuotes },
     { label: 'Paid Customers', value: data.paidCustomers }
   ];
