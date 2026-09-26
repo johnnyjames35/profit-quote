@@ -1396,6 +1396,15 @@ async function returnToCompletedQuote(){
   let pending;
   try{pending=JSON.parse(raw);}catch{return;}
   if(!pending?.quote) return;
+  // Transfer the current browser draft as well as the calculated result, so
+  // registration defaults cannot overwrite custom rates on the next edit.
+  try{
+    const draft=JSON.parse(localStorage.getItem(BUILDER_DRAFT_KEY)||'null');
+    if(draft && draft.owner===pending.owner){
+      draft.owner=String(currentUser.id);
+      localStorage.setItem(BUILDER_DRAFT_KEY,JSON.stringify(draft));
+    }
+  }catch{}
   currentQuoteData=pending.quote;
   editingQuoteId=null;
   switchTab('builder');

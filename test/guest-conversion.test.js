@@ -54,6 +54,16 @@ test('failed post-registration save preserves the quote for retry',async()=>{
  await vm.runInContext('returnToCompletedQuote()',h.context);
  assert.equal(h.context.currentQuoteData.total,8698);assert.equal(h.storage.size,1);
 });
+test('registration transfers custom editable rates with the pending browser draft',async()=>{
+ const h=harness(false),draftStore=new Map();h.context.currentUser.id=7;
+ h.context.BUILDER_DRAFT_KEY='draft';
+ h.context.localStorage={getItem:k=>draftStore.get(k)||null,setItem:(k,v)=>draftStore.set(k,v)};
+ draftStore.set('draft',JSON.stringify({owner:'guest-42',fields:{'q-day-rate':'357','q-profit-target':'27'}}));
+ h.storage.set('pq_quote_return_v1',JSON.stringify({owner:'guest-42',quote}));
+ await vm.runInContext('returnToCompletedQuote()',h.context);
+ const draft=JSON.parse(draftStore.get('draft'));assert.equal(draft.owner,'7');
+ assert.equal(draft.fields['q-day-rate'],'357');assert.equal(draft.fields['q-profit-target'],'27');
+});
 test('registered Email retains server delivery and PDF opens print document',async()=>{
   const h=harness(false);
   await vm.runInContext('emailQuote()',h.context);
