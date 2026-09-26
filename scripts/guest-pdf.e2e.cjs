@@ -1,0 +1,85 @@
+// Real browser + real auth/quote routes + disposable PostgreSQL. No production data or email.
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const express=require('express');
+const {PGlite}=require('@electric-sql/pglite');
+const {chromium}=require('playwright');
+const https=require('node:https');
+const {EventEmitter}=require('node:events');
+
+(async()=>{
+  process.env.JWT_SECRET='trade-flow-test-only';
+  delete process.env.GA_API_SECRET;
+  // Signup mail is simulated locally, including owner notifications.
+  const originalRequest=https.request;
+  https.request=(options,callback)=>{const request=new EventEmitter();request.write=()=>{};request.end=()=>{const response=new EventEmitter();response.statusCode=201;callback(response);queueMicrotask(()=>response.emit('end'));};return request;};
+  const db=new PGlite();
+  await db.exec(fs.readFileSync(path.join(__dirname,'../schema.sql'),'utf8'));
+  let queue=Promise.resolve();
+  const pool={query:db.query.bind(db),connect:async()=>{const previous=queue;let release;queue=new Promise(r=>release=r);await previous;return {query:db.query.bind(db),release};}};
+  const app=express();app.locals.pool=pool;app.use(express.json());
+  for(const name of ['auth','guest','quotes','settings','events']) app.use('/api/'+name,require('../routes/'+name));
+  app.use('/api/billing',require('../routes/billing').router);
+  app.use(express.static(path.join(__dirname,'../public')));
+  app.get('/dashboard',(req,res)=>res.sendFile(path.join(__dirname,'../public/dashboard.html')));
+  const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+  const base='http://127.0.0.1:'+server.address().port;
+  let browser;
+  try{
+    browser=await chromium.launch({headless:true,...(process.env.PQ_BROWSER_PATH?{executablePath:process.env.PQ_BROWSER_PATH}:{})});
+    const context=await browser.newContext({viewport:{width:1280,height:900}});
+    await context.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());
+
+    const out=process.env.PQ_OUTPUT_DIR||'../../outputs';fs.mkdirSync(out,{recursive:true});
+    const page=await context.newPage();let popups=0;page.on('popup',()=>popups++);
+    await page.goto(base+'/dashboard');await page.locator('#app-screen').waitFor({state:'visible'});
+    await page.locator('#nav-builder').click();
+    await page.locator('#q-customer').fill('Mr Thompson');
+    await page.locator('#q-job-type').selectOption('electrical');
+    await page.getByRole('button',{name:'Sockets and switches',exact:true}).click();
+    await page.locator('#q-extra').fill('Do not replace light fittings; test quotation only.');
+    await page.locator('#step-1 .btn-next').click();
+    await page.locator('#q-job-scale').selectOption('Single room');
+    await page.locator('#step-2 .btn-next').click();
+    await page.locator('#q-days').fill('2');await page.locator('#q-day-rate').fill('357');
+    await page.locator('#step-3 .btn-next').click();await page.locator('#q-materials').fill('200');
+    await page.locator('#step-4 .btn-next').click();await page.locator('#step-5 .btn-next').click();
+    await page.locator('#btn-download-pdf').waitFor({state:'visible'});
+    const total=await page.locator('#result-total').innerText();
+    const quote=await page.evaluate(()=>currentQuoteData);
+    assert.match(quote.reference,/^PQ-\d{6}-[A-F0-9]{8}$/);
+    const downloadPromise=page.waitForEvent('download');await page.locator('#btn-download-pdf').click();const download=await downloadPromise;
+    assert.match(download.suggestedFilename(),/^Quotation-Mr-Thompson-\d{2}-\d{2}-\d{4}\.pdf$/);
+    await download.saveAs(path.join(out,download.suggestedFilename()));
+    const bytes=fs.readFileSync(path.join(out,download.suggestedFilename()));assert.equal(bytes.subarray(0,5).toString(),'%PDF-');assert.ok(bytes.length>5000);
+    assert.equal(popups,0,'PDF must not open a tab');assert.equal((await db.query('SELECT * FROM users')).rows.length,0);assert.equal((await db.query('SELECT * FROM quotes')).rows.length,0);
+    await page.reload();await page.locator('#btn-download-pdf').waitFor({state:'visible'});
+    assert.equal(await page.evaluate(()=>currentQuoteData.reference),quote.reference);
+    const againPromise=page.waitForEvent('download');await page.locator('#btn-download-pdf').click();assert.equal((await againPromise).suggestedFilename(),download.suggestedFilename());
+    await page.route('**/api/quotes/preview/pdf',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'PDF temporarily unavailable'})}));
+    await page.locator('#btn-download-pdf').click();await page.getByText('PDF temporarily unavailable',{exact:true}).waitFor();assert.equal(await page.locator('#btn-download-pdf').isEnabled(),true);assert.equal(popups,0);assert.equal(await page.locator('#result-total').innerText(),total);
+    await page.unroute('**/api/quotes/preview/pdf');
+    const printPromise=page.waitForEvent('popup');await page.getByRole('button',{name:'🖨 Print',exact:true}).click();const print=await printPromise;
+    await print.getByText('Dear Mr Thompson,',{exact:true}).waitFor();assert.match(await print.locator('body').innerText(),new RegExp(quote.reference));assert.doesNotMatch(await print.locator('body').innerText(),/QUO-DRAFT/);
+    await print.emulateMedia({media:'print'});await print.screenshot({path:path.join(out,'quotation-layout.png'),fullPage:true});
+    await print.close();
+    await page.locator('#btn-save-quote').click();await page.locator('#register-screen').waitFor({state:'visible'});
+    assert.equal((await db.query('SELECT * FROM quotes')).rows.length,0);
+    const auth=await page.evaluate(()=>localStorage.getItem('pq_token'));const headers={Authorization:'Bearer '+auth,'Content-Type':'application/json'};
+    let response=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers,body:JSON.stringify({output_token:quote.output_token+'x'})});assert.equal(response.status,400);
+    const other=await(await fetch(base+'/api/guest/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({browser_id:'other-pdf-test'})})).json();
+    response=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers:{...headers,Authorization:'Bearer '+other.token},body:JSON.stringify({output_token:quote.output_token})});assert.equal(response.status,403);
+    const jwt=require('jsonwebtoken'),legacy={...quote};delete legacy.reference;delete legacy.created_at;
+    const legacyToken=jwt.sign({purpose:'anonymous-quote',guest_id:jwt.verify(auth,process.env.JWT_SECRET).id,quote:legacy},process.env.JWT_SECRET,{expiresIn:3600});
+    const legacyExport=async()=>await(await fetch(base+'/api/quotes/preview/export',{method:'POST',headers,body:JSON.stringify({output_token:legacyToken})})).json();
+    const legacyOne=await legacyExport();assert.match(legacyOne.reference,/^PQ-/);assert.equal((await legacyExport()).reference,legacyOne.reference);
+    const long={...legacyOne,quote_data:{...legacyOne.quote_data,scopeTasks:Array.from({length:130},(_,i)=>'Scope item '+(i+1)+': inspect fittings and complete installation safely.')}};
+    const {renderPDF}=require('../utils/quotation-pdf'),doc=require('../public/quotation-document');fs.writeFileSync(path.join(out,'long-quotation.pdf'),await renderPDF(doc.render(long,{name:'Guest'})));
+    const guestId=jwt.verify(auth,process.env.JWT_SECRET).id;
+    await db.query("UPDATE quote_allowances SET trial_started_at=NOW()-INTERVAL '8 days' WHERE id=(SELECT trial_id FROM guest_sessions WHERE id=$1)",[guestId]);
+    response=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers,body:JSON.stringify({output_token:quote.output_token})});assert.equal(response.status,402);
+    fs.writeFileSync(path.join(out,'guest-desktop-verification.json'),JSON.stringify({total,reference:quote.reference,filename:download.suggestedFilename(),pdfBytes:bytes.length,pdfPopups:0,repeatDownload:true,reloadRecovery:true,failureRetry:true,print:true,saveRequiresAccount:true,tamperingRejected:true,crossGuestRejected:true,legacyReferenceStable:true,expiredTrialRejected:true},null,2));
+    console.log('PASS: desktop guest create, direct PDF, repeat/reload, failure, Print, Save gate, tampering, cross-guest and legacy draft');
+  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));await db.close();https.request=originalRequest;}
+})().catch(e=>{console.error(e);process.exitCode=1;});

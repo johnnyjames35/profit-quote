@@ -1,3 +1,6 @@
+const crypto = require('node:crypto');
+const {renderPDF}=require('../utils/quotation-pdf');
+const quotationDocument=require('../public/quotation-document');
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { sendToGA } = require('../utils/ga');
@@ -125,7 +128,15 @@ async function anonymousOutput(req) {
   try{signed=jwt.verify(req.body?.output_token,process.env.JWT_SECRET);}
   catch{throw Object.assign(new Error('Generate this quote again before sending or downloading it.'),{status:400});}
   if(signed.purpose!=='anonymous-quote'||signed.guest_id!==req.user.id) throw Object.assign(new Error('Quote not found.'),{status:403});
-  return signed.quote;
+  // Older active guest drafts predate references; derive a stable reference from their signed token.
+  const quote={...signed.quote};
+  quote.created_at=quote.created_at||new Date(signed.iat*1000).toISOString();
+  quote.reference=quote.reference||guestReference(quote.created_at,crypto.createHash('sha256').update(req.body.output_token).digest('hex'));
+  return quote;
+}
+function guestReference(date,id){
+  const day=new Date(date).toLocaleDateString('en-GB',{timeZone:'Europe/London'}).split('/');
+  return 'PQ-'+day[0]+day[1]+day[2].slice(-2)+'-'+id.replaceAll('-','').slice(0,8).toUpperCase();
 }
 router.post('/preview',auth,async(req,res)=>{
   if(!req.user.guest) return res.status(400).json({error:'Use your account quote builder.'});
@@ -134,12 +145,35 @@ router.post('/preview',auth,async(req,res)=>{
     if(!a.can_create) throw limitError(true);
     const quote={...req.body};delete quote.output_token;delete quote.id;
     if(!Number.isFinite(Number(quote.total))||Number(quote.total)<0||Number(quote.total)>10000000||!quote.quote_data) return res.status(400).json({error:'Check the quote figures and generate again.'});
+    quote.created_at=new Date().toISOString();
+    quote.reference=guestReference(quote.created_at,crypto.randomUUID());
     quote.customer_email=quote.customer_email||quote.quote_data.customer_email||'';
     const output_token=jwt.sign({purpose:'anonymous-quote',guest_id:req.user.id,quote},process.env.JWT_SECRET,{expiresIn:Math.max(1,Math.floor((new Date(a.trial_ends_at)-Date.now())/1000))});
     await req.app.locals.pool.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id})]);
-    res.set('Cache-Control','no-store').json({output_token,...publicAccess(a)});
+    res.set('Cache-Control','no-store').json({output_token,reference:quote.reference,created_at:quote.created_at,...publicAccess(a)});
   }catch(e){res.status(e.status||500).json({error:e.message,code:e.code});}
 });
+// PDF output uses the same HTML/CSS as Print, with server-verified quote data only.
+async function sendPDF(req,res,quote){
+  const user=req.user.guest?{name:'Guest'}:(await req.app.locals.pool.query('SELECT name,business_name,phone,contact_email,town FROM users WHERE id=$1',[req.user.id])).rows[0];
+  if(!user) return res.status(404).json({error:'User not found.'});
+  const pdf=await renderPDF(quotationDocument.render(quote,user));
+  res.set({'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="'+quotationDocument.filename(quote)+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}).send(pdf);
+}
+router.post('/preview/pdf',auth,async(req,res)=>{
+  if(!req.user.guest) return res.status(400).json({error:'Use your saved quote.'});
+  try{await sendPDF(req,res,await anonymousOutput(req));}
+  catch(error){console.error('Quotation PDF:',error.message);res.status(error.status||503).json({error:error.status?error.message:'Could not prepare your PDF. Please try again.'});}
+});
+router.get('/:id/pdf',auth,async(req,res)=>{
+  if(req.user.guest) return res.status(403).json({error:'Use your guest quotation.'});
+  try{
+    const result=await req.app.locals.pool.query('SELECT * FROM quotes WHERE id=$1 AND user_id=$2',[req.params.id,req.user.id]);
+    if(!result.rows.length) return res.status(404).json({error:'Quote not found.'});
+    await sendPDF(req,res,result.rows[0]);
+  }catch(error){console.error('Quotation PDF:',error.message);res.status(error.status||503).json({error:error.status?error.message:'Could not prepare your PDF. Please try again.'});}
+});
+
 router.post('/preview/export',auth,async(req,res)=>{
   if(!req.user.guest) return res.status(400).json({error:'Use your saved quote.'});
   try{res.set('Cache-Control','no-store').json(await anonymousOutput(req));}

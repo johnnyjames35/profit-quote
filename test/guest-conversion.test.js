@@ -12,7 +12,7 @@ const quote={output_token:'signed-test-output',id:42,customer_name:'Test custome
 function harness(guest=true){
   const elements={},storage=new Map(),requests=[],opened=[],events=[];
   const element=id=>elements[id]??={style:{},classList:{add(){},remove(){}},textContent:'',value:'',disabled:false};
-  const context=vm.createContext({API:'',token:'test',currentUser:{guest,name:'Electrician'},currentQuoteData:structuredClone(quote),editingQuoteId:42,quotes:[structuredClone(quote)],currentBuilderStep:6,selectedRisk:'low',needsSkip:false,needsScaffold:false,
+  const context=vm.createContext({QuotationDocument:require('../public/quotation-document'),API:'',token:'test',currentUser:{guest,name:'Electrician'},currentQuoteData:structuredClone(quote),editingQuoteId:42,quotes:[structuredClone(quote)],currentBuilderStep:6,selectedRisk:'low',needsSkip:false,needsScaffold:false,
     document:{getElementById:element,querySelector:element},sessionStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null,removeItem:k=>storage.delete(k)},
     fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:url.endsWith('/export')?structuredClone(quote):{ok:true,id:42});},
     window:{open:(...args)=>{opened.push(args);return {document:{write(value){context.printHtml=value;},close(){}},focus(){},print(){}};}},
@@ -35,7 +35,7 @@ test('guest Email sends signed output without a signup prompt',async()=>{
  assert.deepEqual(JSON.parse(h.requests[0].options.body),{output_token:quote.output_token});
  assert.equal(h.elements['register-screen'],undefined);assert.equal(h.storage.size,0);
 });
-test('guest PDF verifies output without a signup prompt',async()=>{
+test('guest Print verifies output without a signup prompt',async()=>{
  const h=harness();await vm.runInContext('printQuote()',h.context);
  assert.equal(h.requests[0].url,'/api/quotes/preview/export');assert.equal(h.opened.length,1);
  assert.equal(h.elements['register-screen'],undefined);
@@ -64,14 +64,14 @@ test('registration transfers custom editable rates with the pending browser draf
  const draft=JSON.parse(draftStore.get('draft'));assert.equal(draft.owner,'7');
  assert.equal(draft.fields['q-day-rate'],'357');assert.equal(draft.fields['q-profit-target'],'27');
 });
-test('registered Email retains server delivery and PDF opens print document',async()=>{
+test('registered Email retains server delivery and Print opens print document',async()=>{
   const h=harness(false);
   await vm.runInContext('emailQuote()',h.context);
   assert.equal(h.requests[0].url,'/api/quotes/send-email');
   assert.deepEqual(JSON.parse(h.requests[0].options.body),{quote_id:42});
   await vm.runInContext('printQuote()',h.context);
   assert.equal(h.opened.length,1);
-  assert.deepEqual(h.events,['quote_downloaded']);
+  assert.deepEqual(h.events,[]);
   assert.equal(h.storage.size,0);
 });
 test('PDF keeps exclusions, escapes customer data and uses the saved reference and date',async()=>{

@@ -14,7 +14,7 @@ test('quote builder supports multiple skips and client-supplied materials', () =
   assert.match(dashboard, /const skipCost=skipQuantity\*skipUnitCost/);
   assert.match(dashboard, /id="client-materials-yes"/);
   assert.match(dashboard, /id="q-client-materials"[^>]*maxlength="300"/);
-  assert.match(dashboard, /These items are not included in the quotation total/);
+  assert.match(fs.readFileSync(path.join(root,'public/quotation-document.js'),'utf8'), /These items are not included in the quotation total/);
   assert.match(route, /quoteData\.clientSuppliesMaterials/);
   assert.match(route, /These items are not included in the quotation total/);
 });
@@ -61,7 +61,7 @@ test('business setup persists the costing inputs used by quotes', () => {
 test('customer-facing quote currency uses clear whole pounds', () => {
   const dashboard = fs.readFileSync(path.join(root, 'public', 'dashboard.html'), 'utf8');
   const route = fs.readFileSync(path.join(root, 'routes', 'quotes.js'), 'utf8');
-  assert.match(dashboard, /Math\.round\(total\)\.toLocaleString\('en-GB'\)/);
+  assert.match(fs.readFileSync(path.join(root,'public/quotation-document.js'),'utf8'), /Math\.round\(total\)\.toLocaleString\('en-GB'\)/);
   assert.match(dashboard, /subtotalExVat=Math\.ceil/);
   assert.match(route, /Math\.round\(Number\(value\) \|\| 0\)/);
 });
