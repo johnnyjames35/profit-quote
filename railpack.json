@@ -6,7 +6,8 @@
       "libnss3",
       "libnspr4",
       "fonts-liberation",
-      "fonts-noto-color-emoji"
+      "fonts-noto-color-emoji",
+      "libexpat1"
     ]
   }
 }
