@@ -5,7 +5,7 @@ const GA_MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID;
 const GA_API_SECRET = process.env.GA_API_SECRET;
 const PUBLIC_EVENT_TYPES = new Set(['page_viewed', 'trial_click']);
 // Account creation is server-owned; older clients must not duplicate it.
-const AUTHENTICATED_FUNNEL_EVENTS = new Set(['quote_started', 'quote_saved', 'quote_sent', 'quote_downloaded', 'checkout_started', 'signup_screen_viewed', 'signup_attempted', 'signup_failed']);
+const AUTHENTICATED_FUNNEL_EVENTS = new Set(['quote_started', 'quote_saved', 'save_prompt_shown', 'quote_downloaded', 'checkout_started', 'signup_screen_viewed', 'signup_attempted', 'signup_failed']);
 
 // Sends the same event to Google Analytics 4 (does not affect the database save above)
 async function sendToGA(event_type, user_id, source) {

@@ -32,12 +32,14 @@ for (const billingPlan of [
   const browser='browser-for-limit-tests';
   const guestResponse=await request('/api/guest/start',{browser_id:browser});assert.equal(guestResponse.status,200);
   const cookie=guestResponse.headers.get('set-cookie').split(';')[0];const guest=(await guestResponse.json()).token;
-  const firstBody=quote();const first=await (await request('/api/quotes',firstBody,guest,cookie)).json();assert.equal(first.quotes_remaining,2);
-  const duplicate=await (await request('/api/quotes',firstBody,guest,cookie)).json();assert.equal(duplicate.id,first.id);assert.equal(duplicate.quotes_remaining,2);
+  const firstBody=quote();const preview=await (await request('/api/quotes/preview',firstBody,guest,cookie)).json();assert.equal(preview.quotes_remaining,null);
+  assert.equal((await request('/api/quotes',firstBody,guest,cookie)).status,403);
   const reg=await request('/api/auth/register',{name:'User one',email:'first@example.invalid',password:'test-password',guest_token:guest,browser_id:browser},null,cookie);assert.equal(reg.status,200);
   const account=await reg.json();const token=account.token;
+  const first=await (await request('/api/quotes',firstBody,token,cookie)).json();
+  const duplicate=await (await request('/api/quotes',firstBody,token,cookie)).json();assert.equal(duplicate.id,first.id);
   const me=await (await request('/api/auth/me',null,token,cookie,'GET')).json();assert.equal(me.quotes_remaining,null,'registration starts unlimited trial');assert.equal(me.trial_active,true);
-  assert.equal((await request('/api/quotes',quote(),guest,cookie)).status,401,'converted guest token revoked');
+  assert.equal((await request('/api/quotes',quote(),guest,cookie)).status,403,'guest token cannot save');
   const second=await (await request('/api/quotes',quote(),token,cookie)).json();assert.equal(second.quotes_remaining,null);
   const race=await Promise.all([request('/api/quotes',quote(),token,cookie),request('/api/quotes',quote(),token,cookie)]);
   assert.deepEqual(race.map(r=>r.status).sort(),[200,200]);

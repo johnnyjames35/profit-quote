@@ -36,9 +36,11 @@ test('events persist in PostgreSQL and admin funnel retrieves them with auth and
   const guestId = '00000000-0000-4000-8000-000000000001';
   await db.query('INSERT INTO guest_sessions(id,browser_hash,ip_hash) VALUES($1,$2,$3)', [guestId, 'browser', 'ip']);
   const guest = jwt.sign({ id: guestId, guest: true }, process.env.JWT_SECRET);
-  for (const event_type of ['quote_started', 'quote_sent', 'quote_downloaded']) {
+  for (const event_type of ['quote_started', 'save_prompt_shown', 'quote_downloaded']) {
     assert.equal((await post('/api/events/funnel', { event_type, user_id: 999 }, guest)).status, 200);
   }
+  assert.equal((await post('/api/events/funnel',{event_type:'quote_sent'},guest)).status,400,'only server delivery records sent');
+  await db.query("INSERT INTO events(event_type,source,meta) VALUES('quote_sent','profitquote_email',$1)",[JSON.stringify({guest_id:guestId})]);
   const stored = await db.query("SELECT user_id, meta FROM events WHERE event_type='quote_started'");
   assert.equal(stored.rows[0].user_id, null);
   assert.equal(stored.rows[0].meta.guest_id, guestId);

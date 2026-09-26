@@ -11,7 +11,7 @@
     const key = 'pq_landing_visit_' + page;
     if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, '1'); record('page_viewed'); }
   } catch (_) { /* Storage can be unavailable in privacy modes. */ }
-  document.querySelectorAll('a[href^="/dashboard?try=1"],a[href^="/dashboard?signup=1"]').forEach(link => {
+  document.querySelectorAll('a[href^="/dashboard?try=1"],a[href^="/dashboard?try=1"]').forEach(link => {
     link.addEventListener('click', () => record('trial_click'));
   });
 })();

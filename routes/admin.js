@@ -106,6 +106,9 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='signup_failed' AND ${legacyCondition('created_at')}`)
     ]);
 
+    const activity=(await pool.query(`SELECT event_type,source,COUNT(*)::int AS c FROM events WHERE ${legacyCondition('created_at')} GROUP BY event_type,source`)).rows;
+    const count=(type,guestOnly=false)=>activity.filter(r=>r.event_type===type&&(!guestOnly||r.source==='guest')).reduce((n,r)=>n+r.c,0);
+    const guestSends=(await pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND meta->>'guest_id' IS NOT NULL AND ${legacyCondition('created_at')}`)).rows[0].c;
     const activePaidCount = activePaidCustomers.rows[0].c;
     res.set('Cache-Control', 'private, no-store');
     res.json({
@@ -126,7 +129,13 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       guestQuotes: guestQuotes.rows[0].c,
       guestConversions: guestConversions.rows[0].c,
       quoteStarts: quoteStarts.rows[0].c,
-      quoteCompletions: totalQuotes.rows[0].c,
+      quoteCompletions: count('quote_completed')+count('anonymous_quote_completed'),
+      anonymousFreeStarts:count('anonymous_free_use_started'),
+      anonymousQuoteStarts:count('quote_started',true),
+      anonymousQuoteCompletions:count('anonymous_quote_completed'),
+      anonymousQuoteSends:guestSends,
+      savePrompts:count('save_prompt_shown'),
+      paidConversions:count('payg_purchased')+count('subscription_started'),
       quoteSends: quoteSends.rows[0].c,
       quoteDownloads: quoteDownloads.rows[0].c,
       signupViews: signupViews.rows[0].c,

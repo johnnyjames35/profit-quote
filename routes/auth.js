@@ -49,11 +49,11 @@ function sendWelcomeEmail(name,email,started){
 function sendNotifyJohnEmail(name, email) {
   return sendBrevoEmail(
     process.env.ADMIN_EMAIL || 'hello@cambriandigital.co.uk',
-    `New ProfitQuote trial started — ${name}`,
+    `New ProfitQuote account — ${name}`,
     `<p>New user signed up for ProfitQuote:</p>
 <p><strong>Name:</strong> ${name}<br>
 <strong>Email:</strong> ${email}</p>
-<p>Their seven-day unlimited trial is available now.</p>`
+<p>Their account is ready. Any free-use period keeps its original start date.</p>`
   );
 }
 

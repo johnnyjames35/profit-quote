@@ -40,9 +40,10 @@ test('guest signup transfers exact quote atomically, rejects reuse, and unlocks 
   await db.query('INSERT INTO guest_sessions(id,browser_hash,ip_hash) VALUES($1,$2,$3)',[guestId,'browser42','ip42']);
   const guest=jwt.sign({id:guestId,guest:true},process.env.JWT_SECRET,{expiresIn:'1h'});
   const quote={customer_name:'Quote test',customer_email:'customer@example.invalid',job_description:'Complete rewire',days:6.5,day_rate:200,total:8698,profit_percent:30,quote_data:{pricingVersion:2,total:8698,profit:2610,profitPct:30,customer_email:'customer@example.invalid',scopeTasks:['Testing'],materials:3600,vatRate:0}};
-  const created=await request('/api/quotes',quote,guest);assert.equal(created.status,200);
-  const saved=await created.json();
-  assert.equal((await request('/api/quotes/send-email',quote,guest)).status,403);
+  assert.equal((await request('/api/quotes',quote,guest)).status,403,'new anonymous saves require account');
+  // Preserve migration of quotes saved under the previous guest policy.
+  const saved=(await db.query('INSERT INTO quotes(guest_id,customer_name,job_description,total,quote_data) VALUES($1,$2,$3,$4,$5) RETURNING *',[guestId,quote.customer_name,quote.job_description,quote.total,JSON.stringify(quote.quote_data)])).rows[0];
+  assert.equal((await request('/api/quotes/send-email',quote,guest)).status,402);
   assert.equal(sent.length,0);
   const registration={name:'Test Electrician',email:'electrician@example.invalid',password:'test-password',trade:'Electrician',guest_token:guest};
   failTransfer=true;

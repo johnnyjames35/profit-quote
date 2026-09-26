@@ -8,7 +8,7 @@ const email=html.slice(html.indexOf('async function emailQuote(){'),html.indexOf
 const save=html.slice(html.indexOf('async function saveQuote(){'),html.indexOf('async function emailQuote(){'));
 const print=html.slice(html.indexOf('async function printQuote(){'),html.indexOf('// VARIATIONS'));
 const render=html.slice(html.indexOf('function renderCompletedQuote(){'),html.indexOf('function flashProfitHero('));
-const quote={id:42,customer_name:'Test customer',customer_email:'customer@example.invalid',job_description:'Complete rewire',days:6.5,total:8698,quote_data:{customer_email:'customer@example.invalid',labour:1300,mats:3600,contingencyPrice:791,total:8698,profit:2610,profitPct:30,protectedCost:6089,subtotalExVat:8698,vatAmount:0,vatRate:0,builderDetails:'Saved scope',roomSummary:'Whole house',skipCost:0,skipPrice:0,skipQuantity:1,scaffoldCost:0,scaffoldPrice:0,contingency:10}};
+const quote={output_token:'signed-test-output',id:42,customer_name:'Test customer',customer_email:'customer@example.invalid',job_description:'Complete rewire',days:6.5,total:8698,quote_data:{customer_email:'customer@example.invalid',labour:1300,mats:3600,contingencyPrice:791,total:8698,profit:2610,profitPct:30,protectedCost:6089,subtotalExVat:8698,vatAmount:0,vatRate:0,builderDetails:'Saved scope',roomSummary:'Whole house',skipCost:0,skipPrice:0,skipQuantity:1,scaffoldCost:0,scaffoldPrice:0,contingency:10}};
 function harness(guest=true){
   const elements={},storage=new Map(),requests=[],opened=[],events=[];
   const element=id=>elements[id]??={style:{},classList:{add(){},remove(){}},textContent:'',value:'',disabled:false};
@@ -16,46 +16,43 @@ function harness(guest=true){
     document:{getElementById:element,querySelector:element},sessionStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null,removeItem:k=>storage.delete(k)},
     fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:url.endsWith('/export')?structuredClone(quote):{ok:true,id:42});},
     window:{open:(...args)=>{opened.push(args);return {document:{write(value){context.printHtml=value;},close(){}},focus(){},print(){}};}},
-    trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
+    saveBuilderDraft(){},clearBuilderDraft(){},loadQuotes:async()=>{},trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
   const nudge=html.slice(html.indexOf('function labourNudge('),html.indexOf('function updateProfitNudges('));
   const checklist=html.slice(html.indexOf('const COST_CHECK_KEYS='),html.indexOf('function renderCompletedQuote(){'));
   vm.runInContext(functions+save+email+print+nudge+checklist+render,context);
   return {context,elements,storage,requests,opened,events};
 }
-for(const action of ['saveQuote','printQuote','emailQuote']) test(`guest ${action} saves latest quote and gates output`,async()=>{
-  const h=harness();
-  await vm.runInContext(`${action}()`,h.context);
-  assert.equal(h.requests.length,1);
-  assert.equal(h.requests[0].options.method,'PATCH');
-  assert.deepEqual(JSON.parse(h.requests[0].options.body),quote);
-  assert.equal(h.storage.get('pq_quote_return_v1'),'42');
-  assert.equal(h.elements['register-screen'].style.display,'flex');
-  assert.equal(h.elements['quote-signup-prompt'].style.display,'block');
-  assert.match(h.elements['#register-screen .auth-left-sub'].textContent,/No card required/);
-  assert.equal(h.opened.length,0);
-  assert.deepEqual(h.events,['signup_screen_viewed']);
+test('guest Save keeps exact quote locally and prompts for an account without storing it',async()=>{
+ const h=harness();await vm.runInContext('saveQuote()',h.context);
+ assert.equal(h.requests.length,0);
+ assert.deepEqual(JSON.parse(h.storage.get('pq_quote_return_v1')).quote,quote);
+ assert.equal(h.elements['register-screen'].style.display,'flex');
+ assert.deepEqual(h.events,['save_prompt_shown','signup_screen_viewed']);
 });
-test('failed save keeps guest quote intact and does not enter signup',async()=>{
-  const h=harness(); h.context.fetch=async()=>Response.json({error:'Save failed'},{status:500});
-  await vm.runInContext('emailQuote()',h.context);
-  assert.equal(h.storage.size,0);
-  assert.equal(h.elements['register-screen'],undefined);
-  assert.equal(h.context.currentQuoteData.total,8698);
-  assert.match(h.context.toast,/still here/);
+test('guest Email sends signed output without a signup prompt',async()=>{
+ const h=harness();await vm.runInContext('emailQuote()',h.context);
+ assert.equal(h.requests[0].url,'/api/quotes/send-email');
+ assert.deepEqual(JSON.parse(h.requests[0].options.body),{output_token:quote.output_token});
+ assert.equal(h.elements['register-screen'],undefined);assert.equal(h.storage.size,0);
 });
-test('signup return after reload restores exact saved result without generation or sending',()=>{
-  const h=harness(false); h.context.currentQuoteData=null;
-  h.context.quotes=[{...structuredClone(quote),customer_email:undefined}];
-  h.storage.set('pq_quote_return_v1','42');
-  vm.runInContext('returnToCompletedQuote()',h.context);
-  assert.equal(h.context.edited,42);
-  assert.equal(h.context.currentBuilderStep,6);
-  assert.equal(h.context.currentQuoteData.customer_email,quote.customer_email);
-  assert.equal(h.context.currentQuoteData.total,8698);
-  assert.equal(h.elements['step-6'].style.display,'block');
-  assert.equal(h.elements['result-total'].textContent,'£8,698');
-  assert.equal(h.elements['ai-output'].style.display,'block');
-  assert.equal(h.requests.length,0); assert.equal(h.opened.length,0); assert.equal(h.storage.size,0);
+test('guest PDF verifies output without a signup prompt',async()=>{
+ const h=harness();await vm.runInContext('printQuote()',h.context);
+ assert.equal(h.requests[0].url,'/api/quotes/preview/export');assert.equal(h.opened.length,1);
+ assert.equal(h.elements['register-screen'],undefined);
+});
+test('registration return saves exact pending quote and restores completed result',async()=>{
+ const h=harness(false);h.context.currentQuoteData=null;
+ h.storage.set('pq_quote_return_v1',JSON.stringify({quote}));
+ await vm.runInContext('returnToCompletedQuote()',h.context);
+ assert.equal(h.context.currentBuilderStep,6);assert.equal(h.context.currentQuoteData.total,8698);
+ assert.deepEqual(JSON.parse(h.requests[0].options.body),quote);
+ assert.equal(h.elements['result-total'].textContent,'£8,698');assert.equal(h.storage.size,0);
+});
+test('failed post-registration save preserves the quote for retry',async()=>{
+ const h=harness(false);h.storage.set('pq_quote_return_v1',JSON.stringify({quote}));
+ h.context.fetch=async()=>Response.json({error:'Try again'},{status:500});
+ await vm.runInContext('returnToCompletedQuote()',h.context);
+ assert.equal(h.context.currentQuoteData.total,8698);assert.equal(h.storage.size,1);
 });
 test('registered Email retains server delivery and PDF opens print document',async()=>{
   const h=harness(false);
@@ -64,7 +61,7 @@ test('registered Email retains server delivery and PDF opens print document',asy
   assert.deepEqual(JSON.parse(h.requests[0].options.body),{quote_id:42});
   await vm.runInContext('printQuote()',h.context);
   assert.equal(h.opened.length,1);
-  assert.deepEqual(h.events,['quote_sent','quote_downloaded']);
+  assert.deepEqual(h.events,['quote_downloaded']);
   assert.equal(h.storage.size,0);
 });
 test('PDF keeps exclusions, escapes customer data and uses the saved reference and date',async()=>{

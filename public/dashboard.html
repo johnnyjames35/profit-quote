@@ -460,7 +460,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
 </dialog>
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="login-screen" style="display:none;">
   <!-- LEFT PANEL -->
   <div class="auth-left">
     <div class="auth-left-logo">
@@ -508,7 +508,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
       <div class="auth-divider">or</div>
       <div class="login-switch" style="margin-top:0;">No account yet?</div>
-      <button class="btn-trial" onclick="showRegister()">Create your free account</button>
+      <button class="btn-trial" onclick="startGuest()">Use free for 7 days — no signup</button>
       <div class="auth-trial-note">No card. No commitment. Cancel anytime.</div>
     </div>
   </div>
@@ -551,8 +551,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
     <div class="login-card">
       <div class="login-logo"><div class="login-logo-icon">£</div><span class="login-logo-text">Profit<span>Quote</span></span></div>
       <div class="login-title">Create your free account</div>
-      <div class="login-sub">7 days of unlimited quotes — no card needed</div>
-      <div id="quote-signup-prompt" class="login-sub" style="display:none;">Your quote is ready. Create your free account to save it, download the PDF and send it to your customer. No card required. Takes about 30 seconds.<br><button type="button" class="btn-action" onclick="backToGuestQuote()">Back to my quote</button></div>
+      <div class="login-sub">Save and retrieve your quotes — no card needed</div>
+      <div id="quote-signup-prompt" class="login-sub" style="display:none;">Your quote is ready. Create a free account to save this quote and access it later. Your quote will stay here while you register.<br><button type="button" class="btn-action" onclick="backToGuestQuote()">Back to my quote</button></div>
       <div class="login-err" id="reg-err"></div>
       <div class="lfield"><label>Your Name</label><input type="text" id="reg-name" placeholder="e.g. Dave Morris"></div>
       <div class="lfield"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.co.uk"></div>
@@ -799,7 +799,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <span class="builder-title" id="builder-title">New Quote</span>
         <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
-      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;"><span id="draft-save-status" role="status">Progress saves on this device as you go. Generate the quote to save the updated total.</span> <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')){ clearBuilderDraft(); resetBuilder(); }" style="color:var(--amber);">Clear &amp; start over</a></div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;"><span id="draft-save-status" role="status">Your current draft stays on this device. Create an account only to save quotes for later.</span> <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')){ clearBuilderDraft(); resetBuilder(); }" style="color:var(--amber);">Clear &amp; start over</a></div>
       <div class="step-dots">
         <div class="dot active" id="dot-1"></div>
         <div class="dot" id="dot-2"></div>
@@ -1360,7 +1360,7 @@ function showGuestSignup(){
   const h=document.querySelector('#register-screen .auth-left-headline');
   const sub=document.querySelector('#register-screen .auth-left-sub');
   if(h) h.innerHTML='Keep your quotes.<br><span>Create your account.</span>';
-  if(sub) sub.textContent='You have tried ProfitQuote. Create your account now and your saved quotes will come with you.';
+  if(sub) sub.textContent='Create a free account to save your quote and access it later.';
   const btn=document.getElementById('reg-btn'); if(btn) btn.textContent='Create Account & Keep My Quotes →';
 }
 const QUOTE_RETURN_KEY = 'pq_quote_return_v1';
@@ -1370,20 +1370,13 @@ async function requireQuoteAccount(){
   if(conversionSaving) return false;
   conversionSaving=true;
   try{
-    // Save the latest edits before registration transfers ownership.
-    const response=await fetch(API+'/api/quotes'+(editingQuoteId?'/'+editingQuoteId:''),{
-      method:editingQuoteId?'PATCH':'POST',
-      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify(currentQuoteData)
-    });
-    const saved=await response.json();
-    if(!response.ok) throw new Error(saved.error||'Please try again');
-    editingQuoteId=editingQuoteId||saved.id;
-    sessionStorage.setItem(QUOTE_RETURN_KEY,String(editingQuoteId));
+    saveBuilderDraft();
+    sessionStorage.setItem(QUOTE_RETURN_KEY,JSON.stringify({quote:currentQuoteData,owner:String(currentUser.id)}));
+    trackFunnelEvent('save_prompt_shown');
     showGuestSignup();
     document.getElementById('quote-signup-prompt').style.display='block';
     document.querySelector('#register-screen .auth-left-headline').textContent='Your quote is ready.';
-    document.querySelector('#register-screen .auth-left-sub').textContent='Create your free account to save it, download the PDF and send it to your customer. No card required. Takes about 30 seconds.';
+    document.querySelector('#register-screen .auth-left-sub').textContent='Create a free account to save this quote and access it later. Your quote will stay here while you register.';
     document.getElementById('reg-btn').textContent='Create your free account →';
   }catch(error){
     showToast('Your quote is still here. Could not prepare signup: '+error.message);
@@ -1397,21 +1390,27 @@ function backToGuestQuote(){
   switchTab('builder');
 }
 
-function returnToCompletedQuote(){
-  const id=Number(sessionStorage.getItem(QUOTE_RETURN_KEY));
-  if(!id) return;
-  const quote=quotes.find(q=>q.id===id);
-  if(!quote){ showToast('Your quote could not be loaded. Refresh to try again.'); return; }
-  editQuote(id);
-  currentQuoteData={...quote,customer_email:quote.customer_email||quote.quote_data?.customer_email||''};
+async function returnToCompletedQuote(){
+  const raw=sessionStorage.getItem(QUOTE_RETURN_KEY);
+  if(!raw) return;
+  let pending;
+  try{pending=JSON.parse(raw);}catch{return;}
+  if(!pending?.quote) return;
+  currentQuoteData=pending.quote;
+  editingQuoteId=null;
+  switchTab('builder');
   currentBuilderStep=6;
-  for(let i=1;i<=6;i++){
-    document.getElementById('step-'+i).style.display=i===6?'block':'none';
-    const dot=document.getElementById('dot-'+i);
-    if(dot) dot.className='dot'+(i===6?' active':' done');
-  }
+  for(let i=1;i<=6;i++)document.getElementById('step-'+i).style.display=i===6?'block':'none';
   renderCompletedQuote();
-  sessionStorage.removeItem(QUOTE_RETURN_KEY);
+  try{
+    const response=await fetch(API+'/api/quotes',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(currentQuoteData)});
+    const saved=await response.json();
+    if(!response.ok)throw new Error(saved.error||'Could not save yet. Your quote is still here.');
+    currentQuoteData.id=saved.id;editingQuoteId=saved.id;
+    sessionStorage.removeItem(QUOTE_RETURN_KEY);clearBuilderDraft();
+    document.getElementById('btn-save-quote').textContent='💾 Saved';
+    await loadQuotes();showToast('Account ready — your quote is saved ✓');
+  }catch(e){showToast(e.message);}
 }
 let quotes = [];
 let filteredQuotes = [];
@@ -1431,7 +1430,7 @@ const BUILDER_STEP_FIELDS = ['q-job-scale','q-property-type','q-room-count','q-s
 
 function saveBuilderDraft(){
   if(restoringBuilderDraft||!currentUser) return;
-  const draft = { owner:String(currentUser.id), quoteId:editingQuoteId, costChecks:readCostChecks(), step: currentBuilderStep, needsSkip, needsScaffold, clientSuppliesMaterials, selectedRisk, fields: {} };
+  const draft = { completedQuote:currentQuoteData, owner:String(currentUser.id), quoteId:editingQuoteId, costChecks:readCostChecks(), step: currentBuilderStep, needsSkip, needsScaffold, clientSuppliesMaterials, selectedRisk, fields: {} };
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el = document.getElementById(id);
     if(el) draft.fields[id] = el.value;
@@ -1439,7 +1438,7 @@ function saveBuilderDraft(){
   const status=document.getElementById('draft-save-status');
   try{
     localStorage.setItem(BUILDER_DRAFT_KEY, JSON.stringify(draft));
-    if(status) status.textContent='Progress saved on this device. Generate the quote to save the updated total.';
+    if(status) status.textContent='Current draft kept on this device. Save to keep it in your account.';
   }catch(e){if(status) status.textContent='This browser could not save your progress. Keep this page open until you generate your quote.';}
 }
 
@@ -1470,7 +1469,7 @@ function restoreBuilderDraft(){
     restoreCostChecks(draft.costChecks||saved?.quote_data?.costChecks);
     document.getElementById('builder-title').textContent=editingQuoteId?'Edit Quote':'New Quote';
     document.getElementById('edit-badge').style.display=editingQuoteId?'inline-flex':'none';
-    nextStep(Math.max(1,Math.min(draft.step || 1, 5)));
+    if(draft.step===6&&draft.completedQuote){currentQuoteData=draft.completedQuote;currentBuilderStep=6;for(let i=1;i<=6;i++)document.getElementById('step-'+i).style.display=i===6?'block':'none';renderCompletedQuote();}else nextStep(Math.max(1,Math.min(draft.step || 1, 5)));
     return true;
   }catch(e){ return false; }
   finally{restoringBuilderDraft=false;}
@@ -1685,7 +1684,7 @@ if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; wind
 const resetTokenFromUrl = urlParams.get('reset');
 
 if(resetTokenFromUrl){ showReset(resetTokenFromUrl); }
-else if(token){ initApp(urlParams.get('try')==='1'); } else if(urlParams.get('signup')==='1'){ showRegister(); } else if(urlParams.get('try')==='1'){ startGuest(); } else { showLogin(); }
+else if(token){ initApp(urlParams.get('login')!=='1'); } else if(urlParams.get('login')==='1'){ showLogin(); } else { startGuest(); }
 
 function showLogin(){
   document.getElementById('login-screen').style.display='flex';
@@ -1815,7 +1814,7 @@ async function doRegister(){
 async function initApp(startInBuilder=false){
   try{
     const res=await fetch(API+'/api/auth/me',{headers:{Authorization:'Bearer '+token}});
-    if(!res.ok){ doLogout(); if(urlParams.get('signup')==='1')showRegister(); return; }
+    if(!res.ok){ doLogout(); if(urlParams.get('login')!=='1')await startGuest(); return; }
     currentUser=await res.json();
   }catch(e){ doLogout(); return; }
   document.getElementById('login-screen').style.display='none';
@@ -1827,11 +1826,12 @@ async function initApp(startInBuilder=false){
   await loadQuotes();
   if(currentUser.guest){
     document.body.classList.add('guest-mode');
+    document.getElementById('onboarding-card').style.display='none';
     ['nav-issues','nav-setup'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='none';
-    const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='Guest preview · '+currentUser.guest_quotes_remaining+' remaining';
+    const pill=document.getElementById('trial-pill'); if(pill) pill.textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
     const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent='Build your first professional quote — no signup needed';
-    if(currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
+    if(!currentUser.can_create){ showSubscriptionPrompt(); }
     if(startInBuilder || quotes.length===0) switchTab('builder');
   }
   if(!currentUser.guest){
@@ -1839,7 +1839,7 @@ async function initApp(startInBuilder=false){
     ['nav-issues','nav-setup'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='';
     localStorage.removeItem('pq_guest_token'); guestToken=null;
-    returnToCompletedQuote();
+    await returnToCompletedQuote();
     if(new URLSearchParams(window.location.search).get('subscribe')==='1'){switchTab('setup');showSubscriptionPrompt();}
     refreshQuoteAccess();
     if(new URLSearchParams(window.location.search).get('billing')==='returned'){switchTab('builder');showSubscriptionPrompt();refreshQuoteAccess(true);}
@@ -1889,7 +1889,7 @@ function populateUserUI(){
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
   if(currentUser.guest){
     const pill=document.getElementById('trial-pill');
-    if(pill) pill.textContent='Guest preview · '+currentUser.guest_quotes_remaining+' remaining';
+    if(pill) pill.textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
     return;
   }
   updateAllowancePill();
@@ -2502,7 +2502,7 @@ function nextStep(n){
 function resetBuilder(){
   if(!currentUser?.guest&&currentUser?.can_create===false){showSubscriptionPrompt();return;}
   pendingCreationKey=null;
-  if(currentUser?.guest && currentUser.guest_quotes_remaining<=0){ showGuestSignup(); return; }
+  if(currentUser?.guest && !currentUser.can_create){ showSubscriptionPrompt(); return; }
   restoreCostChecks([]);
   clearBuilderDraft();
   editingQuoteId=null;
@@ -2663,30 +2663,31 @@ async function generateQuote(){
     profit_percent:profitPct
   };
 
-  // Every new quote is counted on the server before its completed output is shown.
+  // Anonymous output is verified without adding it to the saved quote library.
   if(!editingQuoteId){
     pendingCreationKey=pendingCreationKey||crypto.randomUUID();
     currentQuoteData.creation_key=pendingCreationKey;
   }
   try{
-    const response=await fetch(API+'/api/quotes'+(editingQuoteId?'/'+editingQuoteId:''),{
-      method:editingQuoteId?'PATCH':'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(currentQuoteData)
+    const response=await fetch(API+'/api/quotes'+(currentUser.guest?'/preview':editingQuoteId?'/'+editingQuoteId:''),{
+      method:!currentUser.guest&&editingQuoteId?'PATCH':'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(currentQuoteData)
     });
     const saved=await response.json();
     if(!response.ok){
       if(saved.code==='subscription_required'){currentQuoteData=null;nextStep(5);showSubscriptionPrompt();}
-      else if(saved.code==='guest_limit'){nextStep(5);showGuestSignup();}
+      else if(saved.code==='trial_expired'){nextStep(5);showSubscriptionPrompt();}
       else {nextStep(5);showToast(saved.error||'Could not generate your quote');}
       return;
     }
-    editingQuoteId=editingQuoteId||saved.id;currentQuoteData.id=editingQuoteId;pendingCreationKey=null;
+    if(currentUser.guest){currentQuoteData.output_token=saved.output_token;}else{editingQuoteId=editingQuoteId||saved.id;currentQuoteData.id=editingQuoteId;}pendingCreationKey=null;
     Object.assign(currentUser,...['quotes_remaining','quotes_used','subscribed','guest_quotes_remaining','can_create','unlimited','billing_plan','trial_active','trial_ends_at','period_quotes_used','payg_credits'].map(key=>({[key]:saved[key]})));
     updateAllowancePill();
-    if(currentUser.guest) document.getElementById('trial-pill').textContent='Guest preview · '+currentUser.guest_quotes_remaining+' remaining';
-    document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save':'💾 Saved';clearBuilderDraft();loadQuotes();
+    if(currentUser.guest) document.getElementById('trial-pill').textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
+    document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save':'💾 Saved';if(!currentUser.guest)clearBuilderDraft();loadQuotes();
   }catch(error){nextStep(5);showToast('Connection error — try generating again.');return;}
 
   renderCompletedQuote();
+  saveBuilderDraft();
   }finally{generatingQuote=false;}
 }
 
@@ -2807,18 +2808,14 @@ async function saveQuote(){
     if(res.ok){
       const saved=await res.json();
       if(!editingQuoteId) trackFunnelEvent('quote_saved');
-      if(currentUser?.guest && typeof saved.remaining==='number'){
-        currentUser.guest_quotes_remaining=saved.remaining;
-        const pill=document.getElementById('trial-pill'); if(pill) pill.textContent='Guest preview · '+saved.remaining+' remaining';
-        showToast(saved.remaining ? 'Quote saved — '+saved.remaining+' free remaining' : 'Third quote saved — create your account to keep going');
-      } else showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
+      showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
       clearBuilderDraft();
       // Flash profit on hero for new quotes only
       if(!editingQuoteId && currentQuoteData?.quote_data?.profit){
         flashProfitHero(currentQuoteData.quote_data.profit);
       }
       currentQuoteData.id=saved.id||editingQuoteId;
-      editingQuoteId=currentUser?.guest?currentQuoteData.id:null;
+      editingQuoteId=currentQuoteData.id;
       document.getElementById('step-first-quote').className='step-num done';
       document.getElementById('step-first-quote').textContent='✓';
       document.getElementById('builder-title').textContent='New Quote';
@@ -2826,7 +2823,6 @@ async function saveQuote(){
       document.getElementById('btn-save-quote').textContent='💾 Save';
       loadQuotes();
       switchTab('quotes');
-      if(currentUser?.guest && currentUser.guest_quotes_remaining===0) setTimeout(showGuestSignup,1200);
     } else {
       const err=await res.json();
       if(err.code==='guest_limit') showGuestSignup(); else showToast('Error: '+(err.error||'Could not save'));
@@ -2836,7 +2832,6 @@ async function saveQuote(){
 
 async function emailQuote(){
   if(!currentQuoteData) return;
-  if(!await requireQuoteAccount()) return;
   const customerEmail=(currentQuoteData.customer_email||'').trim();
   if(!customerEmail){ showToast('Enter the customer email before sending'); return; }
   const button=document.querySelector('.btn-email');
@@ -2846,11 +2841,10 @@ async function emailQuote(){
     const response=await fetch(API+'/api/quotes/send-email',{
       method:'POST',
       headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify({quote_id:editingQuoteId||currentQuoteData.id})
+      body:JSON.stringify(currentUser.guest?{output_token:currentQuoteData.output_token}:{quote_id:editingQuoteId||currentQuoteData.id})
     });
     const result=await response.json();
     if(!response.ok) throw new Error(result.error||'The quote could not be emailed.');
-    trackFunnelEvent('quote_sent');
     showToast('Quote emailed from '+result.from+' ✓');
   }catch(error){
     showToast(error.message||'The quote could not be emailed.');
@@ -2861,14 +2855,13 @@ async function emailQuote(){
 
 async function printQuote(){
   if(!currentQuoteData) return;
-  if(currentUser?.guest){await requireQuoteAccount();return;}
   // Open during the click itself so mobile popup blockers retain the user gesture.
   const win=window.open('','_blank');
   if(!win){showToast('Allow popups to download your PDF.');return;}
   try{
-    const response=await fetch(API+'/api/quotes/'+(editingQuoteId||currentQuoteData.id)+'/export',{headers:{Authorization:'Bearer '+token}});
+    const response=await fetch(API+'/api/quotes/'+(currentUser.guest?'preview/export':(editingQuoteId||currentQuoteData.id)+'/export'),{method:currentUser.guest?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(currentUser.guest?{body:JSON.stringify({output_token:currentQuoteData.output_token})}:{})});
     if(!response.ok) throw new Error('Could not load the saved quote. Please generate it again.');
-    currentQuoteData=await response.json();
+    currentQuoteData={...await response.json(),output_token:currentQuoteData.output_token};
   }catch(error){win.close();showToast(error.message);return;}
   trackFunnelEvent('quote_downloaded');
   const escapeHtml=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -2885,7 +2878,7 @@ async function printQuote(){
   const scaffoldDisplay=qd.scaffoldPrice??qd.scaffoldCost??0;
   const contingencyDisplay=qd.contingencyPrice??qd.contingencyAmt??0;
   const date=new Date(currentQuoteData.created_at||Date.now()).toLocaleDateString('en-GB');
-  const ref='QUO-'+escapeHtml(currentQuoteData.id||editingQuoteId);
+  const ref='QUO-'+escapeHtml(currentQuoteData.id||editingQuoteId||'DRAFT');
 
   // Preserve exclusions and short measurements; never split a sentence at an action verb.
   const scope=qd.jobScope;

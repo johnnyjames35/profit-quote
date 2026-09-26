@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { sendToGA } = require('../utils/ga');
 const https = require('https');
+const jwt = require('jsonwebtoken');
 const {access,consume,limitError,publicAccess,UUID}=require('../utils/quote-access');
 
 const CUSTOMER_EMAIL_FROM = 'hello@profitquote.co.uk';
@@ -66,6 +67,7 @@ function logEvent(pool, eventType, userId, source) {
 }
 
 router.get('/', auth, async (req, res) => {
+  if(req.user.guest) return res.json([]);
   try {
     const pool = req.app.locals.pool;
     const field = req.user.guest ? 'guest_id' : 'user_id';
@@ -78,6 +80,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
+  if(req.user.guest) return res.status(403).json({error:'Create an account to save this quote for later.',code:'account_required'});
   const data=req.body||{};
   const {customer_name,trade,job_description,spec_level,skip_type,skip_cost,day_rate,days,markup_percent,profit_target,other_costs,total,profit_percent}=data;
   const quote_data={...(data.quote_data||{}),customer_email:data.customer_email||data.quote_data?.customer_email||''};
@@ -98,7 +101,14 @@ router.post('/', auth, async (req, res) => {
     await consume(client,a,req.user);
     Object.assign(a,await access(client,req.user));
     if(req.user.guest) await client.query('UPDATE guest_sessions SET quote_count=quote_count+1,last_active_at=NOW() WHERE id=$1',[req.user.id]);
-    await client.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_completed',$1,$2,$3)",[req.user.guest?null:req.user.id,req.user.guest?'guest':'dashboard',JSON.stringify({quote_id:saved.rows[0].id,...(req.user.guest?{guest_id:req.user.id}:{})})]);
+    let completionEvent='quote_completed';
+    if(data.output_token){
+      try{
+        const output=jwt.verify(data.output_token,process.env.JWT_SECRET);
+        if(output.purpose==='anonymous-quote' && (await client.query('SELECT id FROM guest_sessions WHERE id=$1 AND converted_user_id=$2',[output.guest_id,req.user.id])).rows.length) completionEvent='quote_saved';
+      }catch{}
+    }
+    await client.query('INSERT INTO events(event_type,user_id,source,meta) VALUES($1,$2,$3,$4)',[completionEvent,req.user.id,'dashboard',JSON.stringify({quote_id:saved.rows[0].id})]);
     if(req.user.guest) await client.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id,quote_number:a.used})]);
     await client.query('COMMIT');
     res.json({...saved.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining});
@@ -108,7 +118,35 @@ router.post('/', auth, async (req, res) => {
   }finally{client.release();}
 });
 
-// Customer output must come from a counted, owned quote, never an arbitrary request body.
+async function anonymousOutput(req) {
+  const a=await access(req.app.locals.pool,req.user);
+  if(!a.can_create) throw limitError(true);
+  let signed;
+  try{signed=jwt.verify(req.body?.output_token,process.env.JWT_SECRET);}
+  catch{throw Object.assign(new Error('Generate this quote again before sending or downloading it.'),{status:400});}
+  if(signed.purpose!=='anonymous-quote'||signed.guest_id!==req.user.id) throw Object.assign(new Error('Quote not found.'),{status:403});
+  return signed.quote;
+}
+router.post('/preview',auth,async(req,res)=>{
+  if(!req.user.guest) return res.status(400).json({error:'Use your account quote builder.'});
+  try{
+    const a=await access(req.app.locals.pool,req.user);
+    if(!a.can_create) throw limitError(true);
+    const quote={...req.body};delete quote.output_token;delete quote.id;
+    if(!Number.isFinite(Number(quote.total))||Number(quote.total)<0||Number(quote.total)>10000000||!quote.quote_data) return res.status(400).json({error:'Check the quote figures and generate again.'});
+    quote.customer_email=quote.customer_email||quote.quote_data.customer_email||'';
+    const output_token=jwt.sign({purpose:'anonymous-quote',guest_id:req.user.id,quote},process.env.JWT_SECRET,{expiresIn:Math.max(1,Math.floor((new Date(a.trial_ends_at)-Date.now())/1000))});
+    await req.app.locals.pool.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id})]);
+    res.set('Cache-Control','no-store').json({output_token,...publicAccess(a)});
+  }catch(e){res.status(e.status||500).json({error:e.message,code:e.code});}
+});
+router.post('/preview/export',auth,async(req,res)=>{
+  if(!req.user.guest) return res.status(400).json({error:'Use your saved quote.'});
+  try{res.set('Cache-Control','no-store').json(await anonymousOutput(req));}
+  catch(e){res.status(e.status||500).json({error:e.message,code:e.code});}
+});
+
+// Registered output comes from an owned, counted quote; anonymous output from a signed trial quote.
 router.get('/:id/export',auth,async(req,res)=>{
   if(req.user.guest) return res.status(403).json({error:'Create an account to download your quote.'});
   try{
@@ -119,18 +157,18 @@ router.get('/:id/export',auth,async(req,res)=>{
 });
 
 router.post('/send-email', auth, async (req, res) => {
-  if (req.user.guest) return res.status(403).json({ error: 'Create an account to send quotes directly.' });
+
   try {
   const pool=req.app.locals.pool;
-  const saved=await pool.query('SELECT * FROM quotes WHERE id=$1 AND user_id=$2',[Number(req.body?.quote_id)||0,req.user.id]);
+  const saved=req.user.guest?{rows:[await anonymousOutput(req)]}:await pool.query('SELECT * FROM quotes WHERE id=$1 AND user_id=$2',[Number(req.body?.quote_id)||0,req.user.id]);
   if(!saved.rows.length) return res.status(404).json({error:'Save this quote before emailing it.'});
   const {customer_name,job_description,total,quote_data}=saved.rows[0];
-  const customer_email=quote_data?.customer_email;
+  const customer_email=saved.rows[0].customer_email||quote_data?.customer_email;
   if (!validEmail(customer_email)) return res.status(400).json({ error: 'Enter a valid customer email address.' });
   if (!Number.isFinite(Number(total)) || Number(total) < 0 || Number(total) > 10000000) return res.status(400).json({ error: 'The quote total is invalid.' });
-    const recent = await pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND user_id=$1 AND created_at >= NOW() - INTERVAL '1 hour'", [req.user.id]);
+    const recent = await pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND (user_id=$1 OR ($2::text IS NOT NULL AND meta->>'guest_id'=$2)) AND created_at >= NOW() - INTERVAL '1 hour'", [req.user.guest?null:req.user.id,req.user.guest?req.user.id:null]);
     if (recent.rows[0].c >= 10) return res.status(429).json({ error: 'Hourly email limit reached. Please try again later.' });
-    const userResult = await pool.query('SELECT name,business_name,phone FROM users WHERE id=$1', [req.user.id]);
+    const userResult = req.user.guest?{rows:[{name:'Your tradesperson',business_name:saved.rows[0].quote_data?.businessName,phone:saved.rows[0].quote_data?.businessPhone}]}:await pool.query('SELECT name,business_name,phone FROM users WHERE id=$1', [req.user.id]);
     if (!userResult.rows.length) return res.status(404).json({ error: 'User not found.' });
     const user = userResult.rows[0];
     const businessName = String(user.business_name || user.name || 'ProfitQuote customer').slice(0, 100);
@@ -138,13 +176,13 @@ router.post('/send-email', auth, async (req, res) => {
       to: customer_email.trim().toLowerCase(), businessName, customerName: customer_name,
       phone: user.phone, total: Number(total), description: String(job_description || '').slice(0, 5000), quoteData: quote_data || {}
     });
-    await pool.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_sent',$1,'profitquote_email',jsonb_build_object('recipient_domain',split_part($2,'@',2),'total',$3::numeric))", [req.user.id, customer_email.trim().toLowerCase(), Number(total)]);
+    await pool.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_sent',$1,'profitquote_email',jsonb_build_object('recipient_domain',split_part($2,'@',2),'total',$3::numeric,'guest_id',$4::text))", [req.user.guest?null:req.user.id, customer_email.trim().toLowerCase(), Number(total),req.user.guest?req.user.id:null]);
     sendToGA('quote_sent', req.user.id, 'profitquote_email').catch(() => {});
     res.set('Cache-Control', 'private, no-store');
     res.json({ success: true, from: CUSTOMER_EMAIL_FROM });
   } catch (error) {
     console.error('Quote email error:', error.message);
-    res.status(502).json({ error: 'The quote could not be emailed. Please try again.' });
+    res.status(error.status||502).json({ error: error.status?error.message:'The quote could not be emailed. Please try again.',code:error.code });
   }
 });
 
@@ -165,6 +203,7 @@ router.patch('/:id/status', auth, async (req, res) => {
 });
 
 router.patch('/:id', auth, async (req, res) => {
+  if(req.user.guest) return res.status(403).json({error:'Create an account to save this quote for later.',code:'account_required'});
   const { customer_name, trade, job_description, spec_level, skip_type, skip_cost, day_rate, days, markup_percent, profit_target, other_costs, quote_data, total, profit_percent } = req.body;
   try {
     const pool = req.app.locals.pool;

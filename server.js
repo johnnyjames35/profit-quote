@@ -59,14 +59,9 @@ app.use('/api/leads', require('./routes/leads'));
 // Trial / payment check middleware
 async function trialCheck(req, res, next) {
   try {
-    if (req.user.guest) {
-      const guest = await pool.query('UPDATE guest_sessions SET ai_requests=ai_requests+1,last_active_at=NOW() WHERE id=$1 AND expires_at>NOW() AND converted_user_id IS NULL AND ai_requests<12 RETURNING id', [req.user.id]);
-      if (!guest.rows.length) return res.status(402).json({ error: 'guest_limit', message: 'Create your free account to continue and keep your quotes.' });
-      return next();
-    }
     const {access,limitError}=require('./utils/quote-access');
     const a=await access(pool,req.user);
-    if(!a.can_create) throw limitError();
+    if(!a.can_create) throw limitError(req.user.guest);
     return next();
   } catch(e) {
     return res.status(e.status||500).json({ error: e.message, code:e.code });

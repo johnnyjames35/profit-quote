@@ -51,19 +51,19 @@ async function access(db, user, lock=false) {
   }
   const now=new Date();
   const trialEnd=allowance.trial_started_at ? new Date(new Date(allowance.trial_started_at).getTime()+7*86400000) : null;
-  const trialActive=!user.guest && trialEnd && now<trialEnd;
+  const trialActive=trialEnd && now<trialEnd;
   const subscription=!user.guest && (await db.query("SELECT * FROM commercial_subscriptions WHERE user_id=$1 AND status='active' AND period_end>NOW() ORDER BY CASE plan WHEN 'pro' THEN 0 ELSE 1 END,period_end DESC LIMIT 1",[user.id])).rows[0];
   const management=!user.guest && (await db.query("SELECT plan FROM commercial_subscriptions WHERE user_id=$1 AND status NOT IN ('canceled','incomplete_expired') ORDER BY verified_at DESC LIMIT 1",[user.id])).rows[0];
   const credits=user.guest?0:(await db.query('SELECT COUNT(*)::int AS n FROM commercial_payments WHERE user_id=$1 AND credit_available=true',[user.id])).rows[0].n;
   const periodUsed=subscription?(await db.query('SELECT COUNT(*)::int AS n FROM commercial_usage WHERE user_id=$1 AND subscription_id=$2 AND period_start=$3',[user.id,subscription.id,subscription.period_start])).rows[0].n:0;
   const unlimited=subscribed||trialActive||subscription?.plan==='pro';
-  const remaining=user.guest?Math.max(0,LIMIT-allowance.used):unlimited?null:Math.max(0,(subscription?6-periodUsed:0))+credits;
+  const remaining=unlimited?null:user.guest?0:Math.max(0,(subscription?6-periodUsed:0))+credits;
   return {owner,trial_id:owner.trial_id,used:allowance.used,remaining,subscribed:subscribed||!!subscription,
     can_create:unlimited||remaining>0,unlimited,trial_active:!!trialActive,trial_ends_at:trialEnd,
     plan:subscribed?'legacy':subscription?.plan||(trialActive?'trial':'payg'),management_plan:management?.plan||null,subscription,period_used:periodUsed,credits};
 }
 
-function limitError(guest=false){return Object.assign(new Error(guest?'Create your free account to keep your quotes and start your 7-day unlimited trial.':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'guest_limit':'subscription_required'});}
+function limitError(guest=false){return Object.assign(new Error(guest?'Your seven days of free use have ended. Choose £5 per quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'trial_expired':'subscription_required'});}
 async function consume(db,a,user){
   if(!a.can_create) throw limitError(user.guest);
   if(user.guest){await db.query('UPDATE quote_allowances SET used=used+1 WHERE id=$1',[a.trial_id]);return;}

@@ -984,14 +984,19 @@ function renderFunnelBars(data) {
   const steps = [
     { label: 'LinkedIn Impressions', value: impressions },
     { label: 'Website Visitors', value: data.totalVisitors },
-    { label: 'Quote Starts', value: data.quoteStarts },
+    { label: 'Anonymous Free Use', value: data.anonymousFreeStarts || 0 },
+    { label: 'Anonymous Quote Starts', value: data.anonymousQuoteStarts || 0 },
+    { label: 'Anonymous Completions', value: data.anonymousQuoteCompletions || 0 },
+    { label: 'Anonymous Sends', value: data.anonymousQuoteSends || 0 },
+    { label: 'Quote Starts (all)', value: data.quoteStarts },
     { label: 'Quotes Completed', value: data.quoteCompletions },
     { label: 'Quotes Sent', value: data.quoteSends },
     { label: 'PDF Downloads', value: data.quoteDownloads },
-    { label: 'Trial Clicks', value: data.trialClicks },
+    { label: 'Save Account Prompts', value: data.savePrompts || 0 },
+    { label: 'Signup Attempts', value: data.signupAttempts },
     { label: 'New Accounts Still Present', value: data.accountsCreated },
     { label: 'First Quotes', value: data.firstQuotes },
-    { label: 'Paid Customers', value: data.paidCustomers }
+    { label: 'Paid Conversions', value: data.paidConversions || 0 }
   ];
 
   const maxVal = Math.max(...steps.map(s => s.value), 1);

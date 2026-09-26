@@ -2,7 +2,7 @@ const router=require('express').Router();
 const crypto=require('crypto');
 const jwt=require('jsonwebtoken');
 const auth=require('../middleware/auth');
-const {browserTrial,digest,ipHash,access}=require('../utils/quote-access');
+const {browserTrial,digest,ipHash,access,publicAccess}=require('../utils/quote-access');
 router.post('/start',async(req,res)=>{
   const browserId=String(req.body?.browser_id||'');
   if(!/^[a-zA-Z0-9_-]{12,100}$/.test(browserId)) return res.status(400).json({error:'A valid browser ID is required'});
@@ -25,6 +25,8 @@ router.post('/start',async(req,res)=>{
     }else{
       await client.query("UPDATE guest_sessions SET expires_at=NOW()+INTERVAL '30 days' WHERE id=$1",[id]);
     }
+    const started=await client.query('UPDATE quote_allowances SET trial_started_at=NOW() WHERE id=(SELECT trial_id FROM guest_sessions WHERE id=$1) AND trial_started_at IS NULL RETURNING id',[id]);
+    if(started.rows.length) await client.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_free_use_started','guest',$1)",[JSON.stringify({guest_id:id})]);
     await client.query('COMMIT');
     res.set('Cache-Control','no-store').json({token:jwt.sign({id,guest:true},process.env.JWT_SECRET,{expiresIn:'30d'})});
   }catch(e){await client.query('ROLLBACK');res.status(e.status||500).json({error:e.message});}
@@ -32,7 +34,7 @@ router.post('/start',async(req,res)=>{
 });
 router.get('/status',auth,async(req,res)=>{
   if(!req.user.guest) return res.status(400).json({error:'Not a guest session'});
-  try{const a=await access(req.app.locals.pool,req.user);res.json({used:a.used,remaining:a.remaining});}
+  try{const a=await access(req.app.locals.pool,req.user);res.json({used:a.used,remaining:a.remaining,...publicAccess(a)});}
   catch(e){res.status(e.status||500).json({error:e.message});}
 });
 module.exports=router;
