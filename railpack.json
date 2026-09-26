@@ -7,7 +7,9 @@
       "libnspr4",
       "fonts-liberation",
       "fonts-noto-color-emoji",
-      "libexpat1"
+      "libexpat1",
+      "fontconfig",
+      "fonts-dejavu-core"
     ]
   }
 }

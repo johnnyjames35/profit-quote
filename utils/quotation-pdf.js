@@ -10,7 +10,8 @@ async function renderPDF(html){
     if(process.env.PQ_BROWSER_PATH) options.executablePath=process.env.PQ_BROWSER_PATH;
     else if(process.platform==='linux'){
       const bundled=require('@sparticuz/chromium');
-      options={...options,args:bundled.args,executablePath:await bundled.executablePath()};
+      options={...options,args:bundled.args,executablePath:await bundled.executablePath(),
+        env:{...process.env,FONTCONFIG_PATH:'/etc/fonts',FONTCONFIG_FILE:'/etc/fonts/fonts.conf'}};
     }
     browser=await chromium.launch(options);
     const context=await browser.newContext({javaScriptEnabled:false,locale:'en-GB'});
