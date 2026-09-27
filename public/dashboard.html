@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="/product-analytics.js"></script>
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-D6L8EB3PWK"></script>
 <script>
@@ -1326,6 +1326,7 @@ const API = '';
 let token = localStorage.getItem('pq_token');
 
 function trackFunnelEvent(eventType){
+  if(eventType!=='quote_saved') window.pqAnalytics?.capture(eventType);
   if(!token) return;
   fetch(API+'/api/events/funnel',{
     method:'POST',
@@ -1417,6 +1418,7 @@ async function returnToCompletedQuote(){
     const response=await fetch(API+'/api/quotes',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(currentQuoteData)});
     const saved=await response.json();
     if(!response.ok)throw new Error(saved.error||'Could not save yet. Your quote is still here.');
+    window.pqAnalytics?.quoteResult(saved);
     currentQuoteData.id=saved.id;editingQuoteId=saved.id;
     sessionStorage.removeItem(QUOTE_RETURN_KEY);clearBuilderDraft();
     document.getElementById('btn-save-quote').textContent='💾 Saved';
@@ -1811,6 +1813,9 @@ async function doRegister(){
     }
     token=data.token;
     localStorage.setItem('pq_token',token);
+    // Capture only after the server confirms account creation; identify before success.
+    window.pqAnalytics?.account(data.user, token);
+    window.pqAnalytics?.capture('account_created');
     // Registration records account creation on the server exactly once.
     initApp();
   }catch(e){
@@ -1827,6 +1832,7 @@ async function initApp(startInBuilder=false){
     const res=await fetch(API+'/api/auth/me',{headers:{Authorization:'Bearer '+token}});
     if(!res.ok){ doLogout(); if(urlParams.get('login')!=='1')await startGuest(); return; }
     currentUser=await res.json();
+    window.pqAnalytics?.account(currentUser, token);
   }catch(e){ doLogout(); return; }
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='none';
@@ -1869,6 +1875,7 @@ async function initApp(startInBuilder=false){
 }
 
 function doLogout(){
+  window.pqAnalytics?.logout();
   localStorage.removeItem('pq_token');
   localStorage.removeItem('pq_guest_token');
   sessionStorage.removeItem(QUOTE_RETURN_KEY);
@@ -2690,6 +2697,7 @@ async function generateQuote(){
       else {nextStep(5);showToast(saved.error||'Could not generate your quote');}
       return;
     }
+    window.pqAnalytics?.quoteResult(saved);
     if(currentUser.guest){currentQuoteData.output_token=saved.output_token;currentQuoteData.reference=saved.reference;currentQuoteData.created_at=saved.created_at;}else{editingQuoteId=editingQuoteId||saved.id;currentQuoteData.id=editingQuoteId;}pendingCreationKey=null;
     Object.assign(currentUser,...['quotes_remaining','quotes_used','subscribed','guest_quotes_remaining','can_create','unlimited','billing_plan','trial_active','trial_ends_at','period_quotes_used','payg_credits'].map(key=>({[key]:saved[key]})));
     updateAllowancePill();
@@ -2818,6 +2826,7 @@ async function saveQuote(){
     }
     if(res.ok){
       const saved=await res.json();
+      window.pqAnalytics?.quoteResult(saved);
       if(!editingQuoteId) trackFunnelEvent('quote_saved');
       showToast(editingQuoteId?'Quote updated ✓':'Quote saved ✓');
       clearBuilderDraft();

@@ -38,6 +38,9 @@ for (const billingPlan of [
   const account=await reg.json();const token=account.token;
   const first=await (await request('/api/quotes',firstBody,token,cookie)).json();
   const duplicate=await (await request('/api/quotes',firstBody,token,cookie)).json();assert.equal(duplicate.id,first.id);
+  assert.equal(preview.analytics_event,'anonymous_quote_completed');
+  assert.equal(first.analytics_event,'quote_completed');
+  assert.equal(duplicate.analytics_event,undefined,'retry must not duplicate PostHog completion');
   const me=await (await request('/api/auth/me',null,token,cookie,'GET')).json();assert.equal(me.quotes_remaining,null,'registration starts unlimited trial');assert.equal(me.trial_active,true);
   assert.equal((await request('/api/quotes',quote(),guest,cookie)).status,403,'guest token cannot save');
   const second=await (await request('/api/quotes',quote(),token,cookie)).json();assert.equal(second.quotes_remaining,null);

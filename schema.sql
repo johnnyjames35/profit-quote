@@ -187,3 +187,16 @@ CREATE TABLE IF NOT EXISTS trade_bundle_access (
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_emails_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 CREATE TABLE IF NOT EXISTS trial_campaign_log(user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,stage TEXT NOT NULL,sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(user_id,stage));
+
+-- Optional PostHog consent and delivery receipts; internal events remain authoritative.
+CREATE TABLE IF NOT EXISTS posthog_consent (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  enabled BOOLEAN NOT NULL DEFAULT false,
+  enabled_since TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS posthog_paid_deliveries (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  delivered_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS events_posthog_paid_idx ON events(user_id,id)
+  WHERE source='stripe_webhook' AND event_type IN ('subscription_started','payg_purchased');

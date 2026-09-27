@@ -53,3 +53,7 @@ Configure STRIPE_WEBHOOK_SECRET in the hosting service for POST /api/billing/web
 Run node --test test/*.test.js. Integration coverage includes signup preservation, retry idempotency, concurrent final credit requests, deletion, repeat signup, signed payment notifications in different orders, cancellation, and saved-quote export/email ownership.
 
 Quotation PDFs use the shared public/quotation-document.js template and bundled Chromium on Linux. Node 22.17+ is required. For local Windows/macOS testing, set PQ_BROWSER_PATH to an installed Chromium browser. Run npm run test:pdf for the isolated guest desktop download checks. No customer PDF files are stored on the server.
+
+## Optional PostHog analytics
+
+See [PostHog setup and verification](docs/posthog.md) for EU analytics, masked replay, event ownership, consent, deployment and rollback. Disabled by default; enable with POSTHOG_ENABLED=true after review.

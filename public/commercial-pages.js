@@ -1,6 +1,7 @@
 (() => {
   const page = document.body.dataset.landingPage;
   function record(eventType) {
+    if (eventType !== 'page_viewed' && typeof window !== 'undefined') window.pqAnalytics?.capture(eventType);
     const body = JSON.stringify({ event_type: eventType, source: page });
     try {
       if (navigator.sendBeacon && navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }))) return;
