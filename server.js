@@ -52,6 +52,7 @@ app.use('/api/reporting', require('./routes/reporting'));
 app.use('/monitoring', require('./routes/monitoring'));
 app.use('/api/photos', require('./routes/photos'));
 app.use('/api/events', require('./routes/events'));
+app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/leads', require('./routes/leads'));
 // Stripe Payment Links are reconciled through authenticated account checks.
 // Legacy webhook processing is deliberately disabled.
@@ -114,6 +115,7 @@ async function init() {
     const bundleTimer=setInterval(()=>app.locals.bundleBilling.reconcile().catch(e=>console.error('Bundle check failed:',e.message)),60000);
     bundleTimer.unref();
     console.log('Database ready');
+    require('./utils/posthog').startPaidConversionDelivery(pool);
     startDailyTrafficEmailScheduler(pool);
         startTrialEmailScheduler(pool);
   } catch(e) {

@@ -114,7 +114,7 @@ router.post('/', auth, async (req, res) => {
     await client.query('INSERT INTO events(event_type,user_id,source,meta) VALUES($1,$2,$3,$4)',[completionEvent,req.user.id,'dashboard',JSON.stringify({quote_id:saved.rows[0].id})]);
     if(req.user.guest) await client.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id,quote_number:a.used})]);
     await client.query('COMMIT');
-    res.json({...saved.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining});
+    res.json({...saved.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining,analytics_event:completionEvent});
   }catch(error){
     await client.query('ROLLBACK');
     res.status(error.status||500).json({error:error.message,code:error.code});
@@ -150,7 +150,7 @@ router.post('/preview',auth,async(req,res)=>{
     quote.customer_email=quote.customer_email||quote.quote_data.customer_email||'';
     const output_token=jwt.sign({purpose:'anonymous-quote',guest_id:req.user.id,quote},process.env.JWT_SECRET,{expiresIn:Math.max(1,Math.floor((new Date(a.trial_ends_at)-Date.now())/1000))});
     await req.app.locals.pool.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id})]);
-    res.set('Cache-Control','no-store').json({output_token,reference:quote.reference,created_at:quote.created_at,...publicAccess(a)});
+    res.set('Cache-Control','no-store').json({output_token,reference:quote.reference,created_at:quote.created_at,...publicAccess(a),analytics_event:'anonymous_quote_completed'});
   }catch(e){res.status(e.status||500).json({error:e.message,code:e.code});}
 });
 // PDF output uses the same HTML/CSS as Print, with server-verified quote data only.
