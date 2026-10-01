@@ -1,6 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 test('commercial copy has no setup fee and the agreed three payment choices',()=>{
  for(const file of ['public/index.html','public/terms.html','utils/trial-message.js']){
-  const s=fs.readFileSync(file,'utf8');assert.match(s,/£5/);assert.match(s,/£19/);assert.match(s,/£29/);assert.doesNotMatch(s,/£37|£49|£99/);
+  const s=fs.readFileSync(file,'utf8');
+  assert.match(s,/£5/);assert.match(s,/£19/);assert.match(s,/£29/);
+  assert.doesNotMatch(s,/£37|£99/);
+  if(file!=='public/index.html')assert.doesNotMatch(s,/£49/);
  }
+ assert.match(fs.readFileSync('public/index.html','utf8'),/Get all three for £49\/month/);
 });
