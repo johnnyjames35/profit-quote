@@ -50,12 +50,17 @@ router.get('/users', requireAdmin, async (req, res) => {
         u.trade,
         u.created_at,
         u.paid_at,
+        u.billing_managed,
+        a.trial_started_at AS access_trial_started_at,
+        EXISTS(SELECT 1 FROM commercial_subscriptions s WHERE s.user_id=u.id AND s.status='active' AND s.period_end>NOW()) AS subscription_active,
+        EXISTS(SELECT 1 FROM commercial_payments p WHERE p.user_id=u.id AND p.credit_available=true) AS has_quote_credit,
         u.first_login_at,
         u.last_active_at,
         COUNT(q.id)::int AS quote_count
       FROM users u
+      LEFT JOIN quote_allowances a ON a.id=u.trial_id
       LEFT JOIN quotes q ON q.user_id = u.id
-      GROUP BY u.id
+      GROUP BY u.id, a.trial_started_at
       ORDER BY u.created_at DESC
     `);
     res.json({ users: result.rows });
@@ -82,7 +87,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
 
     const [
       visitors, linkedinVisitors, googleVisitors, trialClicks, accountsCreated,
-      firstQuotes, totalQuotes, paidCustomers, activePaidCustomers,
+      firstQuotes, totalQuotes, activePaidCustomers,
       guestStarts, guestQuotes, guestConversions, quoteStarts, quoteSends, quoteDownloads,
       signupViews, signupAttempts, signupFailures
     ] = await Promise.all([
@@ -93,8 +98,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE ${legacyCondition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL AND ${legacyCondition('paid_at')}`),
-      pool.query("SELECT COUNT(*)::int AS c FROM users WHERE paid_at IS NOT NULL"),
+      pool.query(`SELECT COUNT(*)::int AS c, COALESCE(SUM(CASE plan WHEN 'starter' THEN 19 WHEN 'pro' THEN 29 ELSE 0 END),0)::int AS mrr FROM (SELECT DISTINCT ON(user_id) user_id,plan FROM commercial_subscriptions WHERE status='active' AND period_end>NOW() ORDER BY user_id, CASE plan WHEN 'pro' THEN 0 ELSE 1 END, period_end DESC) active`),
       pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE ${zonedCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL AND ${zonedCondition('created_at')}`),
@@ -123,7 +127,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       accountsCreated: accountsCreated.rows[0].c,
       firstQuotes: firstQuotes.rows[0].c,
       totalQuotes: totalQuotes.rows[0].c,
-      paidCustomers: paidCustomers.rows[0].c,
+      paidCustomers: count('payg_purchased')+count('subscription_started'),
       activePaidCustomers: activePaidCount,
       guestStarts: guestStarts.rows[0].c,
       guestQuotes: guestQuotes.rows[0].c,
@@ -141,7 +145,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       signupViews: signupViews.rows[0].c,
       signupAttempts: signupAttempts.rows[0].c,
       signupFailures: signupFailures.rows[0].c,
-      mrr: activePaidCount * 37
+      mrr: activePaidCustomers.rows[0].mrr
     });
   } catch(e) {
     res.status(500).json({ error: e.message });
@@ -243,12 +247,12 @@ router.get('/reporting/daily', requireAdmin, async (req, res) => {
     const pool = req.app.locals.pool;
     const appResult = await pool.query(`
       SELECT
-        (SELECT COUNT(*)::int FROM quotes WHERE (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_completions,
+        (SELECT COUNT(*)::int FROM events WHERE event_type IN ('quote_completed','anonymous_quote_completed') AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_completions,
         (SELECT COUNT(*)::int FROM events WHERE event_type='quote_started' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_starts,
         (SELECT COUNT(*)::int FROM events WHERE event_type='quote_sent' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_sends,
         (SELECT COUNT(*)::int FROM events WHERE event_type='quote_downloaded' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_downloads,
         (SELECT COUNT(*)::int FROM users WHERE (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS accounts_created,
-        (SELECT COUNT(*)::int FROM users WHERE paid_at IS NOT NULL AND (paid_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (paid_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS purchases
+        (SELECT COUNT(*)::int FROM events WHERE event_type IN ('payg_purchased','subscription_started') AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS purchases
     `, [report.date]);
     const app = appResult.rows[0] || {};
     report.appFunnel = {
@@ -260,7 +264,7 @@ router.get('/reporting/daily', requireAdmin, async (req, res) => {
       quoteDownloads: app.quote_downloads || 0,
       accountsCreated: app.accounts_created || 0,
       purchases: app.purchases || 0,
-      note: 'Quote completions come from saved quote records; other funnel events are available from the deployment that introduced event tracking.'
+      note: 'Generated quotes include anonymous previews and saved account quotes. Actions and first plan purchases use recorded events; older activity before event tracking may be incomplete.'
     };
     res.set('Cache-Control', 'private, no-store');
     res.json(report);
