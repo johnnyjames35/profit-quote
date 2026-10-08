@@ -40,6 +40,9 @@ async function access(db, user, lock=false) {
     await db.query('INSERT INTO quote_allowances(id,used,trial_started_at) VALUES($1,$2,$3)',[owner.trial_id,user.guest?Math.max(owner.quote_count,count.rows[0].used):count.rows[0].used,user.guest?null:owner.trial_started_at]);
     await db.query(`UPDATE ${table} SET trial_id=$1 WHERE id=$2`,[owner.trial_id,user.id]);
   }
+  // Migrated guest tokens can reach /auth/me without visiting /guest/start.
+  // Start their unused seven-day clock once; never renew an existing start date.
+  if(user.guest) await startGuestTrial(db,user.id);
   const allowance=(await db.query(`SELECT used,trial_started_at FROM quote_allowances WHERE id=$1${lock?' FOR UPDATE':''}`,[owner.trial_id])).rows[0];
   let subscribed=false;
   if(!user.guest){
@@ -63,6 +66,16 @@ async function access(db, user, lock=false) {
     plan:subscribed?'legacy':subscription?.plan||(trialActive?'trial':'payg'),management_plan:management?.plan||null,subscription,period_used:periodUsed,credits};
 }
 
+async function startGuestTrial(db,guestId){
+  // One statement keeps the clock and its funnel event atomic even without a transaction.
+  await db.query(`WITH started AS (
+    UPDATE quote_allowances SET trial_started_at=NOW()
+    WHERE id=(SELECT trial_id FROM guest_sessions WHERE id=$1)
+      AND trial_started_at IS NULL RETURNING id
+  ) INSERT INTO events(event_type,source,meta)
+    SELECT 'anonymous_free_use_started','guest',jsonb_build_object('guest_id',$1::text) FROM started`,[guestId]);
+}
+
 function limitError(guest=false){return Object.assign(new Error(guest?'Your seven days of free use have ended. Choose £5 per quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'trial_expired':'subscription_required'});}
 async function consume(db,a,user){
   if(!a.can_create) throw limitError(user.guest);
@@ -79,4 +92,4 @@ function publicAccess(a){return {quotes_used:a.used,quotes_remaining:a.remaining
   can_create:a.can_create,unlimited:a.unlimited,billing_plan:a.plan,billing_management_plan:a.management_plan,trial_active:a.trial_active,trial_ends_at:a.trial_ends_at,
   period_quotes_used:a.period_used,payg_credits:a.credits,period_ends_at:a.subscription?.period_end||null,
   subscription_required:!a.can_create};}
-module.exports={LIMIT,MONTHLY_LINK,UUID,digest,ipHash,browserTrial,setTrialCookie,access,consume,limitError,publicAccess};
+module.exports={LIMIT,MONTHLY_LINK,UUID,digest,ipHash,browserTrial,setTrialCookie,access,startGuestTrial,consume,limitError,publicAccess};

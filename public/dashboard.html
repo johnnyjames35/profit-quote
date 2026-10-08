@@ -456,7 +456,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
   <button type="button" class="btn-next" onclick="startSubscription('pro')">Pro £29/month — unlimited</button>
   <p>No setup fee. Subscriptions renew monthly until cancelled. Starter includes 6 new quotes per billing month, without rollover. Saving a new quote uses one allowance; viewing and downloading it do not.</p>
   <button type="button" class="btn-action" onclick="refreshQuoteAccess(true)">I've paid — check access</button>
-  <button type="button" class="btn-action" onclick="document.getElementById('subscription-dialog').close()">Back to my draft</button>
+  <button type="button" class="btn-action" onclick="sessionStorage.removeItem(UPGRADE_PLAN_KEY);closeSubscriptionPrompt()">Back to my draft</button>
   <p id="subscription-message" role="status"></p>
 </dialog>
 
@@ -1337,6 +1337,16 @@ function trackFunnelEvent(eventType){
 }
 let guestToken = localStorage.getItem('pq_guest_token');
 let currentUser = null;
+const UPGRADE_PLAN_KEY='pq_upgrade_plan_v1';
+const UPGRADE_PLAN_LABELS={payg:'£5 for one quote',starter:'Starter £19/month — 6 quotes',pro:'Pro £29/month — unlimited quotes'};
+function pendingUpgradePlan(){
+  const plan=sessionStorage.getItem(UPGRADE_PLAN_KEY);
+  return Object.hasOwn(UPGRADE_PLAN_LABELS,plan)?plan:null;
+}
+function closeSubscriptionPrompt(){
+  const dialog=document.getElementById('subscription-dialog');
+  if(dialog?.open) dialog.close();
+}
 
 function getBrowserId(){
   let id=localStorage.getItem('pq_browser_id');
@@ -1355,7 +1365,8 @@ async function startGuest(){
   }catch(e){ showLogin(); alert(e.message||'We could not start the free quote. Please try again.'); }
 }
 
-function showGuestSignup(){
+function showGuestSignup(plan=null){
+  closeSubscriptionPrompt();
   document.getElementById('app-screen').style.display='none';
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='flex';
@@ -1365,6 +1376,15 @@ function showGuestSignup(){
   if(h) h.innerHTML='Keep your quotes.<br><span>Create your account.</span>';
   if(sub) sub.textContent='Create a free account to save your quote and access it later.';
   const btn=document.getElementById('reg-btn'); if(btn) btn.textContent='Create Account & Keep My Quotes →';
+  document.querySelector('#register-screen .login-sub').textContent='Save and retrieve your quotes — no card needed';
+  document.getElementById('quote-signup-prompt').style.display='none';
+  if(plan && Object.hasOwn(UPGRADE_PLAN_LABELS,plan)){
+    const explanation='You chose '+UPGRADE_PLAN_LABELS[plan]+'. Create your free account, then continue to payment. Your draft stays here. No payment is taken when you register.';
+    if(h) h.textContent='Create your account to continue.';
+    if(sub) sub.textContent=explanation;
+    document.querySelector('#register-screen .login-sub').textContent=explanation;
+    if(btn) btn.textContent='Create Account & Continue →';
+  }
 }
 const QUOTE_RETURN_KEY = 'pq_quote_return_v1';
 let conversionSaving = false;
@@ -1388,6 +1408,8 @@ async function requireQuoteAccount(){
 }
 
 function backToGuestQuote(){
+  sessionStorage.removeItem(UPGRADE_PLAN_KEY);
+  closeSubscriptionPrompt();
   document.getElementById('register-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   switchTab('builder');
@@ -1700,6 +1722,7 @@ if(resetTokenFromUrl){ showReset(resetTokenFromUrl); }
 else if(token){ initApp(urlParams.get('login')!=='1'); } else if(urlParams.get('login')==='1'){ showLogin(); } else { startGuest(); }
 
 function showLogin(){
+  closeSubscriptionPrompt();
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('register-screen').style.display='none';
   document.getElementById('forgot-screen').style.display='none';
@@ -1707,6 +1730,7 @@ function showLogin(){
   document.getElementById('app-screen').style.display='none';
 }
 function showRegister(){
+  closeSubscriptionPrompt();
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='flex';
   document.getElementById('forgot-screen').style.display='none';
@@ -1860,6 +1884,7 @@ async function initApp(startInBuilder=false){
     if(new URLSearchParams(window.location.search).get('subscribe')==='1'){switchTab('setup');showSubscriptionPrompt();}
     refreshQuoteAccess();
     if(new URLSearchParams(window.location.search).get('billing')==='returned'){switchTab('builder');showSubscriptionPrompt();refreshQuoteAccess(true);}
+    if(pendingUpgradePlan()) showSubscriptionPrompt();
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
@@ -1921,16 +1946,19 @@ function updateAllowancePill(){
 }
 function showSubscriptionPrompt(){
   saveBuilderDraft();
-  document.getElementById('plan-explanation').textContent=currentUser?.billing_plan==='starter'?'Upgrade to Pro for £10 more per month and keep quoting without limits. Stripe shows any adjustment before you confirm. Your saved quotes stay available.':'Your saved quotes stay available and your current draft is kept here. Choose an option to continue.';
+  const selected=pendingUpgradePlan();
+  document.getElementById('plan-explanation').textContent=selected?'You chose '+UPGRADE_PLAN_LABELS[selected]+'. Select that option below to continue to payment. Your draft is kept here.':currentUser?.billing_plan==='starter'?'Upgrade to Pro for £10 more per month and keep quoting without limits. Stripe shows any adjustment before you confirm. Your saved quotes stay available.':'Your saved quotes stay available and your current draft is kept here. Choose an option to continue.';
   document.getElementById('subscription-dialog').showModal();
 }
 async function startSubscription(plan='pro'){
-  if(currentUser?.guest){showGuestSignup();return;}
+  if(!Object.hasOwn(UPGRADE_PLAN_LABELS,plan)) return;
+  if(currentUser?.guest){sessionStorage.setItem(UPGRADE_PLAN_KEY,plan);showGuestSignup(plan);return;}
   const checkout=window.open('','_blank');
   try{
     const response=await fetch(API+'/api/billing/checkout',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({plan})});
     const data=await response.json();
     if(!response.ok) throw new Error(data.error||'Could not open checkout');
+    sessionStorage.removeItem(UPGRADE_PLAN_KEY);
     if(data.subscribed){checkout?.close();await refreshQuoteAccess(true);return;}
     trackFunnelEvent('checkout_started');
     if(checkout) checkout.location.href=data.url; else window.location.href=data.url;
@@ -1947,7 +1975,7 @@ async function refreshQuoteAccess(showMessage=false){
     const response=await fetch(API+'/api/billing/status',{headers:{Authorization:'Bearer '+token}});
     if(!response.ok) throw new Error('Could not check your subscription. Please try again.');
     Object.assign(currentUser,await response.json());updateAllowancePill();
-    if(currentUser.can_create){document.getElementById('subscription-dialog').close();if(showMessage)showToast('Access confirmed — you can create your quote now.');}
+    if(currentUser.can_create){if(!pendingUpgradePlan())closeSubscriptionPrompt();if(showMessage)showToast('Access confirmed — you can create your quote now.');}
     else if(showMessage) document.getElementById('subscription-message').textContent='Payment has not been confirmed yet. If you have just paid, check again shortly.';
   }catch(error){if(showMessage)document.getElementById('subscription-message').textContent=error.message;}
 }
