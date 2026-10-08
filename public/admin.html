@@ -467,7 +467,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val red" id="f-signup-failures">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Quotes Created</div>
+          <div class="stat-label">Saved Quotes</div>
           <div class="stat-val cyan" id="f-quotes">—</div>
         </div>
         <div class="stat-card">
@@ -483,11 +483,11 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-quote-downloads">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">New Paying Customers</div>
+          <div class="stat-label">First Plan Purchases</div>
           <div class="stat-val green" id="f-paid">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Active Paying Customers</div>
+          <div class="stat-label">Active Subscriptions</div>
           <div class="stat-val green" id="f-active-paid">—</div>
         </div>
         <div class="stat-card">
@@ -498,7 +498,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
       <div class="funnel-card">
         <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
-        <p class="stat-sub">Account counts exclude deleted accounts. Signup attempts and failures are recorded browser events, can include test activity, and remain after an account is deleted. A missing failure event does not prove a signup succeeded.</p>
+        <p class="stat-sub">Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
         <div id="funnel-bars"></div>
       </div>
 
@@ -682,7 +682,7 @@ function renderReporting(data, live = {}) {
   const refreshed = data.generatedAt ? new Date(data.generatedAt).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' }) : 'unknown';
   document.getElementById('report-refreshed').textContent = 'Last successfully refreshed: ' + refreshed + ' · admin traffic excluded';
   const app = data.appFunnel || {};
-  document.getElementById('app-control-note').textContent = 'ProfitQuote app records · ' + (app.date || data.date || '—') + ': ' + number(app.quoteCompletions) + ' quote completions, ' + number(app.quoteStarts) + ' starts, ' + number(app.quoteSends) + ' sends, ' + number(app.quoteDownloads) + ' PDF downloads, ' + number(app.accountsCreated) + ' accounts, ' + number(app.purchases) + ' purchases. Completion history comes from saved quotes; the other actions are tracked from this release onward.';
+  document.getElementById('app-control-note').textContent = 'ProfitQuote app records · ' + (app.date || data.date || '—') + ': ' + number(app.quoteCompletions) + ' generated quotes, ' + number(app.quoteStarts) + ' starts, ' + number(app.quoteSends) + ' sends, ' + number(app.quoteDownloads) + ' PDF downloads, ' + number(app.accountsCreated) + ' accounts, ' + number(app.purchases) + ' first plan purchases. ' + (app.note || 'Older activity before event tracking may be incomplete.');
   document.getElementById('r-users').textContent = number(ga4.users);
   document.getElementById('r-sessions').textContent = number(ga4.sessions);
   document.getElementById('r-clicks').textContent = number(search.clicks);
@@ -693,7 +693,7 @@ function renderReporting(data, live = {}) {
   document.getElementById('live-clicks').textContent = live.error ? '—' : number(live.clicks);
   document.getElementById('live-impressions').textContent = live.error ? '—' : number(live.impressions);
   document.getElementById('live-ctr').textContent = live.error ? '—' : percent(live.ctr);
-  document.getElementById('live-position').textContent = live.error ? '—' : decimal(live.averagePosition);
+  document.getElementById('live-position').textContent = live.error || !Number(live.impressions) ? '—' : decimal(live.averagePosition);
   const liveThrough = live.window?.through ? new Date(live.window.through).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' }) : 'not yet available';
   document.getElementById('live-search-note').textContent = live.error || ('Latest 24 complete hourly buckets through ' + liveThrough + '. Google marks newer hours incomplete; page rows use page aggregation and may not add up to the property total.');
   renderReportList('live-pages', live.topPages, 'page', item => number(item.impressions) + ' impressions · ' + number(item.clicks) + ' clicks');
@@ -793,9 +793,11 @@ async function loadUsers() {
     });
     if (res.status === 401) { doLogout(); return; }
     const data = await res.json();
+    if (!res.ok || !Array.isArray(data.users)) throw new Error('Users unavailable');
     renderUsers(data.users || []);
     renderStats(data.users || []);
   } catch(e) {
+    ['stat-total','stat-trial','stat-paying','stat-week','user-count'].forEach(id => document.getElementById(id).textContent = '—');
     document.getElementById('users-tbody').innerHTML =
       '<tr class="empty-row"><td colspan="10">Could not load users — check connection.</td></tr>';
   }
@@ -805,12 +807,10 @@ function renderStats(users) {
   const now = new Date();
   const weekAgo = new Date(now - 7 * 86400000);
 
-  const paying = users.filter(u => !!u.paid_at).length;
+  const paying = users.filter(u => u.subscription_active).length;
 
   const trial = users.filter(u => {
-    const created = new Date(u.created_at);
-    const daysSince = (now - created) / 86400000;
-    return !u.paid_at && daysSince <= 7;
+    return !u.subscription_active && !(u.paid_at && !u.billing_managed) && !!u.access_trial_started_at && now < new Date(new Date(u.access_trial_started_at).getTime() + 7 * 86400000);
   }).length;
 
   const thisWeek = users.filter(u => new Date(u.created_at) >= weekAgo).length;
@@ -830,12 +830,16 @@ function renderUsers(users) {
   }
   tbody.innerHTML = users.map((u, i) => {
     const created = new Date(u.created_at);
-    const daysSince = (new Date() - created) / 86400000;
+    const trialActive = !!u.access_trial_started_at && new Date() < new Date(new Date(u.access_trial_started_at).getTime() + 7 * 86400000);
     let statusBadge;
-    if (u.paid_at) {
+    if (u.subscription_active) {
       statusBadge = '<span class="badge badge-active">Paying</span>';
-    } else if (daysSince <= 7) {
+    } else if (u.paid_at && !u.billing_managed) {
+      statusBadge = '<span class="badge badge-active">Manual access</span>';
+    } else if (trialActive) {
       statusBadge = '<span class="badge badge-trial">Trial</span>';
+    } else if (u.has_quote_credit) {
+      statusBadge = '<span class="badge badge-active">Quote credit</span>';
     } else {
       statusBadge = '<span class="badge badge-expired">Expired</span>';
     }
@@ -866,7 +870,7 @@ function renderUsers(users) {
 }
 
 async function markPaid(id, name) {
-  const confirmed = confirm('Mark ' + name + ' as paid? This starts their subscription tracking.');
+  const confirmed = confirm('Grant ' + name + ' manual paid access? This does not record a payment or subscription.');
   if (!confirmed) return;
   try {
     const res = await fetch(API + '/api/admin/users/' + id + '/mark-paid', {
@@ -989,7 +993,7 @@ function renderFunnelBars(data) {
     { label: 'Anonymous Completions', value: data.anonymousQuoteCompletions || 0 },
     { label: 'Anonymous Sends', value: data.anonymousQuoteSends || 0 },
     { label: 'Quote Starts (all)', value: data.quoteStarts },
-    { label: 'Quotes Completed', value: data.quoteCompletions },
+    { label: 'Generated Quotes', value: data.quoteCompletions },
     { label: 'Quotes Sent', value: data.quoteSends },
     { label: 'PDF Downloads', value: data.quoteDownloads },
     { label: 'Save Account Prompts', value: data.savePrompts || 0 },

@@ -70,6 +70,7 @@ test('events persist in PostgreSQL and admin funnel retrieves them with auth and
     if (url.includes('analyticsdata')) return Response.json({ rows: [{ metricValues: [{ value: '17' }, { value: '23' }], dimensionValues: [{ value: '/' }] }] });
     return Response.json({ rows: [{ keys: ['query', '/'], clicks: 4, impressions: 30, ctr: 4 / 30, position: 12 }] });
   };
+  await db.exec("INSERT INTO events(event_type,created_at) VALUES('anonymous_quote_completed',NOW()-INTERVAL '1 day'),('quote_completed',NOW()-INTERVAL '1 day'),('payg_purchased',NOW()-INTERVAL '1 day')");
   const report = await request('/api/admin/reporting/daily', { headers: { Authorization: `Bearer ${admin}` } });
   assert.equal(report.status, 200);
   assert.match(report.headers.get('content-type'), /application\/json/);
@@ -77,5 +78,7 @@ test('events persist in PostgreSQL and admin funnel retrieves them with auth and
   assert.equal(body.ga4.users, 17);
   assert.equal(body.searchConsole.clicks, 4);
   assert.equal(body.appFunnel.quoteStarts, 0); // Yesterday, while test events are today.
+  assert.equal(body.appFunnel.quoteCompletions, 2);
+  assert.equal(body.appFunnel.purchases, 1);
   assert.ok(body.comparisons.sevenDay);
 });
