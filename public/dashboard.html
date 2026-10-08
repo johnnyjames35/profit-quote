@@ -2065,7 +2065,7 @@ function switchTab(tab){
   if(tab==='builder' && editingQuoteId===null){
     document.getElementById('builder-title').textContent='New Quote';
     document.getElementById('edit-badge').style.display='none';
-    document.getElementById('btn-save-quote').textContent='💾 Save';
+    document.getElementById('btn-save-quote').textContent=currentUser?.guest?'💾 Save quote to free account':'💾 Save';
     const restored=restoreBuilderDraft();
     if(!restored&&!document.getElementById('q-job-type').value) applyTradeDefault();
     configureJobScope();
@@ -2099,6 +2099,10 @@ function filterQuotes(){
 
 function renderQuotes(){
   const el=document.getElementById('quotes-list');
+  if(currentUser?.guest){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Keep your quotes in one place</div><p>Create a free account to save your quotes and find them here later. No card needed. Your free-use period keeps its original end date.</p><button class="btn-action" onclick="showGuestSignup()">Create free account →</button></div>';
+    return;
+  }
   if(!filteredQuotes.length){
     el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No quotes found</div><p>Tap New to build your first profit-protected quote.</p></div>';
     return;
@@ -2575,7 +2579,7 @@ function resetBuilder(){
   document.getElementById('ai-warning-box').style.display='none';
   document.getElementById('builder-title').textContent='New Quote';
   document.getElementById('edit-badge').style.display='none';
-  document.getElementById('btn-save-quote').textContent='💾 Save';
+  document.getElementById('btn-save-quote').textContent=currentUser?.guest?'💾 Save quote to free account':'💾 Save';
   applyTradeDefault();
   nextStep(1);
 }
@@ -2730,7 +2734,7 @@ async function generateQuote(){
     Object.assign(currentUser,...['quotes_remaining','quotes_used','subscribed','guest_quotes_remaining','can_create','unlimited','billing_plan','trial_active','trial_ends_at','period_quotes_used','payg_credits'].map(key=>({[key]:saved[key]})));
     updateAllowancePill();
     if(currentUser.guest) document.getElementById('trial-pill').textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
-    document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save':'💾 Saved';if(!currentUser.guest)clearBuilderDraft();loadQuotes();
+    document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save quote to free account':'💾 Saved';if(!currentUser.guest)clearBuilderDraft();loadQuotes();
   }catch(error){nextStep(5);showToast('Connection error — try generating again.');return;}
 
   renderCompletedQuote();
@@ -2753,7 +2757,7 @@ function restoreCostChecks(saved){
 function updateCostChecks(){
   if(currentQuoteData){
     currentQuoteData.quote_data.costChecks=readCostChecks();
-    document.getElementById('btn-save-quote').textContent='💾 Save checks';
+    document.getElementById('btn-save-quote').textContent=currentUser?.guest?'💾 Save quote to free account':'💾 Save checks';
   }
   renderCostReview();
   saveBuilderDraft();
