@@ -43,7 +43,7 @@ test('guest signup transfers exact quote atomically, rejects reuse, and unlocks 
   assert.equal((await request('/api/quotes',quote,guest)).status,403,'new anonymous saves require account');
   // Preserve migration of quotes saved under the previous guest policy.
   const saved=(await db.query('INSERT INTO quotes(guest_id,customer_name,job_description,total,quote_data) VALUES($1,$2,$3,$4,$5) RETURNING *',[guestId,quote.customer_name,quote.job_description,quote.total,JSON.stringify(quote.quote_data)])).rows[0];
-  assert.equal((await request('/api/quotes/send-email',quote,guest)).status,402);
+  assert.equal((await request('/api/quotes/send-email',quote,guest)).status,400,'legacy guest receives a trial but still needs signed output to send');
   assert.equal(sent.length,0);
   const registration={name:'Test Electrician',email:'electrician@example.invalid',password:'test-password',trade:'Electrician',guest_token:guest};
   failTransfer=true;

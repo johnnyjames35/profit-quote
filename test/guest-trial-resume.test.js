@@ -1,0 +1,33 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
+const express=require('express'),jwt=require('jsonwebtoken'),{PGlite}=require('@electric-sql/pglite');
+
+test('cached migrated guest starts its unused trial once through auth/me; expiry stays enforced',async(t)=>{
+  process.env.JWT_SECRET='guest-resume-test-only';
+  const db=new PGlite();await db.exec(fs.readFileSync('schema.sql','utf8'));
+  const pool={query:db.query.bind(db),connect:async()=>({query:db.query.bind(db),release(){}})};
+  const app=express();app.use(express.json());app.locals.pool=pool;
+  for(const route of ['guest','auth','quotes'])app.use('/api/'+route,require('../routes/'+route));
+  const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+  t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});
+  const id=crypto.randomUUID(),trial=crypto.randomUUID();
+  await db.query('INSERT INTO quote_allowances(id,used) VALUES($1,3)',[trial]);
+  await db.query('INSERT INTO guest_sessions(id,browser_hash,ip_hash,trial_id,quote_count) VALUES($1,$2,$3,$4,3)',[id,'migrated-browser','test-ip',trial]);
+  const token=jwt.sign({id,guest:true},process.env.JWT_SECRET,{expiresIn:'1h'});
+  const call=(route,body)=>fetch('http://127.0.0.1:'+server.address().port+'/api/'+route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+  const first=await(await call('auth/me')).json();
+  assert.equal(first.trial_active,true);assert.equal(first.can_create,true);assert.equal(first.quotes_remaining,null);
+  const quote={customer_name:'Test Customer',total:8500,quote_data:{total:8500}};
+  assert.equal((await call('quotes/preview',quote)).status,200,'cached token can generate without restarting its guest session');
+  assert.equal((await(await call('auth/me')).json()).trial_ends_at,first.trial_ends_at);
+  await db.exec(fs.readFileSync('schema.sql','utf8'));
+  assert.equal((await(await call('auth/me')).json()).trial_ends_at,first.trial_ends_at,'redeploy does not renew a started trial');
+  assert.equal((await db.query("SELECT COUNT(*)::int AS n FROM events WHERE event_type='anonymous_free_use_started'")).rows[0].n,1);
+  await db.query("UPDATE quote_allowances SET trial_started_at=NOW()-INTERVAL '8 days' WHERE id=$1",[trial]);
+  assert.equal((await(await call('auth/me')).json()).can_create,false);
+  assert.equal((await call('quotes/preview',quote)).status,402);
+  assert.equal((await db.query("SELECT COUNT(*)::int AS n FROM events WHERE event_type='anonymous_free_use_started'")).rows[0].n,1,'expired trials cannot restart');
+  const legacy=crypto.randomUUID();
+  await db.query('INSERT INTO guest_sessions(id,browser_hash,ip_hash) VALUES($1,$2,$3)',[legacy,'unmigrated-browser','test-ip']);
+  const {access}=require('../utils/quote-access');
+  assert.equal((await access(db,{id:legacy,guest:true})).can_create,true,'older unlinked sessions get the same one-time initialization');
+});

@@ -3,7 +3,9 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../public/dashboard.html'),'utf8');
-const functions=html.slice(html.indexOf('function showGuestSignup(){'),html.indexOf('let quotes = [];'));
+const upgradeHelpers=html.slice(html.indexOf('const UPGRADE_PLAN_KEY='),html.indexOf('function getBrowserId(){'));
+const functions=html.slice(html.indexOf('function showGuestSignup('),html.indexOf('let quotes = [];'));
+const upgradeActions=html.slice(html.indexOf('function showSubscriptionPrompt(){'),html.indexOf('async function refreshQuoteAccess('));
 const email=html.slice(html.indexOf('async function emailQuote(){'),html.indexOf('async function printQuote(){'));
 const save=html.slice(html.indexOf('async function saveQuote(){'),html.indexOf('async function emailQuote(){'));
 const print=html.slice(html.indexOf('async function printQuote(){'),html.indexOf('// VARIATIONS'));
@@ -11,17 +13,41 @@ const render=html.slice(html.indexOf('function renderCompletedQuote(){'),html.in
 const quote={output_token:'signed-test-output',id:42,customer_name:'Test customer',customer_email:'customer@example.invalid',job_description:'Complete rewire',days:6.5,total:8698,quote_data:{customer_email:'customer@example.invalid',labour:1300,mats:3600,contingencyPrice:791,total:8698,profit:2610,profitPct:30,protectedCost:6089,subtotalExVat:8698,vatAmount:0,vatRate:0,builderDetails:'Saved scope',roomSummary:'Whole house',skipCost:0,skipPrice:0,skipQuantity:1,scaffoldCost:0,scaffoldPrice:0,contingency:10}};
 function harness(guest=true){
   const elements={},storage=new Map(),requests=[],opened=[],events=[];
-  const element=id=>elements[id]??={style:{},classList:{add(){},remove(){}},textContent:'',value:'',disabled:false};
+  const element=id=>elements[id]??={style:{},classList:{add(){},remove(){}},textContent:'',value:'',disabled:false,open:false,close(){this.open=false;},showModal(){this.open=true;}};
   const context=vm.createContext({QuotationDocument:require('../public/quotation-document'),API:'',token:'test',currentUser:{guest,name:'Electrician'},currentQuoteData:structuredClone(quote),editingQuoteId:42,quotes:[structuredClone(quote)],currentBuilderStep:6,selectedRisk:'low',needsSkip:false,needsScaffold:false,
     document:{getElementById:element,querySelector:element},sessionStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null,removeItem:k=>storage.delete(k)},
     fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:url.endsWith('/export')?structuredClone(quote):{ok:true,id:42});},
-    window:{open:(...args)=>{opened.push(args);return {document:{write(value){context.printHtml=value;},close(){}},focus(){},print(){}};}},
+    window:{open:(...args)=>{opened.push(args);return {location:{},close(){},document:{write(value){context.printHtml=value;},close(){}},focus(){},print(){}};}},
     saveBuilderDraft(){},clearBuilderDraft(){},loadQuotes:async()=>{},trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
   const nudge=html.slice(html.indexOf('function labourNudge('),html.indexOf('function updateProfitNudges('));
   const checklist=html.slice(html.indexOf('const COST_CHECK_KEYS='),html.indexOf('function renderCompletedQuote(){'));
-  vm.runInContext(functions+save+email+print+nudge+checklist+render,context);
+  vm.runInContext(upgradeHelpers+functions+upgradeActions+save+email+print+nudge+checklist+render,context);
   return {context,elements,storage,requests,opened,events};
 }
+
+for(const [plan,label] of Object.entries({payg:'£5',starter:'£19/month',pro:'£29/month'})){
+ test('guest '+plan+' upgrade closes the modal, keeps its plan and continues to the chosen checkout',async()=>{
+  const h=harness();h.context.document.getElementById('subscription-dialog').showModal();
+  await vm.runInContext('startSubscription('+JSON.stringify(plan)+')',h.context);
+  assert.equal(h.elements['subscription-dialog'].open,false,'signup form must be usable');
+  assert.equal(h.elements['register-screen'].style.display,'flex');
+  assert.match(h.elements['#register-screen .login-sub'].textContent,new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.equal(h.storage.get('pq_upgrade_plan_v1'),plan);assert.equal(h.requests.length,0,'guest cannot enter checkout before creating an account');
+  h.context.currentUser={guest:false};vm.runInContext('showSubscriptionPrompt()',h.context);
+  assert.equal(h.elements['subscription-dialog'].open,true);
+  assert.ok(h.elements['plan-explanation'].textContent.includes(label),'selected price survives registration');
+  h.context.fetch=async(url,options)=>{h.requests.push({url,options});return Response.json({url:'https://checkout.example.invalid/test'});};
+  await vm.runInContext('startSubscription('+JSON.stringify(plan)+')',h.context);
+  assert.equal(JSON.parse(h.requests[0].options.body).plan,plan);
+  assert.equal(h.storage.has('pq_upgrade_plan_v1'),false);
+ });
+}
+
+test('returning to a guest draft cancels the pending upgrade choice',async()=>{
+ const h=harness();await vm.runInContext("startSubscription('starter')",h.context);
+ vm.runInContext('backToGuestQuote()',h.context);
+ assert.equal(h.storage.has('pq_upgrade_plan_v1'),false);assert.equal(h.elements['app-screen'].style.display,'flex');
+});
 test('guest Save keeps exact quote locally and prompts for an account without storing it',async()=>{
  const h=harness();await vm.runInContext('saveQuote()',h.context);
  assert.equal(h.requests.length,0);
