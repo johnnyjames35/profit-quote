@@ -23,7 +23,7 @@ const https=require('node:https'),{EventEmitter}=require('node:events');
    await context.route('**/*',async route=>{
      const url=new URL(route.request().url());
      if(url.origin===origin){const response=await route.fetch({url:base+url.pathname+url.search});return route.fulfill({response});}
-     if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'application/javascript',body:`const receive=args=>{if(args[0]==='get') args[3](args[2]==='client_id'?'123.456':1792000000);};(window.dataLayer||[]).forEach(receive);window.gtag=(...args)=>receive(args);`});
+     if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'application/javascript',body:`const receive=args=>{if(args[0]==='get') setTimeout(()=>args[3](args[2]==='client_id'?'123.456':1792000000),100);};(window.dataLayer||[]).forEach(receive);window.gtag=(...args)=>receive(args);`});
      return route.abort();
    });
    const page=await context.newPage();
@@ -50,7 +50,8 @@ const https=require('node:https'),{EventEmitter}=require('node:events');
    await page.locator('#nav-builder').click();await page.locator('#q-job-type').selectOption('bathroom');
    await page.locator('#q-customer').fill('Test Customer');await page.locator('#step-1 .btn-next').click();await page.locator('#step-2').waitFor({state:'visible'});
    // Wait for asynchronous telemetry only; no production requests occur.
-   await new Promise(r=>setTimeout(r,100));
+   const deadline=Date.now()+3000;
+   while(!events.some(x=>x.events[0].name==='quote_started')&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50));
    for(const event of ['trial_click','account_created','first_login','quote_started']){
      const hit=events.find(x=>x.events[0].name===event);assert.ok(hit,event+' reached mocked GA');
      assert.equal(hit.client_id,'123.456');assert.equal(hit.events[0].params.session_id,1792000000);assert.match(hit.events[0].params.page_location,/^https:\/\/profitquote.co.uk\//);

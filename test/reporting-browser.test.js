@@ -41,3 +41,21 @@ test('rejected beacon falls back to a keepalive event request with browser attri
   assert.equal(JSON.parse(sent.options.body).event_type, 'trial_click');
   assert.equal(JSON.parse(sent.options.body).analytics.client_id, '123.456');
 });
+
+for (const landing of ['homepage','commercial']) test(landing+' queues trial attribution before navigation and still navigates on tracking failure',async()=>{
+  const source=landing==='homepage'
+    ? '(function () {'+fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8').split('<script>\n(function () {')[1].split('</script>')[0]
+    : fs.readFileSync(path.join(__dirname,'../public/commercial-pages.js'),'utf8');
+  for(const failing of [false,true]){
+    let click,resolveIdentity;const actions=[];
+    const context={window:{pqGAContext:()=>new Promise(resolve=>resolveIdentity=resolve)},location:{search:'',assign:url=>actions.push('navigate')},URLSearchParams,Blob,
+      document:{body:{dataset:{landingPage:'builders'}},referrer:'',querySelectorAll:()=>[{href:'https://profitquote.co.uk/dashboard?try=1',addEventListener:(name,fn)=>click=fn}]},
+      sessionStorage:{getItem:()=>true},navigator:{sendBeacon:()=>{actions.push('queued');if(failing)throw Error('blocked');return true;}},fetch:()=>Promise.resolve()};
+    vm.runInNewContext(source,context);
+    const pending=click({button:0,preventDefault:()=>actions.push('prevented')});
+    assert.deepEqual(actions,['prevented']);
+    resolveIdentity({client_id:'123.456',session_id:'1792000000'});
+    await pending.catch(()=>{});
+    assert.deepEqual(actions,['prevented','queued','navigate']);
+  }
+});
