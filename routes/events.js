@@ -1,34 +1,11 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 
-const GA_MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID;
-const GA_API_SECRET = process.env.GA_API_SECRET;
+const {sendToGA, requestContext}=require('../utils/ga');
 const PUBLIC_EVENT_TYPES = new Set(['page_viewed', 'trial_click']);
 // Account creation is server-owned; older clients must not duplicate it.
 const AUTHENTICATED_FUNNEL_EVENTS = new Set(['quote_started', 'quote_saved', 'save_prompt_shown', 'quote_downloaded', 'checkout_started', 'signup_screen_viewed', 'signup_attempted', 'signup_failed']);
 
-// Sends the same event to Google Analytics 4 (does not affect the database save above)
-async function sendToGA(event_type, user_id, source) {
-  if (!GA_MEASUREMENT_ID || !GA_API_SECRET) return; // safety: does nothing if env vars aren't set yet
-  try {
-    const clientId = user_id ? `user-${user_id}` : `anon-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    await fetch(
-      `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          client_id: clientId,
-          events: [{
-            name: event_type,
-            params: { source: source || 'unknown' }
-          }]
-        })
-      }
-    );
-  } catch (e) {
-    console.error('GA event send error:', e.message);
-  }
-}
 
 router.post('/', async (req, res) => {
   const { event_type, user_id, source } = req.body;
@@ -41,7 +18,7 @@ router.post('/', async (req, res) => {
       [event_type, user_id || null, source || null]
     );
     res.json({ success: true });
-    sendToGA(event_type, user_id, source); // fire-and-forget, never blocks or breaks the existing response
+    sendToGA(event_type, null, source, requestContext(req)); // fire-and-forget, never blocks or breaks the existing response
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -65,7 +42,7 @@ router.post('/funnel', auth, async (req, res) => {
     );
     res.set('Cache-Control', 'private, no-store');
     res.json({ success: true });
-    sendToGA(event_type, userId, source);
+    sendToGA(event_type, userId, source, requestContext(req));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -30,13 +30,14 @@ test('non-JSON response reports HTTP status instead of a parser crash', async ()
   await assert.rejects(vm.runInContext('readAdminJson(response)', ctx), /non-JSON response \(HTTP 524\)/);
 });
 
-test('rejected beacon falls back to a keepalive event request', () => {
+test('rejected beacon falls back to a keepalive event request with browser attribution', async () => {
   const home = fs.readFileSync(path.join(__dirname, '..', 'public/index.html'), 'utf8');
-  const source = home.slice(home.indexOf('  function record(eventType)'), home.indexOf("  if (!sessionStorage.getItem('pq_homepage_visit_recorded')"));
+  const source = home.slice(home.indexOf('  async function record(eventType)'), home.indexOf("  if (!sessionStorage.getItem('pq_homepage_visit_recorded')"));
   let sent;
-  vm.runInNewContext(source + "record('trial_click');", { source: () => 'google', navigator: { sendBeacon: () => false }, Blob,
+  await vm.runInNewContext(source + "record('trial_click');", { window:{pqGAContext:async()=>({client_id:'123.456',session_id:'1792000000',page_location:'https://profitquote.co.uk/'})}, source: () => 'google', navigator: { sendBeacon: () => false }, Blob,
     fetch: (url, options) => { sent = { url, options }; return Promise.resolve(); } });
   assert.equal(sent.url, '/api/events');
   assert.equal(sent.options.keepalive, true);
   assert.equal(JSON.parse(sent.options.body).event_type, 'trial_click');
+  assert.equal(JSON.parse(sent.options.body).analytics.client_id, '123.456');
 });

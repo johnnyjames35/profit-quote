@@ -3,7 +3,7 @@ const {renderPDF}=require('../utils/quotation-pdf');
 const quotationDocument=require('../public/quotation-document');
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const { sendToGA } = require('../utils/ga');
+const { sendToGA, requestContext } = require('../utils/ga');
 const https = require('https');
 const jwt = require('jsonwebtoken');
 const {access,consume,limitError,publicAccess,UUID}=require('../utils/quote-access');
@@ -14,7 +14,7 @@ function validEmail(value) {
   return typeof value === 'string' && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, description, quoteData }) {
+function sendCustomerQuoteEmail({ to, businessName, customerName, phone, replyEmail, total, description, quoteData }) {
   return new Promise((resolve, reject) => {
     if (!process.env.BREVO_API_KEY) return reject(new Error('Email delivery is not configured'));
     const money = (value) => `£${Math.round(Number(value) || 0).toLocaleString('en-GB')}`;
@@ -35,12 +35,12 @@ function sendCustomerQuoteEmail({ to, businessName, customerName, phone, total, 
         : []),
       'This quotation includes the agreed scope of work and all identified materials and labour requirements.', '',
       'To accept this quotation, reply to this email or contact us using the details below.', '',
-      'Kind regards,', businessName, ...(phone ? [String(phone).slice(0, 50)] : []), CUSTOMER_EMAIL_FROM, '',
+      'Kind regards,', businessName, ...(phone ? [String(phone).slice(0, 50)] : []), replyEmail, '',
       'Generated with ProfitQuote — Profit Protection Software for Tradespeople', 'https://profitquote.co.uk'
     ].join('\n');
     const payload = JSON.stringify({
       sender: { name: `${businessName} via ProfitQuote`.slice(0, 70), email: CUSTOMER_EMAIL_FROM },
-      replyTo: { name: 'ProfitQuote', email: CUSTOMER_EMAIL_FROM },
+      replyTo: { name: businessName.slice(0, 70), email: replyEmail },
       to: [{ email: to, name: String(customerName || 'Customer').slice(0, 70) }],
       subject: `Your quotation from ${businessName}`.slice(0, 200),
       textContent
@@ -114,6 +114,7 @@ router.post('/', auth, async (req, res) => {
     await client.query('INSERT INTO events(event_type,user_id,source,meta) VALUES($1,$2,$3,$4)',[completionEvent,req.user.id,'dashboard',JSON.stringify({quote_id:saved.rows[0].id})]);
     if(req.user.guest) await client.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id,quote_number:a.used})]);
     await client.query('COMMIT');
+    void sendToGA(completionEvent,req.user.id,'dashboard',requestContext(req));
     res.json({...saved.rows[0],...publicAccess(a),guest_quotes_remaining:a.remaining,analytics_event:completionEvent});
   }catch(error){
     await client.query('ROLLBACK');
@@ -150,6 +151,7 @@ router.post('/preview',auth,async(req,res)=>{
     quote.customer_email=quote.customer_email||quote.quote_data.customer_email||'';
     const output_token=jwt.sign({purpose:'anonymous-quote',guest_id:req.user.id,quote},process.env.JWT_SECRET,{expiresIn:Math.max(1,Math.floor((new Date(a.trial_ends_at)-Date.now())/1000))});
     await req.app.locals.pool.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id})]);
+    void sendToGA('anonymous_quote_completed',null,'guest',requestContext(req));
     res.set('Cache-Control','no-store').json({output_token,reference:quote.reference,created_at:quote.created_at,...publicAccess(a),analytics_event:'anonymous_quote_completed'});
   }catch(e){res.status(e.status||500).json({error:e.message,code:e.code});}
 });
@@ -202,16 +204,18 @@ router.post('/send-email', auth, async (req, res) => {
   if (!Number.isFinite(Number(total)) || Number(total) < 0 || Number(total) > 10000000) return res.status(400).json({ error: 'The quote total is invalid.' });
     const recent = await pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND (user_id=$1 OR ($2::text IS NOT NULL AND meta->>'guest_id'=$2)) AND created_at >= NOW() - INTERVAL '1 hour'", [req.user.guest?null:req.user.id,req.user.guest?req.user.id:null]);
     if (recent.rows[0].c >= 10) return res.status(429).json({ error: 'Hourly email limit reached. Please try again later.' });
-    const userResult = req.user.guest?{rows:[{name:'Your tradesperson',business_name:saved.rows[0].quote_data?.businessName,phone:saved.rows[0].quote_data?.businessPhone}]}:await pool.query('SELECT name,business_name,phone FROM users WHERE id=$1', [req.user.id]);
+    const userResult = req.user.guest?{rows:[{name:'Your tradesperson',business_name:saved.rows[0].quote_data?.businessName,phone:saved.rows[0].quote_data?.businessPhone}]}:await pool.query('SELECT name,business_name,phone,contact_email,email FROM users WHERE id=$1', [req.user.id]);
     if (!userResult.rows.length) return res.status(404).json({ error: 'User not found.' });
     const user = userResult.rows[0];
     const businessName = String(user.business_name || user.name || 'ProfitQuote customer').slice(0, 100);
+    const replyEmail=String(req.user.guest?req.body?.reply_email:(user.contact_email||user.email)||'').trim().toLowerCase();
+    if(!validEmail(replyEmail)) return res.status(400).json({error:'Enter a valid business email address for customer replies.'});
     await sendCustomerQuoteEmail({
       to: customer_email.trim().toLowerCase(), businessName, customerName: customer_name,
-      phone: user.phone, total: Number(total), description: String(job_description || '').slice(0, 5000), quoteData: quote_data || {}
+      phone: user.phone, replyEmail, total: Number(total), description: String(job_description || '').slice(0, 5000), quoteData: quote_data || {}
     });
     await pool.query("INSERT INTO events(event_type,user_id,source,meta) VALUES('quote_sent',$1,'profitquote_email',jsonb_build_object('recipient_domain',split_part($2,'@',2),'total',$3::numeric,'guest_id',$4::text))", [req.user.guest?null:req.user.id, customer_email.trim().toLowerCase(), Number(total),req.user.guest?req.user.id:null]);
-    sendToGA('quote_sent', req.user.id, 'profitquote_email').catch(() => {});
+    sendToGA('quote_sent', req.user.id, 'profitquote_email', requestContext(req)).catch(() => {});
     res.set('Cache-Control', 'private, no-store');
     res.json({ success: true, from: CUSTOMER_EMAIL_FROM });
   } catch (error) {

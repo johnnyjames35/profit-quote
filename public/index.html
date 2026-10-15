@@ -68,9 +68,9 @@
     return referrer ? 'referral' : 'direct';
   }
 
-  function record(eventType) {
+  async function record(eventType) {
     if (eventType !== 'page_viewed' && typeof window !== 'undefined') window.pqAnalytics?.capture(eventType);
-    const body = JSON.stringify({ event_type: eventType, source: source() });
+    const body = JSON.stringify({ event_type: eventType, source: source(), analytics: await window.pqGAContext?.() });
     if (navigator.sendBeacon && navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }))) {
       return;
     }

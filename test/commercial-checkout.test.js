@@ -15,12 +15,14 @@ test('authenticated checkout prices, pending-session reuse, verified credits and
  app.post('/api/billing/webhook',express.raw({type:'application/json'}),billing.webhook);app.use(express.json());app.use('/api/billing',billing.router);app.use('/api/quotes',require('../routes/quotes'));
  const server=app.listen(0);t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});
  const base='http://127.0.0.1:'+server.address().port,token=jwt.sign({id:user.id},process.env.JWT_SECRET);
- const post=(url,body,auth=token)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth},body:JSON.stringify(body)});
+ const analytics={client_id:'123.456',session_id:'1792000000',page_location:'https://profitquote.co.uk/dashboard'};
+ const post=(url,body,auth=token)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth,'X-PQ-Analytics':JSON.stringify(analytics)},body:JSON.stringify(body)});
  assert.equal((await post('/api/billing/checkout',{plan:'payg'},'bad')).status,401);
  assert.equal((await post('/api/billing/checkout',{plan:'free'})).status,400);
  const first=await (await post('/api/billing/checkout',{plan:'payg'})).json();
  const repeat=await (await post('/api/billing/checkout',{plan:'payg'})).json();assert.equal(first.url,repeat.url);assert.equal(calls.length,1);
  assert.equal(calls[0].mode,'payment');assert.equal(calls[0].line_items[0].price,'profitquote_v2_payg');assert.equal(calls[0].client_reference_id,user.billing_reference);
+ assert.equal(calls[0].metadata.ga_client_id,analytics.client_id);assert.equal(calls[0].metadata.ga_session_id,analytics.session_id);
  assert.equal((await post('/api/billing/confirm',{session_id:'cs_test_1'})).status,200);
  const q={customer_name:'Test',total:100,creation_key:crypto.randomUUID()};assert.equal((await post('/api/quotes',q)).status,402,'unpaid redirect grants nothing');
  Object.assign(sessions.get('cs_test_1'),{status:'complete',payment_status:'paid',currency:'gbp',amount_total:500,line_items:{data:[{quantity:1}]},payment_intent:'pi_test'});
@@ -31,5 +33,6 @@ test('authenticated checkout prices, pending-session reuse, verified credits and
  const winner=await race.find(x=>x.status===200).json();assert.equal((await post('/api/quotes',{...q,creation_key:winner.creation_key})).status,200,'retry of same saved quote does not spend another credit');
  const next=await (await post('/api/billing/checkout',{plan:'payg'})).json();assert.notEqual(next.url,first.url,'another PAYG purchase gets a fresh session');
  await post('/api/billing/checkout',{plan:'starter'});assert.equal(sessions.get('cs_test_2').status,'expired');assert.equal(calls.at(-1).mode,'subscription');assert.equal(calls.at(-1).subscription_data.metadata.plan,'starter');
+ assert.equal(calls.at(-1).subscription_data.metadata.ga_client_id,analytics.client_id);
  await post('/api/billing/checkout',{plan:'pro'});assert.equal(sessions.get('cs_test_3').status,'expired');assert.equal(calls.at(-1).line_items[0].price,'profitquote_v2_pro');
 });

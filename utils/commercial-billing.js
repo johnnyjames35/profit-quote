@@ -1,12 +1,17 @@
 const Stripe=require('stripe');
 
 const crypto=require('crypto');
+const {analyticsContext,requestContext}=require('./ga');
 
 const PLANS={payg:{amount:500,name:'ProfitQuote — one quote'},starter:{amount:1900,name:'ProfitQuote Starter — 6 quotes/month'},pro:{amount:2900,name:'ProfitQuote Pro — unlimited quotes'}};
 const PORTAL_CONFIG=process.env.STRIPE_PORTAL_CONFIGURATION||'bpc_1UJKho8466uzy1MNPmxeV3N9';
-async function recordPurchase(db,id,userId,type,plan){
+async function recordPurchase(db,id,userId,type,plan,metadata){
   await db.query(`WITH receipt AS (INSERT INTO billing_events(id) VALUES($1) ON CONFLICT DO NOTHING RETURNING id)
     INSERT INTO events(event_type,user_id,source,meta) SELECT $2,$3,'stripe_webhook',jsonb_build_object('plan',$4::text) FROM receipt`,['commercial:'+id,type,userId,plan]);
+  const context=analyticsContext({client_id:metadata?.ga_client_id,session_id:metadata?.ga_session_id,page_location:metadata?.ga_page_location});
+  if(context) await db.query('INSERT INTO ga_purchase_outbox(transaction_id,context,parameters) VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[
+    id,context,{transaction_id:id,currency:'GBP',value:PLANS[plan].amount/100,items:[{item_id:plan,item_name:PLANS[plan].name,price:PLANS[plan].amount/100,quantity:1}]}
+  ]);
 }
 function stripeFor(req){
 
@@ -69,7 +74,7 @@ async function syncSubscription(db,stripe,id,userId){
       new Date((item.current_period_start||sub.current_period_start)*1000),new Date((item.current_period_end||sub.current_period_end)*1000)]);
 
   await db.query('UPDATE users SET stripe_customer_id=$1,billing_managed=true WHERE id=$2',[customer,user.id]);
-  if(paid)await recordPurchase(db,id,user.id,'subscription_started',actual);
+  if(paid)await recordPurchase(db,id,user.id,'subscription_started',actual,sub.metadata);
   return true;
 
 }
@@ -92,7 +97,7 @@ async function fulfil(db,stripe,sessionId,userId){
   if(session.mode!=='payment'||session.currency!=='gbp'||session.amount_total!==500||session.line_items?.data?.length!==1||session.line_items.data[0].quantity!==1)throw new Error('Incorrect quote payment');
   if(session.payment_intent?.latest_charge?.amount_refunded>0)return false;
   await db.query('INSERT INTO commercial_payments(session_id,user_id,amount,payment_intent) VALUES($1,$2,500,$3) ON CONFLICT DO NOTHING',[session.id,user.id,typeof session.payment_intent==='string'?session.payment_intent:session.payment_intent?.id]);
-  await recordPurchase(db,session.id,user.id,'payg_purchased','payg');
+  await recordPurchase(db,session.id,user.id,'payg_purchased','payg',session.metadata);
   return true;
 
 }
@@ -158,6 +163,8 @@ async function checkout(req,res){
     }else{
 
       const metadata={app:'profitquote-v2',plan,reference:user.billing_reference};
+      const analytics=requestContext(req);
+      if(analytics) Object.assign(metadata,{ga_client_id:analytics.client_id,ga_session_id:analytics.session_id,ga_page_location:analytics.page_location});
 
       const session=await stripe.checkout.sessions.create({mode:plan==='payg'?'payment':'subscription',client_reference_id:user.billing_reference,
 
