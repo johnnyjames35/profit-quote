@@ -17,7 +17,7 @@ function harness(guest=true){
   const context=vm.createContext({QuotationDocument:require('../public/quotation-document'),API:'',token:'test',currentUser:{guest,name:'Electrician'},currentQuoteData:structuredClone(quote),editingQuoteId:42,quotes:[structuredClone(quote)],currentBuilderStep:6,selectedRisk:'low',needsSkip:false,needsScaffold:false,
     document:{getElementById:element,querySelector:element},sessionStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null,removeItem:k=>storage.delete(k)},
     fetch:async(url,options)=>{requests.push({url,options});return Response.json(url.endsWith('send-email')?{from:'hello@profitquote.co.uk'}:url.endsWith('/export')?structuredClone(quote):{ok:true,id:42});},
-    window:{open:(...args)=>{opened.push(args);return {location:{},close(){},document:{write(value){context.printHtml=value;},close(){}},focus(){},print(){}};}},
+    window:{prompt:()=> 'business@example.invalid',open:(...args)=>{opened.push(args);return {location:{},close(){},document:{write(value){context.printHtml=value;},close(){}},focus(){},print(){}};}},
     saveBuilderDraft(){},clearBuilderDraft(){},loadQuotes:async()=>{},trackFunnelEvent:e=>events.push(e),showToast:message=>context.toast=message,editQuote:id=>context.edited=id,switchTab:tab=>context.tab=tab,calcHealthScore:()=>80,setTimeout:fn=>fn(),Date,console});
   const nudge=html.slice(html.indexOf('function labourNudge('),html.indexOf('function updateProfitNudges('));
   const checklist=html.slice(html.indexOf('const COST_CHECK_KEYS='),html.indexOf('function renderCompletedQuote(){'));
@@ -58,7 +58,7 @@ test('guest Save keeps exact quote locally and prompts for an account without st
 test('guest Email sends signed output without a signup prompt',async()=>{
  const h=harness();await vm.runInContext('emailQuote()',h.context);
  assert.equal(h.requests[0].url,'/api/quotes/send-email');
- assert.deepEqual(JSON.parse(h.requests[0].options.body),{output_token:quote.output_token});
+ assert.deepEqual(JSON.parse(h.requests[0].options.body),{output_token:quote.output_token,reply_email:'business@example.invalid'});
  assert.equal(h.elements['register-screen'],undefined);assert.equal(h.storage.size,0);
 });
 test('guest Print verifies output without a signup prompt',async()=>{

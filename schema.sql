@@ -200,3 +200,12 @@ CREATE TABLE IF NOT EXISTS posthog_paid_deliveries (
 );
 CREATE INDEX IF NOT EXISTS events_posthog_paid_idx ON events(user_id,id)
   WHERE source='stripe_webhook' AND event_type IN ('subscription_started','payg_purchased');
+
+-- Written in the same transaction as verified payment fulfilment.
+CREATE TABLE IF NOT EXISTS ga_purchase_outbox (
+  transaction_id TEXT PRIMARY KEY,
+  context JSONB NOT NULL,
+  parameters JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  delivered_at TIMESTAMPTZ
+);

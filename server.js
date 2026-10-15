@@ -116,6 +116,7 @@ async function init() {
     bundleTimer.unref();
     console.log('Database ready');
     require('./utils/posthog').startPaidConversionDelivery(pool);
+    require('./utils/ga').startPurchaseDelivery(pool);
     startDailyTrafficEmailScheduler(pool);
         startTrialEmailScheduler(pool);
   } catch(e) {

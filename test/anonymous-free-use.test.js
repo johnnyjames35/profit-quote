@@ -24,9 +24,12 @@ test('anonymous seven-day create/send/export, Save-only account gate, expiry, id
  assert.equal((await call('quotes',quote,guest)).status,403);
  assert.deepEqual(await(await call('quotes',null,guest,'GET')).json(),[]);
  assert.equal((await call('quotes/send-email',{...quote},guest)).status,400,'raw data cannot bypass signed output');
- assert.equal((await call('quotes/send-email',{output_token:output.output_token},guest)).status,200);
+ assert.equal((await call('quotes/send-email',{output_token:output.output_token,reply_email:'business@example.invalid'},guest)).status,200);
  assert.equal(sent.length,1);assert.equal(sent[0].to[0].email,quote.customer_email);assert.match(sent[0].textContent,/1,234/);
- failEmail=true;assert.equal((await call('quotes/send-email',{output_token:output.output_token},guest)).status,502);failEmail=false;
+ assert.equal(sent[0].replyTo.email,'business@example.invalid');
+ assert.equal((await call('quotes/send-email',{output_token:output.output_token,reply_email:'bad\r\naddress'},guest)).status,400);
+ assert.equal(sent.length,1,'invalid reply address must not reach the email provider');
+ failEmail=true;assert.equal((await call('quotes/send-email',{output_token:output.output_token,reply_email:'business@example.invalid'},guest)).status,502);failEmail=false;
  assert.equal((await db.query("SELECT * FROM events WHERE event_type='quote_sent'")).rows.length,1,'failed delivery is not counted');
  const downloaded=await(await call('quotes/preview/export',{output_token:output.output_token},guest)).json();assert.equal(downloaded.total,1234);
  const other=(await(await call('guest/start',{browser_id:'other-anonymous-browser'})).json()).token;

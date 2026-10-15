@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const https = require('https');
 const crypto = require('crypto');
 const {browserTrial,setTrialCookie,access,publicAccess,ipHash}=require('../utils/quote-access');
-const { sendToGA } = require('../utils/ga');
+const { sendToGA, requestContext } = require('../utils/ga');
 const { isFreeOnboardingOfferActive } = require('../utils/onboarding-offer');
 
 const USER_FIELDS = 'id,name,email,trade,plan,day_rate,hourly_rate,overhead_per_day,markup_percent,profit_target,vat_registered,vat_rate,skip_clean,skip_mixed,skip_plasterboard,skip_inert,skip_hazardous,business_name,phone,contact_email,town,trial_started_at,paid_at';
@@ -68,11 +68,11 @@ function sendResetEmail(name, email, resetLink) {
   );
 }
 
-function logEvent(pool, eventType, userId, source) {
+function logEvent(pool, eventType, userId, source, context) {
   return pool.query(
     'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
     [eventType, userId || null, source || null]
-  ).then(() => sendToGA(eventType, userId, source))
+  ).then(() => sendToGA(eventType, userId, source, context))
    .catch(e => console.error('Event log error:', e.message));
 }
 
@@ -129,7 +129,7 @@ router.post('/register', async (req, res) => {
 
     res.json({ token, user });
 
-    logEvent(pool, 'account_created', user.id, source);
+    logEvent(pool, 'account_created', user.id, source, requestContext(req));
     sendWelcomeEmail(name, email,user.trial_started_at).catch(e => console.error('Welcome email error:', e.message));
     sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
 
@@ -165,7 +165,7 @@ router.post('/login', async (req, res) => {
       [user.id]
     );
     if (!alreadyLogged.rows.length) {
-      logEvent(pool, 'first_login', user.id, null);
+      logEvent(pool, 'first_login', user.id, null, requestContext(req));
     }
   } catch(e) {
     res.status(500).json({ error: e.message });
