@@ -88,7 +88,13 @@
   }
 
   document.querySelectorAll('a[href^="/dashboard?try=1"]').forEach((link) => {
-    link.addEventListener('click', () => record('trial_click'));
+    link.addEventListener('click', async (event) => {
+      if (event.defaultPrevented) return;
+      if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) { void record('trial_click'); return; }
+      event.preventDefault();
+      try { await record('trial_click'); }
+      finally { location.assign(link.href); }
+    });
   });
 })();
 </script><script>

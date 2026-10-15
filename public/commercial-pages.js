@@ -13,6 +13,12 @@
     if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, '1'); record('page_viewed'); }
   } catch (_) { /* Storage can be unavailable in privacy modes. */ }
   document.querySelectorAll('a[href^="/dashboard?try=1"],a[href^="/dashboard?try=1"]').forEach(link => {
-    link.addEventListener('click', () => record('trial_click'));
+    link.addEventListener('click', async (event) => {
+      if (event.defaultPrevented) return;
+      if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) { void record('trial_click'); return; }
+      event.preventDefault();
+      try { await record('trial_click'); }
+      finally { location.assign(link.href); }
+    });
   });
 })();
