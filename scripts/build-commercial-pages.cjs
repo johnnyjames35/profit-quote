@@ -31,7 +31,7 @@ const pages = [
  guide:'/how-to-price-a-building-job.html',guideLabel:'How to price a building job'
 },
 {
- title:'Quoting Software for Electricians | ProfitQuote',h1:'Quoting software for electricians',
+ title:'Electrical Job Quoting Software | ProfitQuote',h1:'Electrical job quoting software for electricians',
  description:'Quote electrical jobs with labour, cables, fittings, testing time and making good accounted for. Protect your margin with ProfitQuote. Try free for 7 days.',
  intro:'A rewire quote needs more than a count of sockets. ProfitQuote helps electricians price the scope, labour, materials and easily missed work, then turn the reviewed calculation into a professional customer PDF.',
  promise:'Allow for the work around the installation, too.',
@@ -97,6 +97,7 @@ for(let i=0;i<pages.length;i++){
 <link rel="stylesheet" href="/commercial-pages.css">
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-D6L8EB3PWK"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-D6L8EB3PWK');</script>
+<script src="/ga-context.js" defer></script>
 <script src="/commercial-pages.js" defer></script>
 </head><body data-landing-page="${slug}">
 <a class="skip" href="#main">Skip to content</a>
