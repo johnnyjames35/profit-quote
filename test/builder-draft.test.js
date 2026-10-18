@@ -19,6 +19,20 @@ function harness(){
   vm.runInContext(source,context);
   return {context,el,storage};
 }
+
+test('roofing answers survive draft reload and old roofing dimensions remain available as notes',()=>{
+  const h=harness();h.context.editingQuoteId=null;h.el('q-job-type').value='roofing';
+  const answers={work:'Repair',type:'Flat roof',area:'42',access:'Scaffolding required',waste:'Skip required',measurements:'Rear roof 7m × 6m'};
+  for(const [key,value] of Object.entries(answers))h.el('q-roof-'+key).value=value;
+  vm.runInContext('saveBuilderDraft()',h.context);
+  for(const key of Object.keys(answers))h.el('q-roof-'+key).value='';
+  assert.equal(vm.runInContext('restoreBuilderDraft()',h.context),true);
+  for(const [key,value] of Object.entries(answers))assert.equal(h.el('q-roof-'+key).value,value);
+  h.el('q-roof-measurements').value='';h.el('q-length-m').value='7';h.el('q-width-m').value='6';
+  vm.runInContext('saveBuilderDraft()',h.context);
+  assert.equal(vm.runInContext('restoreBuilderDraft()',h.context),true);
+  assert.match(h.el('q-roof-measurements').value,/7m × 6m/);
+});
 test('edited quote restores its identity, step, costs and checks after reload without creating a quote',()=>{
   const h=harness();h.el('q-days').value='5.5';h.el('q-materials').value='2850';h.el('q-customer').value='Test customer';
   vm.runInContext('saveBuilderDraft()',h.context);

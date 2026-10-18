@@ -860,8 +860,16 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <!-- Step 2: Trade-aware job scope -->
       <div id="step-2" style="display:none;">
         <div class="card">
-          <div class="card-title">How big is the job?</div>
+          <div class="card-title" id="job-size-title">How big is the job?</div>
           <p class="field-hint" id="job-size-hint"></p>
+          <div id="roofing-scope-fields" hidden>
+            <div class="field-group"><label class="field-label" for="q-roof-work">What work is needed?</label><select class="field-input" id="q-roof-work" onchange="updateJobScope()"><option value="">Choose the work</option><option>Repair</option><option>Partial replacement</option><option>Full replacement</option><option>Inspection / investigation</option><option>Other / not sure yet</option></select></div>
+            <div class="field-group"><label class="field-label" for="q-roof-type">Roof type</label><select class="field-input" id="q-roof-type" onchange="updateJobScope()"><option value="">Choose the roof type</option><option>Pitched — tiles</option><option>Pitched — slate</option><option>Flat roof</option><option>Metal / sheet roof</option><option>Other / not sure yet</option></select></div>
+            <div class="field-group"><label class="field-label" for="q-roof-area">Approximate area involved (m², optional)</label><input class="field-input" id="q-roof-area" type="number" min="0" step="0.1" placeholder="Leave blank if unknown" oninput="updateJobScope()"><div class="field-hint">The roof area being worked on, not the room below. An estimate is fine; confirm it on site.</div></div>
+            <div class="field-group"><label class="field-label" for="q-roof-access">Access / scaffolding</label><select class="field-input" id="q-roof-access" onchange="updateRoofAccess()"><option value="">Choose if known</option><option>Scaffolding required</option><option>Tower / lift / other access equipment</option><option>No scaffolding planned</option><option>Assess access on site</option></select><div class="field-hint">Add the actual access cost in Materials &amp; Markup. Selecting scaffolding opens that cost field there.</div></div>
+            <div class="field-group"><label class="field-label" for="q-roof-waste">Waste removal</label><select class="field-input" id="q-roof-waste" onchange="updateRoofWaste()"><option value="">Choose if known</option><option>Skip required</option><option>Waste collection / other disposal</option><option>Customer arranging removal</option><option>No waste removal expected</option><option>Assess disposal on site</option></select><div class="field-hint">Include disposal and collection costs in your price. Selecting a skip opens the skip cost fields later.</div></div>
+            <details id="roof-measurements"><summary style="cursor:pointer;min-height:44px;padding:12px 0;color:var(--amber);font-weight:700;">Add measurements (optional)</summary><div class="field-group"><label class="field-label" for="q-roof-measurements">Roof measurements or site notes</label><textarea class="field-input" id="q-roof-measurements" rows="2" maxlength="500" oninput="updateJobScope()" placeholder="e.g. Front slope approximately 6m × 4m"></textarea><div class="field-hint">Leave blank to continue. No room length, width or height is required.</div></div></details>
+          </div>
           <div id="job-scope-fields">
             <div class="field-group"><label class="field-label" for="q-job-scale">Job scope</label><select class="field-input" id="q-job-scale" onchange="updateJobScope()"></select></div>
             <div class="field-group" id="property-type-group"><label class="field-label" for="q-property-type">Property type</label><select class="field-input" id="q-property-type" onchange="updateJobScope()"><option value="">Choose if known</option><option>House</option><option>Flat</option><option>Bungalow</option><option>Commercial premises</option><option>Other</option></select></div>
@@ -953,8 +961,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group">
             <label class="field-label">Does this job require a skip?</label>
             <div class="risk-row">
-              <button class="risk-btn active-low" id="skip-no" onclick="setSkip(false)" style="flex:1;">No Skip Needed</button>
-              <button class="risk-btn" id="skip-yes" onclick="setSkip(true)" style="flex:1;">Yes — Add Skip</button>
+              <button class="risk-btn active-low" id="skip-no" onclick="setSkip(false,true)" style="flex:1;">No Skip Needed</button>
+              <button class="risk-btn" id="skip-yes" onclick="setSkip(true,true)" style="flex:1;">Yes — Add Skip</button>
             </div>
           </div>
           <div id="skip-fields" style="display:none;">
@@ -982,8 +990,8 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <div class="field-group">
             <label class="field-label">Does this job require scaffolding?</label>
             <div class="risk-row">
-              <button class="risk-btn active-low" id="scaffold-no" onclick="setScaffold(false)" style="flex:1;">No Scaffolding</button>
-              <button class="risk-btn" id="scaffold-yes" onclick="setScaffold(true)" style="flex:1;">Yes — Add Scaffolding</button>
+              <button class="risk-btn active-low" id="scaffold-no" onclick="setScaffold(false,true)" style="flex:1;">No Scaffolding</button>
+              <button class="risk-btn" id="scaffold-yes" onclick="setScaffold(true,true)" style="flex:1;">Yes — Add Scaffolding</button>
             </div>
           </div>
           <div id="scaffold-fields" style="display:none;">
@@ -1475,7 +1483,7 @@ let editingQuoteId = null; // null = new quote, number = editing existing
 let currentBuilderStep = 1;
 const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
 let restoringBuilderDraft=false;
-const BUILDER_STEP_FIELDS = ['q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
+const BUILDER_STEP_FIELDS = ['q-roof-work','q-roof-type','q-roof-area','q-roof-access','q-roof-waste','q-roof-measurements','q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
   'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
   'q-days','q-day-rate','q-overhead','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
   'q-contingency','q-profit-target'];
@@ -1513,6 +1521,11 @@ function restoreBuilderDraft(){
       const el = document.getElementById(id);
       if(el && val!=null) el.value = val;
     });
+    if(document.getElementById('q-job-type').value==='roofing'&&!document.getElementById('q-roof-measurements').value){
+      const fields=draft.fields||{};
+      const length=fields['q-length-m'],width=fields['q-width-m'];
+      if(length&&width) document.getElementById('q-roof-measurements').value='Previously entered dimensions: '+length+'m × '+width+'m';
+    }
     restoreGuidedScope();
     if(typeof draft.needsSkip==='boolean') setSkip(draft.needsSkip);
     if(typeof draft.needsScaffold==='boolean') setScaffold(draft.needsScaffold);
@@ -1531,12 +1544,18 @@ function clearBuilderDraft(){
   try{ localStorage.removeItem(BUILDER_DRAFT_KEY); }catch(e){}
 }
 
-function setSkip(val){
+function setSkip(val,fromUser=false){
   needsSkip = val;
   document.getElementById('skip-yes').className = val ? 'risk-btn active-low' : 'risk-btn';
   document.getElementById('skip-no').className = val ? 'risk-btn' : 'risk-btn active-low';
   document.getElementById('skip-fields').style.display = val ? 'block' : 'none';
   if(val) updateSkipTotal();
+  if(fromUser&&document.getElementById('q-job-type').value==='roofing'){
+    const field=document.getElementById('q-roof-waste');
+    if(val) field.value='Skip required';
+    else if(field.value==='Skip required') field.value='Assess disposal on site';
+    updateGuidedDescription();
+  }
   saveBuilderDraft();
 }
 
@@ -1570,15 +1589,22 @@ function applyTradeDefault(){
 
 function usesDimensions(){
   const type=document.getElementById('q-job-type').value;
-  return ['decorating','bathroom','kitchen','roofing','extension'].includes(type)||
+  return ['decorating','bathroom','kitchen','extension'].includes(type)||
     (['other',''].includes(type)&&/tiler|tiling|landscap|plaster|floor/i.test(currentUser?.trade||''));
 }
 
 function configureJobScope(){
   const type=document.getElementById('q-job-type').value;
   const dimensions=usesDimensions();
+  const roofing=type==='roofing';
+  document.getElementById('roofing-scope-fields').hidden=!roofing;
+  document.getElementById('job-size-title').textContent=roofing?'Tell us about the roof':'How big is the job?';
   document.getElementById('dimension-fields').hidden=!dimensions;
-  document.getElementById('job-scope-fields').hidden=dimensions;
+  document.getElementById('job-scope-fields').hidden=dimensions||roofing;
+  if(roofing){
+    document.getElementById('job-size-hint').textContent='Describe the work first. Add an approximate area or measurements only if you know them.';
+    return;
+  }
   document.getElementById('job-size-hint').textContent=dimensions?'Dimensions help estimate the area for this work. Add them if useful.':
     type==='electrical'?'Tell us how much of the property is involved. No room measurements needed.':
     type==='plumbing'?'Tell us which rooms, fittings or systems are involved.':'Describe the areas or items involved, rather than measuring an unrelated room.';
@@ -1600,6 +1626,14 @@ function configureJobScope(){
 }
 
 function readJobScope(){
+  if(document.getElementById('q-job-type').value==='roofing'){
+    const value=id=>document.getElementById(id).value.trim();
+    const area=Number(value('q-roof-area'));
+    return {scale:value('q-roof-work'),propertyType:'',roomCount:null,details:'',roofing:{
+      work:value('q-roof-work'),type:value('q-roof-type'),area:Number.isFinite(area)&&area>0?area:null,
+      access:value('q-roof-access'),waste:value('q-roof-waste'),measurements:value('q-roof-measurements')
+    }};
+  }
   if(usesDimensions()) return null;
   const scale=document.getElementById('q-job-scale').value;
   return {scale,propertyType:document.getElementById('property-type-group').hidden?'':document.getElementById('q-property-type').value,
@@ -1609,6 +1643,12 @@ function readJobScope(){
 
 function jobScopeSummary(){
   const scope=readJobScope();
+  if(scope?.roofing){
+    const r=scope.roofing;
+    return [r.work,r.type,r.area?'approximately '+r.area+' m² of roof area':'',
+      r.access?'Access: '+r.access:'',r.waste?'Waste: '+r.waste:'',
+      r.measurements?'Measurements / site notes: '+r.measurements:''].filter(Boolean).join(' · ');
+  }
   return scope?[scope.scale,scope.propertyType,scope.roomCount?'approximately '+scope.roomCount+' rooms':'',scope.details].filter(Boolean).join(' · '):'';
 }
 
@@ -1616,6 +1656,18 @@ function updateJobScope(){
   configureJobScope();
   updateGuidedDescription();
   updateProfitNudges();
+}
+
+function updateRoofAccess(){
+  const access=document.getElementById('q-roof-access').value;
+  if(access) setScaffold(access==='Scaffolding required');
+  updateJobScope();
+}
+
+function updateRoofWaste(){
+  const waste=document.getElementById('q-roof-waste').value;
+  if(waste) setSkip(waste==='Skip required');
+  updateJobScope();
 }
 
 // These are prompts to review an estimate, not industry minimum durations.
@@ -1706,11 +1758,17 @@ function restoreGuidedScope(){
   updateGuidedDescription();
 }
 
-function setScaffold(val){
+function setScaffold(val,fromUser=false){
   needsScaffold = val;
   document.getElementById('scaffold-yes').className = val ? 'risk-btn active-low' : 'risk-btn';
   document.getElementById('scaffold-no').className = val ? 'risk-btn' : 'risk-btn active-low';
   document.getElementById('scaffold-fields').style.display = val ? 'block' : 'none';
+  if(fromUser&&document.getElementById('q-job-type').value==='roofing'){
+    const field=document.getElementById('q-roof-access');
+    if(val) field.value='Scaffolding required';
+    else if(field.value==='Scaffolding required') field.value='No scaffolding planned';
+    updateGuidedDescription();
+  }
   saveBuilderDraft();
 }
 
@@ -2258,6 +2316,9 @@ function editQuote(id){
   document.getElementById('q-extra').value=qd.extraNotes||(qd.jobType?'':savedDescription);
   configureJobScope();
   const scope=qd.jobScope||{};
+  const roof=scope.roofing||{};
+  ['work','type','area','access','waste','measurements'].forEach(key=>{document.getElementById('q-roof-'+key).value=roof[key]??'';});
+  if(qd.jobType==='roofing'&&!scope.roofing&&qd.roomSummary) document.getElementById('q-roof-measurements').value=qd.roomSummary;
   ['scale','propertyType','roomCount','details'].forEach((key,i)=>{document.getElementById(['q-job-scale','q-property-type','q-room-count','q-scope-details'][i]).value=scope[key]??'';});
   configureJobScope();
   ['length','width','height'].forEach(dim=>['m','ft'].forEach(unit=>{document.getElementById('q-'+dim+'-'+unit).value='';}));
@@ -2573,7 +2634,8 @@ function resetBuilder(){
   restoreCostChecks([]);
   clearBuilderDraft();
   editingQuoteId=null;
-  ['q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['q-roof-work','q-roof-type','q-roof-area','q-roof-access','q-roof-waste','q-roof-measurements','q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('roof-measurements').open=false;
   selectedScopeTasks=[];
   document.getElementById('q-scope-tasks').value='[]';
   renderScopeTasks();
