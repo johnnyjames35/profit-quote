@@ -446,6 +446,11 @@ textarea.field-input{resize:vertical;min-height:80px;}
 #subscription-dialog .btn-action{margin-top:8px;}
 </style>
 <script src="/quotation-document.js"></script>
+<style>
+.signup-policy{margin:18px 0;color:#b9cbd3;font-size:13px;line-height:1.65}
+.signup-policy a{color:#ffc20a;text-decoration:underline;text-underline-offset:3px}
+.signup-policy a:focus-visible{outline:3px solid #ffc20a;outline-offset:3px}
+</style>
 </head>
 <body>
 <dialog id="subscription-dialog" style="max-width:440px;width:calc(100% - 40px);border:1px solid #ffc20a;border-radius:16px;padding:28px;background:#15232c;color:white;">
@@ -567,6 +572,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
           <option>Window Fitter</option><option>HVAC Engineer</option><option>Other</option>
         </select>
       </div>
+      <p class="signup-policy">By creating an account, you agree to our <a href="/terms.html" target="_blank" rel="noopener">Terms of use (opens in a new tab)</a>. Read our <a href="/privacy.html" target="_blank" rel="noopener">Privacy notice (opens in a new tab)</a> to see how we use your information.</p>
       <button class="btn-login" id="reg-btn" onclick="doRegister()">Create Account →</button>
       <div class="login-switch">Already have an account? <a onclick="showLogin()">Sign in</a></div>
     </div>
@@ -3107,4 +3113,3 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 </script>
 </body>
 </html>
-

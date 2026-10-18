@@ -1,0 +1,10 @@
+.mobile-menu{display:none;position:relative}
+.mobile-menu summary{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 10px;border:1px solid #abc0c9;border-radius:8px;cursor:pointer;font-weight:700;list-style:none}
+.mobile-menu summary::-webkit-details-marker{display:none}
+.mobile-menu summary::after{content:" ▾";margin-left:5px}
+.mobile-menu[open] summary::after{content:" ▴"}
+.mobile-menu-panel{position:absolute;right:0;top:calc(100% + 8px);z-index:20;width:min(270px,calc(100vw - 36px));padding:8px;border:1px solid #abc0c9;border-radius:10px;background:#112733;box-shadow:0 12px 30px #0008}
+.mobile-menu-panel a{display:flex;align-items:center;min-height:44px;padding:10px 12px;border-radius:6px;color:#fff;text-decoration:none;font-weight:700}
+.mobile-menu-panel a:hover{background:#213e4b}
+.mobile-menu :focus-visible{outline:3px solid #ffc20a;outline-offset:3px}
+@media(max-width:760px){nav.wrap{gap:8px}.brand{font-size:1.05rem;white-space:nowrap}.mobile-menu{display:block;margin-left:auto}.links{gap:0}.links>.guides-link{display:none!important}.links .button{white-space:nowrap;padding:10px}.mobile-menu-panel{right:-90px}}
