@@ -20,6 +20,24 @@ function harness(){
   return {context,el,storage};
 }
 
+test('trade-specific answers and dimensions survive draft reload',()=>{
+  const h=harness();h.context.editingQuoteId=null;h.el('q-job-type').value='other';
+  const fields={'q-other-category':'Carpentry / joinery','q-trade-work':'Doors / frames / ironmongery','q-trade-condition':'Bespoke work','q-trade-quantity':'6 doors','q-trade-measurements':'Opening 900mm x 2100mm','q-length-m':'4.5'};
+  for(const [id,value] of Object.entries(fields))h.el(id).value=value;
+  vm.runInContext('saveBuilderDraft()',h.context);
+  for(const id of Object.keys(fields))h.el(id).value='';
+  assert.equal(vm.runInContext('restoreBuilderDraft()',h.context),true);
+  for(const [id,value] of Object.entries(fields))assert.equal(h.el(id).value,value);
+});
+
+test('older general-trade dimension drafts remain available as optional notes',()=>{
+  const h=harness();h.context.editingQuoteId=null;h.el('q-job-type').value='other';h.el('q-length-m').value='5';h.el('q-width-m').value='3';
+  vm.runInContext('saveBuilderDraft()',h.context);
+  assert.equal(vm.runInContext('restoreBuilderDraft()',h.context),true);
+  assert.equal(h.el('q-other-category').value,'General building / repairs');
+  assert.match(h.el('q-trade-measurements').value,/length 5m.*width 3m/);
+});
+
 test('roofing answers survive draft reload and old roofing dimensions remain available as notes',()=>{
   const h=harness();h.context.editingQuoteId=null;h.el('q-job-type').value='roofing';
   const answers={work:'Repair',type:'Flat roof',area:'42',access:'Scaffolding required',waste:'Skip required',measurements:'Rear roof 7m × 6m'};

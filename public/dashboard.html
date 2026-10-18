@@ -871,15 +871,21 @@ textarea.field-input{resize:vertical;min-height:80px;}
             <details id="roof-measurements"><summary style="cursor:pointer;min-height:44px;padding:12px 0;color:var(--amber);font-weight:700;">Add measurements (optional)</summary><div class="field-group"><label class="field-label" for="q-roof-measurements">Roof measurements or site notes</label><textarea class="field-input" id="q-roof-measurements" rows="2" maxlength="500" oninput="updateJobScope()" placeholder="e.g. Front slope approximately 6m × 4m"></textarea><div class="field-hint">Leave blank to continue. No room length, width or height is required.</div></div></details>
           </div>
           <div id="job-scope-fields">
+            <div class="field-group" id="other-category-group" hidden><label class="field-label" for="q-other-category">What kind of work is it?</label><select class="field-input" id="q-other-category" onchange="changeTradeCategory()"><option value="">Choose a category</option><option>General building / repairs</option><option>Carpentry / joinery</option><option>Tiling</option><option>Plastering</option><option>Flooring</option><option>Landscaping</option><option>Windows / doors</option><option>Other</option></select></div>
+            <div class="field-group"><label class="field-label" for="q-trade-work">What work is needed?</label><select class="field-input" id="q-trade-work" onchange="updateJobScope()"></select></div>
             <div class="field-group"><label class="field-label" for="q-job-scale">Job scope</label><select class="field-input" id="q-job-scale" onchange="updateJobScope()"></select></div>
+            <div class="field-group"><label class="field-label" id="trade-condition-label" for="q-trade-condition">Existing condition / access</label><select class="field-input" id="q-trade-condition" onchange="updateJobScope()"></select></div>
+            <div class="field-group"><label class="field-label" id="trade-quantity-label" for="q-trade-quantity">Items or quantities (optional)</label><input class="field-input" id="q-trade-quantity" maxlength="500" placeholder="" oninput="updateJobScope()"><div class="field-hint" id="trade-quantity-hint"></div></div>
             <div class="field-group" id="property-type-group"><label class="field-label" for="q-property-type">Property type</label><select class="field-input" id="q-property-type" onchange="updateJobScope()"><option value="">Choose if known</option><option>House</option><option>Flat</option><option>Bungalow</option><option>Commercial premises</option><option>Other</option></select></div>
             <div class="field-group" id="room-count-group"><label class="field-label" for="q-room-count">Approximate number of rooms</label><input class="field-input" id="q-room-count" type="number" min="1" max="1000" step="1" placeholder="e.g. 8" oninput="updateJobScope()"><div class="field-hint">Count rooms involved, including kitchen and bathrooms. An estimate is fine.</div></div>
             <div class="field-group"><label class="field-label" for="q-scope-details" id="scope-details-label">Scope details (optional)</label><input class="field-input" id="q-scope-details" maxlength="500" oninput="updateJobScope()"></div>
           </div>
-          <div id="dimension-fields">
-          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">Enter in metres OR feet — we'll convert automatically.</p>
+          <details id="trade-measurement-notes" hidden><summary style="cursor:pointer;min-height:44px;padding:12px 0;color:var(--amber);font-weight:700;">Add measurements (optional)</summary><div class="field-group"><label class="field-label" for="q-trade-measurements">Relevant item, opening or run measurements</label><textarea class="field-input" id="q-trade-measurements" rows="2" maxlength="500" oninput="updateJobScope()" placeholder="e.g. Door opening 900mm × 2100mm, or fence run 12m"></textarea><div class="field-hint" id="trade-notes-measurement-hint">Only add measurements useful to this job. Leave blank to continue.</div></div></details>
+          <details id="dimension-fields">
+          <summary style="cursor:pointer;min-height:44px;padding:12px 0;color:var(--amber);font-weight:700;">Add measurements (optional)</summary>
+          <p class="field-hint" id="trade-measurement-hint">Only add dimensions if useful. Leave blank to continue. Enter in metres OR feet.</p>
           <div class="field-group">
-            <label class="field-label">Length</label>
+            <label class="field-label">Length (optional)</label>
             <div class="room-grid">
               <div>
                 <input class="field-input" id="q-length-m" type="number" step="0.01" placeholder="Metres" oninput="convertRoom('m','length')">
@@ -892,7 +898,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
           </div>
           <div class="field-group">
-            <label class="field-label">Width</label>
+            <label class="field-label">Width (optional)</label>
             <div class="room-grid">
               <div>
                 <input class="field-input" id="q-width-m" type="number" step="0.01" placeholder="Metres" oninput="convertRoom('m','width')">
@@ -918,7 +924,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
             </div>
           </div>
           <div id="room-area" style="font-size:0.85rem;color:var(--amber);font-weight:700;margin-top:8px;"></div>
-          </div>
+          </details>
         </div>
         <button class="btn-next" onclick="nextStep(3)">Next →</button>
         <button class="btn-prev" onclick="appBack()">← Back</button>
@@ -1483,8 +1489,8 @@ let editingQuoteId = null; // null = new quote, number = editing existing
 let currentBuilderStep = 1;
 const BUILDER_DRAFT_KEY = 'pq_builder_draft_v1';
 let restoringBuilderDraft=false;
-const BUILDER_STEP_FIELDS = ['q-roof-work','q-roof-type','q-roof-area','q-roof-access','q-roof-waste','q-roof-measurements','q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
-  'q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft',
+const BUILDER_STEP_FIELDS = ['q-other-category','q-trade-work','q-trade-condition','q-trade-quantity','q-roof-work','q-roof-type','q-roof-area','q-roof-access','q-roof-waste','q-roof-measurements','q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode',
+  'q-trade-measurements','q-length-m','q-width-m','q-height-m','q-length-ft','q-width-ft','q-height-ft',
   'q-days','q-day-rate','q-overhead','q-materials','q-markup','q-client-materials','q-skip-size','q-skip-quantity','q-skip-cost','q-scaffold-cost',
   'q-contingency','q-profit-target'];
 
@@ -1516,11 +1522,23 @@ function restoreBuilderDraft(){
     editingQuoteId=draft.quoteId||null;
     currentQuoteData=saved?{...saved,quote_data:{...saved.quote_data}}:null;
     document.getElementById('q-job-type').value=draft.fields?.['q-job-type']||'';
+    document.getElementById('q-other-category').value=draft.fields?.['q-other-category']||'';
     configureJobScope();
     Object.entries(draft.fields||{}).forEach(([id, val])=>{
       const el = document.getElementById(id);
       if(el && val!=null) el.value = val;
     });
+    if(document.getElementById('q-job-type').value==='other'&&!document.getElementById('q-other-category').value){
+      const fields=draft.fields||{};
+      if(fields['q-length-m']||fields['q-width-m']||fields['q-height-m']){
+        document.getElementById('q-other-category').value='General building / repairs';
+        document.getElementById('q-trade-measurements').value=['Previously entered dimensions:',
+          fields['q-length-m']?'length '+fields['q-length-m']+'m':'',
+          fields['q-width-m']?'width '+fields['q-width-m']+'m':'',
+          fields['q-height-m']?'height '+fields['q-height-m']+'m':''].filter(Boolean).join(' ');
+        configureJobScope();
+      }
+    }
     if(document.getElementById('q-job-type').value==='roofing'&&!document.getElementById('q-roof-measurements').value){
       const fields=draft.fields||{};
       const length=fields['q-length-m'],width=fields['q-width-m'];
@@ -1584,13 +1602,48 @@ function applyTradeDefault(){
   const trade=(currentUser?.trade||'').toLowerCase();
   const defaults=[[/electric/,'electrical'],[/plumb|hvac/,'plumbing'],[/bathroom/,'bathroom'],[/kitchen/,'kitchen'],[/decorat|paint/,'decorating'],[/roof/,'roofing']];
   document.getElementById('q-job-type').value=defaults.find(([pattern])=>pattern.test(trade))?.[1]||(trade?'other':'');
+  if(document.getElementById('q-job-type').value==='other'){
+    const categories=[[/carpent|joiner/,'Carpentry / joinery'],[/tiler|tiling/,'Tiling'],[/plaster/,'Plastering'],[/floor/,'Flooring'],[/landscap/,'Landscaping'],[/window/,'Windows / doors'],[/build/,'General building / repairs']];
+    document.getElementById('q-other-category').value=categories.find(([pattern])=>pattern.test(trade))?.[1]||'';
+  }
   selectJobType();
 }
 
 function usesDimensions(){
   const type=document.getElementById('q-job-type').value;
+  const category=document.getElementById('q-other-category').value;
+  if(type==='other'&&category==='Landscaping'&&['Fencing / decking','Repairs / maintenance'].includes(document.getElementById('q-trade-work').value))return false;
   return ['decorating','bathroom','kitchen','extension'].includes(type)||
-    (['other',''].includes(type)&&/tiler|tiling|landscap|plaster|floor/i.test(currentUser?.trade||''));
+    (type==='other'&&['Tiling','Plastering','Flooring','Landscaping'].includes(category));
+}
+
+function tradeScopeQuestions(){
+  const type=document.getElementById('q-job-type').value;
+  const category=document.getElementById('q-other-category').value;
+  const configs={
+    bathroom:{title:'Tell us about the bathroom',work:['Full refurbishment','Replace selected fittings','Shower / wet room installation','Repairs / making good'],condition:'Layout / services',conditions:['Keep the existing layout','Move plumbing / change layout','New room / new services','Inspect existing services first'],quantity:'Fittings and finishes (optional)',hint:'e.g. Bath, shower, WC and basin; tiled walls; customer supplying the suite',measurement:'Room dimensions can help with tiling and finishes. They do not describe the whole installation.'},
+    kitchen:{title:'Tell us about the kitchen',work:['Full refurbishment','Units / worktop installation','Replace selected items','Repairs / alterations'],condition:'Layout / services',conditions:['Keep the existing layout','Change layout / move services','New kitchen space','Inspect existing services first'],quantity:'Units, worktops and appliances (optional)',hint:'e.g. 12 units, 5m of worktop and 3 appliances; customer supplying the kitchen',measurement:'Room dimensions may help with the space. Use your cabinet and worktop measurements when pricing those items.'},
+    decorating:{title:'Tell us about the decorating',work:['Painting','Wallpapering','Painting and wallpapering','Preparation / repairs only'],condition:'Surface condition',conditions:['Good condition / light preparation','Cracks / filling / sanding needed','Wallpaper stripping needed','New plaster / bare surfaces','Assess preparation on site'],quantity:'Surfaces and items (optional)',hint:'e.g. Walls and ceilings in 3 rooms, 8 doors and skirting',measurement:'Add dimensions for the area being decorated if helpful. A floor area is not the paintable wall area.'},
+    extension:{title:'Tell us about the building work',work:['New extension','Renovation / conversion','Structural alterations','Selected building stages'],condition:'Current stage',conditions:['Planning / design stage','Ready to start / new structure','Existing building to alter','Work already in progress','Inspect scope and approvals first'],quantity:'Building stages and allowances (optional)',hint:'e.g. Single-storey rear extension; foundations, shell, drainage and finishing',measurement:'Optional dimensions describe the affected area or extension footprint. They do not replace plans or a site assessment.'},
+    electrical:{title:'Tell us about the electrical work',work:['Full / partial rewire','Consumer unit work','Sockets / lighting / new circuits','Fault finding / repairs','Inspection / testing'],condition:'Property access',conditions:['Occupied property','Empty property','New build / open access','Restricted access / assess on site'],quantity:'Points, circuits or items (optional)',hint:'e.g. 18 sockets, 12 lights and a consumer unit; include testing and making good'},
+    plumbing:{title:'Tell us about the plumbing / heating',work:['Fittings / sanitaryware','Boiler / heating / hot water','Pipework / drainage','Leak / repair / fault finding','Inspection / servicing'],condition:'Existing services / access',conditions:['Like-for-like / accessible services','Move or extend pipework','Concealed / restricted access','New installation','Inspect existing system first'],quantity:'Fittings or system details (optional)',hint:'e.g. Replace boiler and 8 radiators; or fit a customer-supplied basin'},
+    'Carpentry / joinery':{title:'Tell us about the carpentry',work:['Doors / frames / ironmongery','Shelving / fitted storage','Structural carpentry','Repairs / alterations'],condition:'Fit / existing condition',conditions:['Standard items / straightforward fitting','Bespoke work','Existing items need repair','Assess fit and access on site'],quantity:'Items and finish (optional)',hint:'e.g. Hang 6 doors with handles; paint finish by others',measurement:'Use item or opening dimensions if known. Room height is not needed for hanging a door.'},
+    Tiling:{title:'Tell us about the tiling',work:['Wall tiling','Floor tiling','Wall and floor tiling','Repairs / regrouting'],condition:'Substrate / preparation',conditions:['Ready to tile','Remove existing tiles','Levelling / substrate repairs','Waterproofing / tanking required','Assess surfaces on site'],quantity:'Tile areas and finish (optional)',hint:'e.g. 18m² walls and 6m² floor; large-format tiles supplied by customer',measurement:'Measure the surface being tiled. Enter separate wall and floor areas in the details above.'},
+    Plastering:{title:'Tell us about the plastering',work:['Skimming','Boarding and skimming','Repairs / patching','Rendering'],condition:'Existing surface',conditions:['Sound surfaces','Remove loose material','New boards needed','Damp / defects to assess'],quantity:'Surfaces and finish (optional)',hint:'e.g. 2 ceilings and 4 walls; include beads, preparation and waste',measurement:'Measure the wall or ceiling being worked on. Floor area alone may not reflect the work.'},
+    Flooring:{title:'Tell us about the flooring',work:['Lay new flooring','Remove and replace flooring','Subfloor preparation','Floor repairs'],condition:'Subfloor condition',conditions:['Ready to lay','Levelling / repairs needed','Existing flooring to remove','Moisture / condition to assess'],quantity:'Rooms, material and finish (optional)',hint:'e.g. 35m² LVT in hall and kitchen; underlay, trims and thresholds',measurement:'Length and width may help estimate floor area. Include separate rooms and waste allowances in your costs.'},
+    Landscaping:{title:'Tell us about the landscaping',work:['Paving / patios','Fencing / decking','Turf / planting','Groundworks / drainage','Repairs / maintenance'],condition:'Ground / access',conditions:['Clear site / easy access','Restricted access','Excavation / clearance needed','Ground or drainage to assess'],quantity:'Areas, lengths and quantities (optional)',hint:'e.g. 20m² patio and 12m fencing; include excavation and disposal',measurement:'Add the relevant area or run length. A fence needs a run length, not room height.'},
+    'Windows / doors':{title:'Tell us about the windows / doors',work:['Window replacement','External door replacement','Repairs / adjustments','New openings / installation'],condition:'Openings / access',conditions:['Like-for-like existing openings','Openings need alteration','Upper floor / access equipment','Assess openings and access on site'],quantity:'Openings and specification (optional)',hint:'e.g. 4 windows and a rear door; include trims and making good',measurement:'Use opening or item dimensions if known. Identify each opening in the details above.'},
+    'General building / repairs':{title:'Tell us about the building job',work:['Repairs / maintenance','Alterations','New building work','Selected trades / stages'],condition:'Site condition / access',conditions:['Clear scope / straightforward access','Occupied property','Restricted access','Hidden defects / assess on site'],quantity:'Items and work included (optional)',hint:'Describe quantities, site access, waste and making good.',measurement:'Only add dimensions relevant to the work being priced.'}
+  };
+  return configs[type]||(type==='other'?configs[category]:null)||{title:'Tell us about the job',work:['Installation','Repair / maintenance','Removal / replacement','Other / investigate'],condition:'Condition / access',conditions:['Straightforward access','Restricted access','Existing defects','Assess on site'],quantity:'Items and quantities (optional)',hint:'Describe what is included, quantities, access, waste and any customer-supplied items.'};
+}
+
+function changeTradeCategory(){
+  document.getElementById('q-trade-measurements').value='';
+  document.getElementById('trade-measurement-notes').open=false;
+  ['q-trade-work','q-trade-condition','q-trade-quantity'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dimension-fields').open=false;
+  updateJobScope();
 }
 
 function configureJobScope(){
@@ -1598,18 +1651,41 @@ function configureJobScope(){
   const dimensions=usesDimensions();
   const roofing=type==='roofing';
   document.getElementById('roofing-scope-fields').hidden=!roofing;
+  document.getElementById('trade-measurement-notes').hidden=true;
   document.getElementById('job-size-title').textContent=roofing?'Tell us about the roof':'How big is the job?';
   document.getElementById('dimension-fields').hidden=!dimensions;
-  document.getElementById('job-scope-fields').hidden=dimensions||roofing;
+  document.getElementById('job-scope-fields').hidden=roofing;
   if(roofing){
     document.getElementById('job-size-hint').textContent='Describe the work first. Add an approximate area or measurements only if you know them.';
     return;
   }
-  document.getElementById('job-size-hint').textContent=dimensions?'Dimensions help estimate the area for this work. Add them if useful.':
-    type==='electrical'?'Tell us how much of the property is involved. No room measurements needed.':
-    type==='plumbing'?'Tell us which rooms, fittings or systems are involved.':'Describe the areas or items involved, rather than measuring an unrelated room.';
+  const config=tradeScopeQuestions();
+  document.getElementById('trade-measurement-notes').hidden=!config.measurement||dimensions;
+  document.getElementById('trade-notes-measurement-hint').textContent=(config.measurement||'Only add relevant measurements.')+' Leave blank to continue.';
+  document.getElementById('job-size-title').textContent=config.title;
+  document.getElementById('job-size-hint').textContent='Describe the work first. You can continue without measurements.';
+  document.getElementById('other-category-group').hidden=type!=='other';
+  const key=type+':'+document.getElementById('q-other-category').value;
+  for(const [id,options] of [['q-trade-work',config.work],['q-trade-condition',config.conditions]]){
+    const field=document.getElementById(id);
+    if(field.dataset.scopeKey!==key){
+      const previous=field.value;
+      field.innerHTML='<option value="">Choose if known</option>'+options.map(text=>'<option>'+text+'</option>').join('');
+      field.value=options.includes(previous)?previous:'';
+      field.dataset.scopeKey=key;
+    }
+  }
+  document.getElementById('trade-condition-label').textContent=config.condition;
+  document.getElementById('trade-quantity-label').textContent=config.quantity;
+  document.getElementById('trade-quantity-hint').textContent=config.hint;
+  document.getElementById('q-trade-quantity').placeholder=config.hint;
+  document.getElementById('trade-measurement-hint').textContent=(config.measurement||'Only add dimensions useful to this work.')+' Leave blank to continue. Enter metres OR feet.';
   const choices=type==='electrical'?['Whole property','Several rooms','Single room','Extension/Annex','Other']:
     type==='plumbing'?['Whole property / system','Several rooms','Single room','Single fitting / repair','Other']:
+    type==='bathroom'?['Whole bathroom / ensuite','Selected fittings / surfaces','Several bathrooms','Other']:
+    type==='kitchen'?['Whole kitchen','Selected units / worktops / items','Several areas','Other']:
+    type==='decorating'?['Whole property','Several rooms','Single room','Exterior','Other']:
+    type==='extension'?['Single-storey extension','Multi-storey extension','Conversion / renovation','Selected area / stage','Other']:
     ['Whole property','Several areas','Single area / item','Extension/Annex','Other'];
   const select=document.getElementById('q-job-scale');
   const previous=select.value;
@@ -1619,10 +1695,10 @@ function configureJobScope(){
     select.dataset.scopeType=type;
   }
   const scale=select.value;
-  document.getElementById('property-type-group').hidden=!scale||scale==='Other'||scale.includes('fitting')||scale.includes('item');
-  document.getElementById('room-count-group').hidden=!/Whole property|Several rooms|Extension/.test(scale);
+  document.getElementById('property-type-group').hidden=!['electrical','plumbing','extension'].includes(type)||!scale||scale==='Other'||scale.includes('fitting')||scale.includes('item');
+  document.getElementById('room-count-group').hidden=!['electrical','plumbing','decorating'].includes(type)||!/Whole property|Several rooms|Extension/.test(scale);
   document.getElementById('scope-details-label').textContent=scale==='Single room'?'Which room?':scale==='Other'?'What does the job cover?':'Scope details (optional)';
-  document.getElementById('q-scope-details').placeholder=type==='electrical'?'e.g. Full rewire, occupied house, loft access':type==='plumbing'?'e.g. Replace boiler and 8 radiators':'e.g. Fit 6 internal doors';
+  document.getElementById('q-scope-details').placeholder='Assumptions, exclusions, customer-supplied items or site details';
 }
 
 function readJobScope(){
@@ -1634,11 +1710,15 @@ function readJobScope(){
       access:value('q-roof-access'),waste:value('q-roof-waste'),measurements:value('q-roof-measurements')
     }};
   }
-  if(usesDimensions()) return null;
   const scale=document.getElementById('q-job-scale').value;
   return {scale,propertyType:document.getElementById('property-type-group').hidden?'':document.getElementById('q-property-type').value,
     roomCount:document.getElementById('room-count-group').hidden?null:Math.max(0,Math.min(1000,parseInt(document.getElementById('q-room-count').value,10)||0))||null,
-    details:document.getElementById('q-scope-details').value.trim()};
+    details:document.getElementById('q-scope-details').value.trim(),tradeDetails:{
+      jobType:document.getElementById('q-job-type').value,category:document.getElementById('q-job-type').value==='other'?document.getElementById('q-other-category').value:'',
+      work:document.getElementById('q-trade-work').value,condition:document.getElementById('q-trade-condition').value,
+      quantity:document.getElementById('q-trade-quantity').value.trim(),
+      measurements:document.getElementById('trade-measurement-notes').hidden?'':document.getElementById('q-trade-measurements').value.trim()
+    }};
 }
 
 function jobScopeSummary(){
@@ -1649,7 +1729,9 @@ function jobScopeSummary(){
       r.access?'Access: '+r.access:'',r.waste?'Waste: '+r.waste:'',
       r.measurements?'Measurements / site notes: '+r.measurements:''].filter(Boolean).join(' · ');
   }
-  return scope?[scope.scale,scope.propertyType,scope.roomCount?'approximately '+scope.roomCount+' rooms':'',scope.details].filter(Boolean).join(' · '):'';
+  const d=scope?.tradeDetails;
+  return scope?[d?.category,d?.work,scope.scale,scope.propertyType,d?.condition,
+    scope.roomCount?'approximately '+scope.roomCount+' rooms':'',d?.quantity,d?.measurements?'Measurements: '+d.measurements:'',scope.details].filter(Boolean).join(' · '):'';
 }
 
 function updateJobScope(){
@@ -1708,6 +1790,12 @@ function updateProfitNudges(){
 }
 
 function selectJobType(){
+  ['q-length-m','q-width-m','q-height-m','q-length-ft','q-width-ft','q-height-ft'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('room-area').textContent='';
+  document.getElementById('q-trade-measurements').value='';
+  document.getElementById('trade-measurement-notes').open=false;
+  ['q-trade-work','q-trade-condition','q-trade-quantity'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dimension-fields').open=false;
   selectedScopeTasks=[];
   document.getElementById('q-scope-tasks').value='[]';
   configureJobScope();
@@ -2316,6 +2404,11 @@ function editQuote(id){
   document.getElementById('q-extra').value=qd.extraNotes||(qd.jobType?'':savedDescription);
   configureJobScope();
   const scope=qd.jobScope||{};
+  const legacyMeasurements=qd.roomSummary||[qd.lenM?'Length '+qd.lenM+'m':'',qd.widM?'width '+qd.widM+'m':'',qd.heightM?'height '+qd.heightM+'m':''].filter(Boolean).join(' · ');
+  document.getElementById('q-other-category').value=scope.tradeDetails?.category||(qd.jobType==='other'&&legacyMeasurements?'General building / repairs':'');
+  configureJobScope();
+  for(const key of ['work','condition','quantity','measurements']) document.getElementById('q-trade-'+key).value=scope.tradeDetails?.[key]||'';
+  if(qd.jobType==='other'&&!scope.tradeDetails&&legacyMeasurements)document.getElementById('q-trade-measurements').value=legacyMeasurements;
   const roof=scope.roofing||{};
   ['work','type','area','access','waste','measurements'].forEach(key=>{document.getElementById('q-roof-'+key).value=roof[key]??'';});
   if(qd.jobType==='roofing'&&!scope.roofing&&qd.roomSummary) document.getElementById('q-roof-measurements').value=qd.roomSummary;
@@ -2599,7 +2692,7 @@ function updateRoomArea(){
   const l=parseFloat(document.getElementById('q-length-m').value)||0;
   const w=parseFloat(document.getElementById('q-width-m').value)||0;
   const el=document.getElementById('room-area');
-  if(l>0&&w>0){ el.textContent='Floor area: '+(l*w).toFixed(2)+' m²'; }
+  if(l>0&&w>0){ el.textContent='Length × width: '+(l*w).toFixed(2)+' m² (check this is the relevant surface area)'; }
   else { el.textContent=''; }
 }
 
@@ -2634,8 +2727,11 @@ function resetBuilder(){
   restoreCostChecks([]);
   clearBuilderDraft();
   editingQuoteId=null;
-  ['q-roof-work','q-roof-type','q-roof-area','q-roof-access','q-roof-waste','q-roof-measurements','q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['q-other-category','q-trade-work','q-trade-condition','q-trade-quantity','q-roof-work','q-roof-type','q-roof-area','q-roof-access','q-roof-waste','q-roof-measurements','q-job-scale','q-property-type','q-room-count','q-scope-details','q-job-type','q-scope-tasks','q-extra','q-desc','q-customer','q-email','q-postcode','q-days','q-materials','q-length-m','q-length-ft','q-width-m','q-width-ft','q-height-m','q-height-ft'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('dimension-fields').open=false;
   document.getElementById('roof-measurements').open=false;
+  document.getElementById('trade-measurement-notes').open=false;
+  document.getElementById('q-trade-measurements').value='';
   selectedScopeTasks=[];
   document.getElementById('q-scope-tasks').value='[]';
   renderScopeTasks();
@@ -2758,8 +2854,10 @@ async function generateQuote(){
   if(lenM>0&&widM>0){
     const area=(lenM*widM).toFixed(2);
     const areaFt=((lenFt||lenM*3.28084)*(widFt||widM*3.28084)).toFixed(1);
-    roomSummary='Room: '+lenM+'m × '+widM+'m ('+area+' m² / '+areaFt+' ft²)';
+    roomSummary='Measurements: '+lenM+'m × '+widM+'m ('+area+' m² / '+areaFt+' ft²)';
     if(heightM>0) roomSummary+=' · Height: '+heightM+'m';
+  }else{
+    roomSummary=[lenM>0?'Length: '+lenM+'m':'',widM>0?'Width: '+widM+'m':'',heightM>0?'Height: '+heightM+'m':''].filter(Boolean).join(' · ');
   }
 
   // Builder details
