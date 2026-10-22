@@ -70,7 +70,7 @@ test('events persist in PostgreSQL and admin funnel retrieves them with auth and
     if (url.includes('analyticsdata')) return Response.json({ rows: [{ metricValues: [{ value: '17' }, { value: '23' }], dimensionValues: [{ value: '/' }] }] });
     return Response.json({ rows: [{ keys: ['query', '/'], clicks: 4, impressions: 30, ctr: 4 / 30, position: 12 }] });
   };
-  await db.exec("INSERT INTO events(event_type,created_at) VALUES('anonymous_quote_completed',NOW()-INTERVAL '1 day'),('quote_completed',NOW()-INTERVAL '1 day'),('payg_purchased',NOW()-INTERVAL '1 day')");
+  await db.exec("INSERT INTO events(event_type,source,created_at) VALUES('anonymous_quote_completed',NULL,NOW()-INTERVAL '1 day'),('quote_completed',NULL,NOW()-INTERVAL '1 day'),('payg_purchased','stripe_webhook',NOW()-INTERVAL '1 day'),('subscription_started',NULL,NOW()-INTERVAL '1 day')");
   const report = await request('/api/admin/reporting/daily', { headers: { Authorization: `Bearer ${admin}` } });
   assert.equal(report.status, 200);
   assert.match(report.headers.get('content-type'), /application\/json/);

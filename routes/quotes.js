@@ -112,6 +112,12 @@ router.post('/', auth, async (req, res) => {
       }catch{}
     }
     await client.query('INSERT INTO events(event_type,user_id,source,meta) VALUES($1,$2,$3,$4)',[completionEvent,req.user.id,'dashboard',JSON.stringify({quote_id:saved.rows[0].id})]);
+    // access(..., true) holds the owner lock. Preserve activation after quote
+    // deletion and never count an idempotent retry or backfill an older quote.
+    await client.query(`INSERT INTO events(event_type,user_id,source,meta)
+      SELECT 'first_quote',$1,'dashboard',jsonb_build_object('quote_id',$2::int)
+      WHERE NOT EXISTS(SELECT 1 FROM quotes WHERE user_id=$1 AND id<>$2)
+        AND NOT EXISTS(SELECT 1 FROM events WHERE user_id=$1 AND event_type IN ('first_quote','quote_completed','quote_saved') AND (meta->>'quote_id' IS DISTINCT FROM $2::text))`,[req.user.id,saved.rows[0].id]);
     if(req.user.guest) await client.query("INSERT INTO events(event_type,source,meta) VALUES('guest_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id,quote_number:a.used})]);
     await client.query('COMMIT');
     void sendToGA(completionEvent,req.user.id,'dashboard',requestContext(req));

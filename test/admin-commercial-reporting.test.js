@@ -24,7 +24,7 @@ test('admin reads commercial billing, shared trial clock and distinct quote meas
     ('starter',1,'customer1','starter','active',NOW(),NOW()+INTERVAL '30 days'),
     ('pro',2,'customer2','pro','active',NOW(),NOW()+INTERVAL '30 days'),
     ('old',4,'customer4','pro','active',NOW()-INTERVAL '30 days',NOW()-INTERVAL '1 day');
-    INSERT INTO events(event_type) VALUES('subscription_started'),('payg_purchased'),('anonymous_quote_completed'),('quote_completed');`);
+    INSERT INTO events(event_type,source) VALUES('subscription_started','stripe_webhook'),('payg_purchased','stripe_webhook'),('subscription_started',NULL),('anonymous_quote_completed',NULL),('quote_completed',NULL);`);
   const app=express();app.locals.pool=db;app.use('/admin',require('../routes/admin'));
   const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});

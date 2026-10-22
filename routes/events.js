@@ -8,14 +8,14 @@ const AUTHENTICATED_FUNNEL_EVENTS = new Set(['quote_started', 'quote_saved', 'sa
 
 
 router.post('/', async (req, res) => {
-  const { event_type, user_id, source } = req.body;
+  const { event_type, source } = req.body;
   if (!event_type) return res.status(400).json({ error: 'event_type required' });
   if (!PUBLIC_EVENT_TYPES.has(event_type)) return res.status(400).json({ error: 'unsupported public event_type' });
   try {
     const pool = req.app.locals.pool;
     await pool.query(
       'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
-      [event_type, user_id || null, source || null]
+      [event_type, null, source || null]
     );
     res.json({ success: true });
     sendToGA(event_type, null, source, requestContext(req)); // fire-and-forget, never blocks or breaks the existing response
