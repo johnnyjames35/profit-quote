@@ -112,6 +112,9 @@ router.get('/funnel', requireAdmin, async (req, res) => {
 
     const activity=(await pool.query(`SELECT event_type,source,COUNT(*)::int AS c FROM events WHERE ${legacyCondition('created_at')} GROUP BY event_type,source`)).rows;
     const count=(type,guestOnly=false)=>activity.filter(r=>r.event_type===type&&(!guestOnly||r.source==='guest')).reduce((n,r)=>n+r.c,0);
+    // Old manual grants used subscription_started too. Keep those historical
+    // records, but only include verified billing events in purchase totals.
+    const purchases=activity.filter(r=>r.source==='stripe_webhook'&&['payg_purchased','subscription_started'].includes(r.event_type)).reduce((n,r)=>n+r.c,0);
     const guestSends=(await pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND meta->>'guest_id' IS NOT NULL AND ${legacyCondition('created_at')}`)).rows[0].c;
     const activePaidCount = activePaidCustomers.rows[0].c;
     res.set('Cache-Control', 'private, no-store');
@@ -127,7 +130,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       accountsCreated: accountsCreated.rows[0].c,
       firstQuotes: firstQuotes.rows[0].c,
       totalQuotes: totalQuotes.rows[0].c,
-      paidCustomers: count('payg_purchased')+count('subscription_started'),
+      paidCustomers: purchases,
       activePaidCustomers: activePaidCount,
       guestStarts: guestStarts.rows[0].c,
       guestQuotes: guestQuotes.rows[0].c,
@@ -139,7 +142,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       anonymousQuoteCompletions:count('anonymous_quote_completed'),
       anonymousQuoteSends:guestSends,
       savePrompts:count('save_prompt_shown'),
-      paidConversions:count('payg_purchased')+count('subscription_started'),
+      paidConversions:purchases,
       quoteSends: quoteSends.rows[0].c,
       quoteDownloads: quoteDownloads.rows[0].c,
       signupViews: signupViews.rows[0].c,
@@ -187,15 +190,23 @@ router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
   const pool = req.app.locals.pool;
   const { id } = req.params;
   try {
-    const result = await pool.query(
-      'UPDATE users SET paid_at = NOW() WHERE id = $1 AND NOT EXISTS(SELECT 1 FROM trade_bundle_access WHERE user_id=$1) RETURNING id',
-      [id]
-    );
+    const result = await pool.query(`
+      WITH granted AS (
+        UPDATE users SET paid_at=NOW() WHERE id=$1 AND paid_at IS NULL AND NOT billing_managed
+          AND NOT EXISTS(SELECT 1 FROM trade_bundle_access WHERE user_id=$1) RETURNING id
+      ), logged AS (
+        INSERT INTO events(event_type,user_id,source)
+          SELECT 'manual_access_granted',id,'admin' FROM granted RETURNING user_id
+      ) SELECT u.id,u.billing_managed,
+        EXISTS(SELECT 1 FROM trade_bundle_access WHERE user_id=$1) AS bundle_bound
+        FROM users u WHERE u.id=$1`,[id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    if(result.rows[0].billing_managed || result.rows[0].bundle_bound) {
+      return res.status(409).json({error:'Manage this account through Stripe or Trade Toolkit.'});
+    }
     res.json({ success: true });
-    logEvent(pool, 'subscription_started', id, null);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -212,9 +223,9 @@ router.patch('/users/:id/mark-cancelled', requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     if(exists.rows[0].billing_managed) return res.status(409).json({error:'Cancel this subscription in Stripe. This control only removes manual access.'});
-    await pool.query('UPDATE users SET paid_at=NULL WHERE id=$1',[id]);
+    const changed=await pool.query('UPDATE users SET paid_at=NULL WHERE id=$1 AND paid_at IS NOT NULL RETURNING id',[id]);
     res.json({ success: true });
-    logEvent(pool, 'subscription_cancelled', id, null);
+    if(changed.rows.length) logEvent(pool, 'manual_access_revoked', id, 'admin');
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -252,7 +263,7 @@ router.get('/reporting/daily', requireAdmin, async (req, res) => {
         (SELECT COUNT(*)::int FROM events WHERE event_type='quote_sent' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_sends,
         (SELECT COUNT(*)::int FROM events WHERE event_type='quote_downloaded' AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS quote_downloads,
         (SELECT COUNT(*)::int FROM users WHERE (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS accounts_created,
-        (SELECT COUNT(*)::int FROM events WHERE event_type IN ('payg_purchased','subscription_started') AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS purchases
+        (SELECT COUNT(*)::int FROM events WHERE source='stripe_webhook' AND event_type IN ('payg_purchased','subscription_started') AND (created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London') AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')) AS purchases
     `, [report.date]);
     const app = appResult.rows[0] || {};
     report.appFunnel = {
@@ -288,4 +299,3 @@ router.get('/reporting/live', requireAdmin, async (_req, res) => {
 });
 
 module.exports = router;
-
