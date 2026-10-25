@@ -422,11 +422,11 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
       <div class="funnel-stats-row">
         <div class="stat-card">
-          <div class="stat-label" id="f-visitors-label">Recorded Visits Today</div>
+          <div class="stat-label" id="f-visitors-label">Recorded Landing Visits Today</div>
           <div class="stat-val cyan" id="f-visitors-today">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Free Quote Visitors</div>
+          <div class="stat-label">Guest Sessions</div>
           <div class="stat-val amber" id="f-guest-starts">—</div>
         </div>
         <div class="stat-card">
@@ -483,6 +483,34 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-quote-downloads">—</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Unique Visitors</div>
+          <div class="stat-val cyan" id="f-unique-visitors">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Page Views</div>
+          <div class="stat-val cyan" id="f-page-views">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Checkout Attempts</div>
+          <div class="stat-val cyan" id="f-checkout-attempts">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Failed Checkout Requests</div>
+          <div class="stat-val red" id="f-checkout-failures">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Stripe Async Payment Failures</div>
+          <div class="stat-val red" id="f-stripe-checkout-failures">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Expired / Abandoned Checkouts</div>
+          <div class="stat-val cyan" id="f-expired-checkouts">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unconfirmed Checkout Attempts</div>
+          <div class="stat-val cyan" id="f-checkout-pending">—</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">Checkout Openings</div>
           <div class="stat-val cyan" id="f-checkout-starts">—</div>
         </div>
@@ -501,8 +529,10 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
       </div>
 
       <div class="funnel-card">
+        <p class="stat-sub" id="f-tracking-since">Loading tracking coverage...</p>
+        <p class="stat-sub" id="f-webhook-status">Loading Stripe webhook receipt...</p>
         <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
-        <p class="stat-sub">Recorded visits count selected landing pages once per tab session, not unique people or every page view. Use GA4 Users for its active-user estimate. Checkout Openings count client-reported successful checkout redirects, not failed attempts. Older commercial-page events used page names as sources and cannot be reattributed. Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
+        <p class="stat-sub">Unique Visitors counts anonymous browsers using a 30-day first-party cookie, not identified people. Cookie blocking or different browsers/devices can increase this count. Page Views counts successful HTML requests, including reloads; admin/API traffic, recognised bots and DNT/GPC requests are excluded. Server Checkout Attempts includes authenticated requests, with invalid plans, guest restrictions and provider errors counted as failures. Unconfirmed attempts are retained when no terminal outcome could be stored. Checkout Openings includes older client events as well as new server-verified openings. Older commercial-page events used page names as sources and cannot be reattributed. Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
         <div id="funnel-bars"></div>
       </div>
 
@@ -970,6 +1000,19 @@ async function loadFunnel() {
     document.getElementById('f-quote-downloads').textContent = data.quoteDownloads;
     document.getElementById('f-paid').textContent = data.paidCustomers;
     document.getElementById('f-checkout-starts').textContent = data.checkoutStarts;
+    document.getElementById('f-unique-visitors').textContent = data.uniqueVisitors;
+    document.getElementById('f-page-views').textContent = data.pageViews;
+    document.getElementById('f-checkout-attempts').textContent = data.checkoutAttempts;
+    document.getElementById('f-checkout-failures').textContent = data.checkoutFailures;
+    document.getElementById('f-checkout-pending').textContent = data.checkoutPending;
+    document.getElementById('f-stripe-checkout-failures').textContent = data.stripeCheckoutFailures;
+    document.getElementById('f-expired-checkouts').textContent = data.expiredCheckouts;
+    const ukDate=value=>new Date(value).toLocaleString('en-GB',{timeZone:'Europe/London'});
+    document.getElementById('f-tracking-since').textContent = 'Unique visitors, page views and server checkout attempts are recorded from '+ukDate(data.trackingSince)+'. Earlier activity cannot be backfilled.';
+    const receipt=data.lastWebhook;
+    document.getElementById('f-webhook-status').textContent = receipt
+      ? 'Latest signed Stripe webhook: '+receipt.event_type+' · HTTP '+(receipt.http_status || 'pending')+' · '+ukDate(receipt.last_received_at)+'. Acceptance verifies delivery and signature, not a payment.'
+      : 'No signed Stripe webhook has been recorded since this tracking began.';
     const activePaidEl = document.getElementById('f-active-paid');
     if (activePaidEl) activePaidEl.textContent = data.activePaidCustomers;
     document.getElementById('f-mrr').textContent = '£' + data.mrr;
@@ -982,6 +1025,8 @@ async function loadFunnel() {
     window.lastFunnelData = null;
     document.querySelectorAll('#view-funnel .stat-val').forEach((el) => { el.textContent = '—'; });
     document.getElementById('funnel-updated').textContent = 'Refresh failed: ' + e.message;
+    document.getElementById('f-tracking-since').textContent = 'Tracking coverage could not be loaded.';
+    document.getElementById('f-webhook-status').textContent = 'Webhook status could not be loaded.';
     document.getElementById('funnel-bars').innerHTML = '<p style="color:var(--muted);">Could not load funnel data.</p>';
   }
 }

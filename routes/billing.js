@@ -25,10 +25,7 @@ router.get('/status',auth,async(req,res)=>{
   }
   catch(e){res.status(e.status||500).json({error:e.message});}
 });
-router.post('/checkout',auth,async(req,res)=>{
-  try{await require('../utils/commercial-billing').checkout(req,res);}
-  catch(e){res.status(e.status||503).json({error:e.status?e.message:'Checkout is temporarily unavailable. Please try again or contact support.'});}
-});
+router.post('/checkout',auth,require('../utils/checkout-tracking'));
 router.post('/confirm',auth,async(req,res)=>{
   if(req.user.guest)return res.status(403).json({error:'Sign in first.'});
   try{
@@ -52,7 +49,7 @@ function verifySignature(raw,header,secret){
   return JSON.parse(raw.toString('utf8'));
 }
 
-async function webhook(req,res){
+async function processWebhook(req,res){
   let event;
   try{event=verifySignature(req.body,req.headers['stripe-signature'],process.env.STRIPE_WEBHOOK_SECRET);}
   catch(e){return res.status(400).json({error:'Invalid webhook'});}
@@ -92,5 +89,27 @@ async function webhook(req,res){
     res.json({received:true});
   }catch(e){await client.query('ROLLBACK');console.error('Billing webhook processing failed');res.status(500).json({error:'Webhook processing failed'});}
   finally{client.release();}
+}
+async function webhook(req,res){
+  let event;
+  try { event=verifySignature(req.body,req.headers['stripe-signature'],process.env.STRIPE_WEBHOOK_SECRET); }
+  catch (_) { return res.status(400).json({error:'Invalid webhook'}); }
+  if(event.livemode!==(!/^(sk|rk)_test_/.test(process.env.STRIPE_SECRET_KEY||'')) || typeof event.id!=='string' || !/^evt_[a-zA-Z0-9_]{1,150}$/.test(event.id) || typeof event.type!=='string' || event.type.length>150 || !Number.isInteger(event.created) || !event.data?.object) return res.status(400).json({error:'Invalid event'});
+  const db=req.app.locals.pool;
+  try {
+    await db.query(`INSERT INTO billing_webhook_receipts(event_id,event_type) VALUES($1,$2)
+      ON CONFLICT(event_id) DO UPDATE SET attempts=billing_webhook_receipts.attempts+1,last_received_at=NOW()`,[event.id,event.type]);
+    const session=event.data.object;
+    if(['checkout.session.async_payment_failed','checkout.session.expired'].includes(event.type) && session.object==='checkout.session' &&
+      (session.metadata?.app==='profitquote-v2' || PAYMENT_LINKS.has(session.payment_link))) {
+      await db.query(`INSERT INTO stripe_checkout_outcomes(event_id,session_id,event_type,event_created)
+        VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`,[event.id,session.id,event.type,new Date(event.created*1000)]);
+    }
+    let status=200,body;
+    await processWebhook(req,{status(code){status=code;return this;},json(value){body=value;return this;}});
+    await db.query(`UPDATE billing_webhook_receipts SET http_status=$2,
+      accepted_at=CASE WHEN $2>=200 AND $2<300 THEN NOW() ELSE accepted_at END WHERE event_id=$1`,[event.id,status]);
+    return res.status(status).json(body);
+  } catch (_) { return res.status(500).json({error:'Webhook processing pending'}); }
 }
 module.exports={router,webhook,verifySignature};

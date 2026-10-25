@@ -1,0 +1,78 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
+const express=require('express'),jwt=require('jsonwebtoken'),{PGlite}=require('@electric-sql/pglite');
+async function fixture(t){
+  process.env.JWT_SECRET='tracking-test';process.env.ADMIN_SECRET='tracking-admin';process.env.STRIPE_WEBHOOK_SECRET='tracking-webhook';delete process.env.GA_API_SECRET;
+  const db=new PGlite();await db.exec(fs.readFileSync('schema.sql','utf8'));
+  let queue=Promise.resolve();const pool={query:db.query.bind(db),connect:async()=>{const before=queue;let release;queue=new Promise(r=>release=r);await before;return {query:db.query.bind(db),release};}};
+  const app=express();app.locals.pool=pool;
+  const billing=require('../routes/billing');app.post('/api/billing/webhook',express.raw({type:'application/json'}),billing.webhook);
+  app.use(express.json());app.use(require('../middleware/traffic'));app.use('/api/admin',require('../routes/admin'));app.use('/api/billing',billing.router);app.use('/api/events',require('../routes/events'));
+  app.get(['/', '/about.html'],(req,res)=>res.type('html').send('<h1>Tracking fixture</h1>'));
+  app.get('/admin',(req,res)=>res.type('html').send('private'));app.get('/asset.js',(req,res)=>res.type('js').send('void 0;'));
+  const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+  t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});
+  const base='http://127.0.0.1:'+server.address().port;
+  const post=(path,body,token)=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body)});
+  const funnel=async period=>(await fetch(base+'/api/admin/funnel?period='+period,{headers:{Authorization:'Bearer '+jwt.sign({admin:true},process.env.ADMIN_SECRET)}})).json();
+  return{db,app,base,post,funnel};
+}
+test('first-party visitors dedupe across pages/reloads; page views exclude bots, privacy signals, private and missing pages',async t=>{
+  const {db,base,funnel}=await fixture(t),headers={Accept:'text/html','User-Agent':'Mozilla/5.0 audit browser'};
+  const first=await fetch(base+'/?utm_source=LinkedIn&secret=never-store',{headers});await first.text();
+  const cookie=first.headers.get('set-cookie').split(';')[0];assert.match(cookie,/pq_visitor=/);assert.match(first.headers.get('set-cookie'),/HttpOnly/);
+  await(await fetch(base+'/about.html',{headers:{...headers,Cookie:cookie,'If-None-Match':first.headers.get('etag')}})).text();
+  await(await fetch(base+'/',{headers:{...headers,Cookie:cookie}})).text();
+  await(await fetch(base+'/',{headers})).text();
+  for(const [path,extra] of [['/',{DNT:'1'}],['/',{'Sec-GPC':'1'}],['/',{'User-Agent':'Googlebot'}],['/admin',{}],['/asset.js',{}],['/missing',{}]])await(await fetch(base+path,{headers:{...headers,...extra}})).text();
+  await new Promise(r=>setTimeout(r,30));
+  const data=await funnel('today');assert.equal(data.pageViews,4);assert.equal(data.uniqueVisitors,2);assert.ok(data.trackingSince);
+  const rows=(await db.query('SELECT * FROM page_visits ORDER BY id')).rows;
+  assert.equal(rows[0].source,'linkedin');assert.equal(rows[0].visitor_hash,rows[1].visitor_hash);assert.notEqual(rows[0].visitor_hash,rows[3].visitor_hash);
+  assert.ok(rows.every(r=>!r.path.includes('?')));assert.ok(!JSON.stringify(rows).includes(cookie.split('=')[1]));
+  await db.exec("UPDATE page_visits SET created_at=NOW()-INTERVAL '40 days' WHERE id=(SELECT min(id) FROM page_visits)");
+  assert.equal((await funnel('today')).pageViews,3);assert.equal((await funnel('all')).pageViews,4);
+});
+test('checkout request ledger records provider and validation failures, reused successes, and ignores duplicate client events',async t=>{
+  const {db,app,post,funnel}=await fixture(t);
+  const user=(await db.query("INSERT INTO users(name,email,password_hash) VALUES('Audit','audit@example.invalid','stub') RETURNING *")).rows[0];
+  const token=jwt.sign({id:user.id},process.env.JWT_SECRET),guest=jwt.sign({id:crypto.randomUUID(),guest:true},process.env.JWT_SECRET);
+  let fail=true,calls=0,session;
+  app.locals.commercialStripe={prices:{list:async()=>({data:[{id:'price_audit'}]})},checkout:{sessions:{create:async data=>{calls++;if(fail)throw Error('sensitive provider detail');return session={...data,id:'cs_audit',status:'open',url:'https://checkout.stripe.com/audit'};},retrieve:async()=>session}}};
+  assert.equal((await post('/api/billing/checkout',{plan:'payg'},'bad')).status,401);
+  assert.equal((await post('/api/billing/checkout',{plan:'payg'},token)).status,503);
+  assert.equal((await post('/api/billing/checkout',{plan:'invalid'},token)).status,400);
+  assert.equal((await post('/api/billing/checkout',{plan:'payg'},guest)).status,403);
+  fail=false;
+  for(let i=0;i<2;i++)assert.equal((await post('/api/billing/checkout',{plan:'payg'},token)).status,200);
+  assert.equal(calls,2,'one rejected provider call and one created session; retry reuses it');
+  assert.equal((await post('/api/events/funnel',{event_type:'checkout_started'},token)).status,200);
+  const f=await funnel('all');assert.equal(f.checkoutAttempts,5);assert.equal(f.checkoutFailures,3);assert.equal(f.checkoutStarts,2);assert.equal(f.checkoutPending,0);
+  const rows=(await db.query('SELECT * FROM checkout_attempts')).rows;
+  assert.equal(rows.filter(x=>x.outcome==='failed').length,3);assert.ok(!JSON.stringify(rows).includes('sensitive provider detail'));
+  const original=app.locals.pool.query;app.locals.pool.query=async(sql,args)=>{if(sql.includes('WITH done'))throw Error('outcome write failed');return original(sql,args);};
+  assert.equal((await post('/api/billing/checkout',{plan:'payg'},token)).status,503);
+  app.locals.pool.query=original;
+  assert.equal((await funnel('all')).checkoutPending,1);assert.equal((await funnel('all')).checkoutFailures,3);
+});
+test('signed webhook receipts record acceptance, retries and provider failures without accepting invalid signatures',async t=>{
+  const {db,app,base,funnel}=await fixture(t);
+  const event={id:'evt_audit_probe',type:'product.updated',livemode:true,created:Math.floor(Date.now()/1000),data:{object:{id:'prod_audit',object:'product'}}};
+  const send=async(value,valid=true)=>{const raw=JSON.stringify(value),now=Math.floor(Date.now()/1000);const sig=crypto.createHmac('sha256',process.env.STRIPE_WEBHOOK_SECRET).update(now+'.'+raw).digest('hex');return fetch(base+'/api/billing/webhook',{method:'POST',headers:{'Content-Type':'application/json','Stripe-Signature':`t=${now},v1=${valid?sig:'0'.repeat(64)}`},body:raw});};
+  assert.equal((await send(event,false)).status,400);assert.equal((await db.query('SELECT * FROM billing_webhook_receipts')).rows.length,0);
+  assert.equal((await send({...event,livemode:false})).status,400);
+  for(let i=0;i<2;i++)assert.equal((await send(event)).status,200);
+  const row=(await db.query('SELECT * FROM billing_webhook_receipts')).rows[0];assert.equal(row.attempts,2);assert.equal(row.http_status,200);assert.ok(row.accepted_at);
+  app.locals.commercialStripe={checkout:{sessions:{retrieve:async()=>{throw Error('provider unavailable');}}}};
+  const payment={...event,id:'evt_audit_failed',type:'checkout.session.completed',data:{object:{id:'cs_audit',object:'checkout.session',metadata:{app:'profitquote-v2'}}}};
+  assert.equal((await send(payment)).status,500);
+  const failed=(await db.query('SELECT * FROM billing_webhook_receipts WHERE event_id=$1',[payment.id])).rows[0];assert.equal(failed.http_status,500);assert.equal(failed.accepted_at,null);
+  assert.equal((await db.query('SELECT count(*)::int n FROM commercial_payments')).rows[0].n,0);
+  assert.equal((await funnel('all')).lastWebhook.event_id,payment.id);
+  const expired={...event,id:'evt_expired',type:'checkout.session.expired',data:{object:{id:'cs_expired',object:'checkout.session',metadata:{app:'profitquote-v2'}}}};
+  // Do not fetch an unpaid expired session merely to recognise its signed failure.
+  app.locals.commercialStripe={checkout:{sessions:{retrieve:async()=>({metadata:{app:'profitquote-v2',plan:'payg'},payment_status:'unpaid'})}}};
+  assert.equal((await send(expired)).status,200);assert.equal((await send(expired)).status,200);
+  assert.equal((await send({...expired,id:'evt_async_failure',type:'checkout.session.async_payment_failed'})).status,200);
+  assert.equal((await send({...expired,id:'evt_other_app',data:{object:{...expired.data.object,id:'cs_other',metadata:{app:'other'}}}})).status,200);
+  const f=await funnel('all');assert.equal(f.expiredCheckouts,1);assert.equal(f.stripeCheckoutFailures,1);
+});

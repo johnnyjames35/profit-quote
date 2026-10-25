@@ -29,6 +29,8 @@ router.post('/', async (req, res) => {
 // to corrupt.
 router.post('/funnel', auth, async (req, res) => {
   const { event_type } = req.body || {};
+  // Cached older clients may still send this; server checkout receipts now own it.
+  if(event_type==='checkout_started') return res.json({success:true,ignored:true});
   if (!AUTHENTICATED_FUNNEL_EVENTS.has(event_type)) {
     return res.status(400).json({ error: 'unsupported funnel event_type' });
   }

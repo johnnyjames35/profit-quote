@@ -202,6 +202,29 @@ CREATE INDEX IF NOT EXISTS events_posthog_paid_idx ON events(user_id,id)
   WHERE source='stripe_webhook' AND event_type IN ('subscription_started','payg_purchased');
 
 -- Written in the same transaction as verified payment fulfilment.
+CREATE TABLE IF NOT EXISTS traffic_tracking_state (id BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK(id), started_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+INSERT INTO traffic_tracking_state(id) VALUES(TRUE) ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS page_visits (
+ id BIGSERIAL PRIMARY KEY, visitor_hash CHAR(64) NOT NULL, path VARCHAR(500) NOT NULL,
+ source VARCHAR(50) NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS page_visits_period ON page_visits(created_at,visitor_hash);
+CREATE TABLE IF NOT EXISTS checkout_attempts (
+ id UUID PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL, guest_id UUID,
+ plan TEXT NOT NULL, outcome TEXT NOT NULL DEFAULT 'pending' CHECK(outcome IN ('pending','opened','failed')),
+ http_status INTEGER, failure_code TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), completed_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS checkout_attempts_period ON checkout_attempts(created_at);
+CREATE TABLE IF NOT EXISTS stripe_checkout_outcomes (
+ event_id TEXT PRIMARY KEY, session_id TEXT NOT NULL, event_type TEXT NOT NULL,
+ event_created TIMESTAMPTZ NOT NULL, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ UNIQUE(session_id,event_type)
+);
+CREATE TABLE IF NOT EXISTS billing_webhook_receipts (
+ event_id TEXT PRIMARY KEY, event_type TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 1,
+ received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), last_received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ http_status INTEGER, accepted_at TIMESTAMPTZ
+);
 CREATE TABLE IF NOT EXISTS ga_purchase_outbox (
   transaction_id TEXT PRIMARY KEY,
   context JSONB NOT NULL,

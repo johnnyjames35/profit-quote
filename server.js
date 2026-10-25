@@ -37,6 +37,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use(require('./middleware/traffic'));
 app.use(require('./routes/commercial-pages'));
 app.get('/knowledge-centre.html', require('./routes/knowledge-centre').knowledgeCentre);
 app.use(express.static(path.join(__dirname, 'public')));

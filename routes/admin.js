@@ -114,11 +114,33 @@ router.get('/funnel', requireAdmin, async (req, res) => {
     const count=(type,guestOnly=false)=>activity.filter(r=>r.event_type===type&&(!guestOnly||r.source==='guest')).reduce((n,r)=>n+r.c,0);
     const guestSends=(await pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND meta->>'guest_id' IS NOT NULL AND ${legacyCondition('created_at')}`)).rows[0].c;
     const activePaidCount = activePaidCustomers.rows[0].c;
+    const traffic=(await pool.query(`SELECT COUNT(*)::int AS page_views,COUNT(DISTINCT visitor_hash)::int AS unique_visitors
+      FROM page_visits WHERE ${zonedCondition('created_at')}`)).rows[0];
+    const trackingSince=(await pool.query('SELECT started_at FROM traffic_tracking_state WHERE id=TRUE')).rows[0]?.started_at;
+    const checkout=(await pool.query(`SELECT COUNT(*)::int AS attempts,
+      COUNT(*) FILTER(WHERE outcome='opened')::int AS opened,
+      COUNT(*) FILTER(WHERE outcome='failed')::int AS failed,
+      COUNT(*) FILTER(WHERE outcome='pending')::int AS pending FROM checkout_attempts WHERE ${zonedCondition('created_at')}`)).rows[0];
+    const webhook=(await pool.query(`SELECT event_id,event_type,attempts,last_received_at,http_status,accepted_at
+      FROM billing_webhook_receipts ORDER BY last_received_at DESC LIMIT 1`)).rows[0] || null;
+    const stripeOutcomes=(await pool.query(`SELECT
+      COUNT(*) FILTER(WHERE event_type='checkout.session.async_payment_failed')::int AS failed,
+      COUNT(*) FILTER(WHERE event_type='checkout.session.expired')::int AS expired
+      FROM stripe_checkout_outcomes WHERE ${zonedCondition('event_created')}`)).rows[0];
     res.set('Cache-Control', 'private, no-store');
     res.json({
       period,
       timezone: 'Europe/London',
       generatedAt: new Date().toISOString(),
+      pageViews: traffic.page_views,
+      uniqueVisitors: traffic.unique_visitors,
+      trackingSince,
+      checkoutAttempts: checkout.attempts,
+      checkoutFailures: checkout.failed,
+      checkoutPending: checkout.pending,
+      stripeCheckoutFailures: stripeOutcomes.failed,
+      expiredCheckouts: stripeOutcomes.expired,
+      lastWebhook: webhook,
       visitorsToday: visitors.rows[0].c,
       totalVisitors: visitors.rows[0].c,
       linkedinVisitors: linkedinVisitors.rows[0].c,
@@ -145,7 +167,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       signupViews: signupViews.rows[0].c,
       signupAttempts: signupAttempts.rows[0].c,
       signupFailures: signupFailures.rows[0].c,
-      checkoutStarts: count('checkout_started'),
+      checkoutStarts: count('checkout_started') + count('checkout_opened'),
       mrr: activePaidCustomers.rows[0].mrr
     });
   } catch(e) {
