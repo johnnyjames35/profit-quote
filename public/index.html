@@ -97,10 +97,12 @@
     }).catch(() => {});
   }
 
-  if (!sessionStorage.getItem('pq_homepage_visit_recorded')) {
-    sessionStorage.setItem('pq_homepage_visit_recorded', '1');
-    record('page_viewed');
-  }
+  try {
+    if (!sessionStorage.getItem('pq_homepage_visit_recorded')) {
+      sessionStorage.setItem('pq_homepage_visit_recorded', '1');
+      void record('page_viewed');
+    }
+  } catch (_) { void record('page_viewed'); }
 
   document.querySelectorAll('a[href^="/dashboard?try=1"]').forEach((link) => {
     link.addEventListener('click', async (event) => {

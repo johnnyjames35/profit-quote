@@ -438,11 +438,11 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val green" id="f-guest-conversions">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">LinkedIn Visitors</div>
+          <div class="stat-label">LinkedIn Landing Visits</div>
           <div class="stat-val cyan" id="f-linkedin">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Google Visitors</div>
+          <div class="stat-label">Google Landing Visits</div>
           <div class="stat-val cyan" id="f-google">—</div>
         </div>
         <div class="stat-card">
@@ -483,6 +483,10 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-quote-downloads">—</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Checkout Openings</div>
+          <div class="stat-val cyan" id="f-checkout-starts">—</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">First Plan Purchases</div>
           <div class="stat-val green" id="f-paid">—</div>
         </div>
@@ -498,7 +502,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
       <div class="funnel-card">
         <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
-        <p class="stat-sub">Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
+        <p class="stat-sub">Recorded visits count selected landing pages once per tab session, not unique people or every page view. Use GA4 Users for its active-user estimate. Checkout Openings count client-reported successful checkout redirects, not failed attempts. Older commercial-page events used page names as sources and cannot be reattributed. Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
         <div id="funnel-bars"></div>
       </div>
 
@@ -965,6 +969,7 @@ async function loadFunnel() {
     document.getElementById('f-quote-sends').textContent = data.quoteSends;
     document.getElementById('f-quote-downloads').textContent = data.quoteDownloads;
     document.getElementById('f-paid').textContent = data.paidCustomers;
+    document.getElementById('f-checkout-starts').textContent = data.checkoutStarts;
     const activePaidEl = document.getElementById('f-active-paid');
     if (activePaidEl) activePaidEl.textContent = data.activePaidCustomers;
     document.getElementById('f-mrr').textContent = '£' + data.mrr;
@@ -987,7 +992,7 @@ function renderFunnelBars(data) {
 
   const steps = [
     { label: 'LinkedIn Impressions', value: impressions },
-    { label: 'Website Visitors', value: data.totalVisitors },
+    { label: 'Recorded Landing Visits', value: data.totalVisitors },
     { label: 'Anonymous Free Use', value: data.anonymousFreeStarts || 0 },
     { label: 'Anonymous Quote Starts', value: data.anonymousQuoteStarts || 0 },
     { label: 'Anonymous Completions', value: data.anonymousQuoteCompletions || 0 },
@@ -1000,6 +1005,7 @@ function renderFunnelBars(data) {
     { label: 'Signup Attempts', value: data.signupAttempts },
     { label: 'New Accounts Still Present', value: data.accountsCreated },
     { label: 'First Quotes', value: data.firstQuotes },
+    { label: 'Checkout Openings', value: data.checkoutStarts || 0 },
     { label: 'Paid Conversions', value: data.paidConversions || 0 }
   ];
 

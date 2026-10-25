@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
     const pool = req.app.locals.pool;
     await pool.query(
       'INSERT INTO events (event_type, user_id, source) VALUES ($1,$2,$3)',
-      [event_type, user_id || null, source || null]
+      [event_type, null, typeof source === 'string' ? source.slice(0, 50) : null]
     );
     res.json({ success: true });
     sendToGA(event_type, null, source, requestContext(req)); // fire-and-forget, never blocks or breaks the existing response

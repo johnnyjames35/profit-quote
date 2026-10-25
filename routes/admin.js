@@ -145,6 +145,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       signupViews: signupViews.rows[0].c,
       signupAttempts: signupAttempts.rows[0].c,
       signupFailures: signupFailures.rows[0].c,
+      checkoutStarts: count('checkout_started'),
       mrr: activePaidCustomers.rows[0].mrr
     });
   } catch(e) {
@@ -195,7 +196,7 @@ router.patch('/users/:id/mark-paid', requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     res.json({ success: true });
-    logEvent(pool, 'subscription_started', id, null);
+    logEvent(pool, 'manual_access_granted', id, null);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

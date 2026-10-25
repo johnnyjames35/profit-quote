@@ -24,13 +24,14 @@ test('admin reads commercial billing, shared trial clock and distinct quote meas
     ('starter',1,'customer1','starter','active',NOW(),NOW()+INTERVAL '30 days'),
     ('pro',2,'customer2','pro','active',NOW(),NOW()+INTERVAL '30 days'),
     ('old',4,'customer4','pro','active',NOW()-INTERVAL '30 days',NOW()-INTERVAL '1 day');
-    INSERT INTO events(event_type) VALUES('subscription_started'),('payg_purchased'),('anonymous_quote_completed'),('quote_completed');`);
+    INSERT INTO events(event_type) VALUES('subscription_started'),('payg_purchased'),('anonymous_quote_completed'),('quote_completed'),('checkout_started');`);
   const app=express();app.locals.pool=db;app.use('/admin',require('../routes/admin'));
   const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});
   const get=async url=>{const res=await fetch(`http://127.0.0.1:${server.address().port}/admin/${url}`,{headers:{Authorization:'Bearer '+jwt.sign({admin:true},process.env.ADMIN_SECRET)}});assert.equal(res.status,200);return res.json();};
   const funnel=await get('funnel?period=all');
   assert.equal(funnel.activePaidCustomers,2);assert.equal(funnel.mrr,48);
+  assert.equal(funnel.checkoutStarts,1);
   assert.equal(funnel.paidCustomers,2);assert.equal(funnel.totalQuotes,0);assert.equal(funnel.quoteCompletions,2);
   const {users}=await get('users');
   assert.equal(users.find(u=>u.id===1).subscription_active,true);

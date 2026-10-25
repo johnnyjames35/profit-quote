@@ -31,8 +31,8 @@ test('non-JSON response reports HTTP status instead of a parser crash', async ()
 });
 
 test('rejected beacon falls back to a keepalive event request with browser attribution', async () => {
-  const home = fs.readFileSync(path.join(__dirname, '..', 'public/index.html'), 'utf8');
-  const source = home.slice(home.indexOf('  async function record(eventType)'), home.indexOf("  if (!sessionStorage.getItem('pq_homepage_visit_recorded')"));
+  const home = fs.readFileSync(path.join(__dirname, '..', 'public/index.html'), 'utf8').replace(/\r\n/g,'\n');
+  const source = home.slice(home.indexOf('  async function record(eventType)'), home.indexOf("\n  try {\n    if (!sessionStorage.getItem('pq_homepage_visit_recorded')"));
   let sent;
   await vm.runInNewContext(source + "record('trial_click');", { window:{pqGAContext:async()=>({client_id:'123.456',session_id:'1792000000',page_location:'https://profitquote.co.uk/'})}, source: () => 'google', navigator: { sendBeacon: () => false }, Blob,
     fetch: (url, options) => { sent = { url, options }; return Promise.resolve(); } });
@@ -44,7 +44,7 @@ test('rejected beacon falls back to a keepalive event request with browser attri
 
 for (const landing of ['homepage','commercial']) test(landing+' queues trial attribution before navigation and still navigates on tracking failure',async()=>{
   const source=landing==='homepage'
-    ? '(function () {'+fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8').split('<script>\n(function () {')[1].split('</script>')[0]
+    ? '(function () {'+fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8').replace(/\r\n/g,'\n').split('<script>\n(function () {')[1].split('</script>')[0]
     : fs.readFileSync(path.join(__dirname,'../public/commercial-pages.js'),'utf8');
   for(const failing of [false,true]){
     let click,resolveIdentity;const actions=[];
