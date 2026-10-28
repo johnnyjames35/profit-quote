@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><script src="/product-analytics.js"></script>
+<head><script src="/product-analytics.js"></script><script src="/public-events.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-D6L8EB3PWK"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-D6L8EB3PWK');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -670,24 +670,7 @@ if (generateBtn) {
   });
 }
 
-// Record only the hand-off from this high-intent guide into the free product.
-// sendBeacon keeps the navigation fast; fetch is the compatibility fallback.
-document.querySelectorAll('a[href^="/dashboard?try=1"]').forEach((link) => {
-  link.addEventListener('click', () => {
-    window.pqAnalytics?.capture('trial_click');
-    const body = JSON.stringify({ event_type: 'trial_click', source: 'builder-quote-template' });
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }));
-      return;
-    }
-    fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      keepalive: true
-    }).catch(() => {});
-  });
-});
+// CTA hand-offs are recorded by /public-events.js.
 </script>
 
 </body>
