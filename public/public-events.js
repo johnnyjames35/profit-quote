@@ -2,6 +2,12 @@
 (() => {
   if (window.pqTrackPublicEvent) return;
   const signup = new Set(['signup_screen_viewed', 'signup_attempted', 'signup_failed']);
+  // Opt-in diagnostics contain enums only, never identities, URLs or form values.
+  const debug = new URLSearchParams(location.search).get('tracking_debug') === '1';
+  function diagnostic(key, value) {
+    if (debug) document.documentElement?.setAttribute('data-pq-' + key, value);
+  }
+  diagnostic('tracking-status', 'ready');
   function source() {
     const campaign = new URLSearchParams(location.search).get('utm_source');
     if (campaign?.trim()) return campaign.trim().toLowerCase().slice(0, 50);
@@ -14,19 +20,31 @@
     return 'referral';
   }
   window.pqTrackPublicEvent = async eventType => {
-    if ((!signup.has(eventType) && eventType !== 'trial_click') || navigator.doNotTrack === '1' || navigator.globalPrivacyControl) return false;
+    if (!signup.has(eventType) && eventType !== 'trial_click') return false;
+    diagnostic('tracking-event', eventType);
+    if (navigator.doNotTrack === '1' || navigator.globalPrivacyControl) {
+      diagnostic('tracking-status', 'privacy-disabled'); return false;
+    }
+    diagnostic('tracking-status', 'preparing');
     try {
       try { window.pqAnalytics?.capture(eventType); } catch (_) { /* Optional product analytics is independent. */ }
       let analytics;
       try { analytics = await window.pqGAContext?.(); } catch (_) { /* Internal counts do not require Google tags. */ }
+      diagnostic('ga-identity', analytics?.client_id ? 'available' : 'unavailable');
       const body = JSON.stringify({event_type:eventType, source:source(), analytics});
       const url = signup.has(eventType) ? '/api/events/signup' : '/api/events';
-      try { if (navigator.sendBeacon?.(url, new Blob([body], {type:'application/json'}))) return true; } catch (_) { /* Try keepalive below. */ }
-      void fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body, keepalive:true}).catch(() => {});
+      try { if (navigator.sendBeacon?.(url, new Blob([body], {type:'application/json'}))) {
+        diagnostic('tracking-status', 'beacon-queued'); return true;
+      } } catch (_) { /* Try keepalive below. */ }
+      diagnostic('tracking-status', 'fetch-queued');
+      void fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body, keepalive:true})
+        .then(r => diagnostic('tracking-status', r.ok ? 'recorded' : 'request-rejected'))
+        .catch(() => diagnostic('tracking-status', 'request-failed'));
       return true;
-    } catch (_) { return false; }
+    } catch (_) { diagnostic('tracking-status', 'failed'); return false; }
   };
   function click(event) {
+    diagnostic('tracking-click', event.defaultPrevented ? 'already-prevented' : 'received');
     if (event.defaultPrevented || (event.type === 'auxclick' ? event.button !== 1 : event.button !== 0)) return;
     const link = event.target?.closest?.('a[href]');
     if (!link || link.hasAttribute('download')) return;

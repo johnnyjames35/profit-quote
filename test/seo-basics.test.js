@@ -76,6 +76,6 @@ test('the builder quote template page targets commercial intent and routes reade
   assert.match(html, /"dateModified": "2026-09-01"/);
   assert.match(html, /href="\/dashboard\?try=1&amp;source=builder-quote-template"/);
   assert.match(html, /7-day unlimited free trial with an account\. No card required\./);
-  assert.match(html, /<script src="\/public-events.js"><\/script>/);
+  assert.match(html, /<script src="\/public-events.js\?v=[a-f0-9]{12}"><\/script>/);
 });
 

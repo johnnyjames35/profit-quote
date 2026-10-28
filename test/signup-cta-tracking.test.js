@@ -1,14 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const express=require('express');
 function browser({beacon=true,dnt=false,gpc=false,referrer='https://www.google.co.uk/search?q=private',search=''}={}) {
-  const events=[],handlers={},navigations=[];
+  const events=[],handlers={},navigations=[],attributes={};
   const context={window:{pqGAContext:async()=>({client_id:'123.456',session_id:'1793229000',page_location:'https://profitquote.co.uk/knowledge-centre.html'})},
     navigator:{doNotTrack:dnt?'1':'0',globalPrivacyControl:gpc,sendBeacon:(url,body)=>{if(beacon)events.push({url,body});return beacon;}},
-    document:{referrer,addEventListener:(type,handler)=>{handlers[type]=handler;}},
+    document:{referrer,documentElement:{setAttribute:(key,value)=>{attributes[key]=value;}},addEventListener:(type,handler)=>{handlers[type]=handler;}},
     location:{origin:'https://profitquote.co.uk',hostname:'profitquote.co.uk',href:'https://profitquote.co.uk/knowledge-centre.html',search,assign:url=>navigations.push(url)},
     URL,URLSearchParams,Blob,fetch:async(url,options)=>{events.push({url,body:new Blob([options.body])});return {ok:true};}};
   const source=fs.readFileSync('public/public-events.js','utf8');vm.runInNewContext(source,context);
-  return {context,events,handlers,navigations,source};
+  return {context,events,handlers,navigations,source,attributes};
 }
 async function flush(){await new Promise(r=>setImmediate(r));}
 function click(b,{href='https://profitquote.co.uk/dashboard?source=guide&try=1',type='click',button=0,ctrlKey=false,target='',defaultPrevented=false}={}){
@@ -36,9 +36,22 @@ test('direct and guest signup events need no account token and honour privacy si
 });
 test('every public page with a free-trial CTA loads the shared tracker and generators preserve it',()=>{
  for(const name of fs.readdirSync('public').filter(x=>x.endsWith('.html'))){
-  const html=fs.readFileSync('public/'+name,'utf8');if(/href="\/dashboard\?[^"\s]*try=1/.test(html))assert.match(html,/<script src="\/public-events.js"><\/script>/,name);
+  const html=fs.readFileSync('public/'+name,'utf8');if(/href="\/dashboard\?[^"\s]*try=1/.test(html))assert.match(html,/<script src="\/public-events.js\?v=[a-f0-9]{12}"><\/script>/,name);
  }
  for(const name of ['scripts/build-commercial-pages.cjs','scripts/build-resources.cjs'])assert.match(fs.readFileSync(name,'utf8'),/\/public-events.js/);
+});
+test('opt-in diagnostics distinguish privacy suppression and queueing without exposing identity or altering preferences',async()=>{
+ const normal=browser();await normal.context.window.pqTrackPublicEvent('signup_attempted');assert.deepEqual(normal.attributes,{});
+ const suppressed=browser({dnt:true,search:'?tracking_debug=1'});await suppressed.context.window.pqTrackPublicEvent('signup_attempted');
+ assert.equal(suppressed.attributes['data-pq-tracking-status'],'privacy-disabled');assert.equal(suppressed.events.length,0);assert.equal(suppressed.context.navigator.doNotTrack,'1');
+ const enabled=browser({search:'?tracking_debug=1'});await enabled.context.window.pqTrackPublicEvent('signup_attempted');
+ assert.equal(enabled.attributes['data-pq-tracking-status'],'beacon-queued');assert.equal(enabled.attributes['data-pq-ga-identity'],'available');assert.ok(!JSON.stringify(enabled.attributes).includes('123.456'));
+});
+test('tracking asset URL matches its content hash on pages and generators',()=>{
+ const hash=require('node:crypto').createHash('sha256').update(fs.readFileSync('public/public-events.js','utf8').replace(/\r\n/g,'\n')).digest('hex').slice(0,12);
+ for(const p of [...fs.readdirSync('public').filter(x=>x.endsWith('.html')).map(x=>'public/'+x),'scripts/build-commercial-pages.cjs','scripts/build-resources.cjs']){
+  const s=fs.readFileSync(p,'utf8');if(s.includes('/public-events.js'))assert.ok(s.includes('/public-events.js?v='+hash),p);
+ }
 });
 test('signup UI events are anonymous, origin restricted, allowlisted, bounded and do not leak form fields',async t=>{
  process.env.JWT_SECRET='signup-test';delete process.env.GA_API_SECRET;
