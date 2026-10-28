@@ -36,3 +36,12 @@ test('all seven commercial pages load identity helper before click handling',()=
   assert.ok(page.indexOf('/ga-context.js')>=0);assert.ok(page.indexOf('/ga-context.js')<page.indexOf('/commercial-pages.js'));
  }
 });
+
+test('homepage and dashboard load GA identity before their event producers',()=>{
+ for(const name of ['index.html','dashboard.html']){
+  const page=fs.readFileSync(path.join(root,'public',name),'utf8');
+  const helperPosition=page.indexOf('<script src="/ga-context.js"></script>');
+  assert.ok(helperPosition>=0, name+' must load the identity helper synchronously');
+  assert.ok(helperPosition<page.indexOf('window.pqGAContext?.()'),name+' must load identity before events');
+ }
+});

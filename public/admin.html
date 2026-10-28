@@ -422,8 +422,8 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 
       <div class="funnel-stats-row">
         <div class="stat-card">
-          <div class="stat-label" id="f-visitors-label">Recorded Landing Visits Today</div>
-          <div class="stat-val cyan" id="f-visitors-today">—</div>
+          <div class="stat-label" id="f-visitors-label">Landing Events Today</div>
+          <div class="stat-val cyan" id="f-visitors-today">—</div><div class="stat-sub">Browser events from the homepage and commercial landing pages, once per page per tab session. Separate from server page views and visitor cookies below.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Guest Sessions</div>
@@ -543,7 +543,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         <div class="report-date">Latest GA4 calendar-day report: <strong id="report-date">—</strong><br><span id="report-refreshed" class="stat-sub">Not refreshed yet</span></div>
         <button class="refresh-btn" id="report-refresh" onclick="loadReporting()">↻ Refresh report</button>
       </div>
-      <div class="report-message" id="report-window-note">This covers the previous UK calendar day, not Google's rolling last 24 hours. Google may continue adjusting recent figures.</div>
+      <div class="report-message" id="report-window-note">The requested GA4 date defaults to yesterday in the UK; GA4 uses its property's reporting time zone. Search Console calendar dates use Pacific Time; app records use Europe/London. This is not Google's rolling last 24 hours; the live hourly window is separate. Google may continue adjusting recent figures.</div>
       <div class="report-message" id="app-control-note">ProfitQuote app control: waiting for data.</div>
       <div id="report-status" class="report-message">Open this tab to load traffic reporting.</div>
       <div id="report-content" style="display:none;">
@@ -1016,8 +1016,8 @@ async function loadFunnel() {
     const activePaidEl = document.getElementById('f-active-paid');
     if (activePaidEl) activePaidEl.textContent = data.activePaidCustomers;
     document.getElementById('f-mrr').textContent = '£' + data.mrr;
-    const periodLabels = { today: 'Recorded Visits Today', '7d': 'Recorded Visits — 7 Days', '30d': 'Recorded Visits — 30 Days', all: 'Recorded Visits — All Time' };
-    document.getElementById('f-visitors-label').textContent = periodLabels[data.period] || 'Recorded Visits';
+    const periodLabels = { today: 'Landing Events Today', '7d': 'Landing Events — 7 Days', '30d': 'Landing Events — 30 Days', all: 'Landing Events — All Time' };
+    document.getElementById('f-visitors-label').textContent = periodLabels[data.period] || 'Landing Events';
     document.getElementById('funnel-updated').textContent = 'Updated ' + new Date(data.generatedAt).toLocaleString('en-GB', { timeZone: data.timezone || 'Europe/London', dateStyle: 'medium', timeStyle: 'short' });
 
     renderFunnelBars(data);
@@ -1037,7 +1037,7 @@ function renderFunnelBars(data) {
 
   const steps = [
     { label: 'LinkedIn Impressions', value: impressions },
-    { label: 'Recorded Landing Visits', value: data.totalVisitors },
+    { label: 'Landing Events', value: data.totalVisitors },
     { label: 'Anonymous Free Use', value: data.anonymousFreeStarts || 0 },
     { label: 'Anonymous Quote Starts', value: data.anonymousQuoteStarts || 0 },
     { label: 'Anonymous Completions', value: data.anonymousQuoteCompletions || 0 },
