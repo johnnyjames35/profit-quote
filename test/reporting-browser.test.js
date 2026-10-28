@@ -48,14 +48,15 @@ for (const landing of ['homepage','commercial']) test(landing+' queues trial att
     : fs.readFileSync(path.join(__dirname,'../public/commercial-pages.js'),'utf8');
   for(const failing of [false,true]){
     let click,resolveIdentity;const actions=[];
-    const context={window:{pqGAContext:()=>new Promise(resolve=>resolveIdentity=resolve)},location:{search:'',assign:url=>actions.push('navigate')},URLSearchParams,Blob,
-      document:{body:{dataset:{landingPage:'builders'}},referrer:'',querySelectorAll:()=>[{href:'https://profitquote.co.uk/dashboard?try=1',addEventListener:(name,fn)=>click=fn}]},
+    const context={window:{pqGAContext:()=>new Promise(resolve=>resolveIdentity=resolve)},location:{origin:'https://profitquote.co.uk',hostname:'profitquote.co.uk',href:'https://profitquote.co.uk/',search:'',assign:url=>actions.push('navigate')},URL,URLSearchParams,Blob,
+      document:{body:{dataset:{landingPage:'builders'}},referrer:'',addEventListener:(name,fn)=>{if(name==='click')click=fn;}},
       sessionStorage:{getItem:()=>true},navigator:{sendBeacon:()=>{actions.push('queued');if(failing)throw Error('blocked');return true;}},fetch:()=>Promise.resolve()};
     vm.runInNewContext(source,context);
-    const pending=click({button:0,preventDefault:()=>actions.push('prevented')});
+    vm.runInNewContext(fs.readFileSync('public/public-events.js','utf8'),context);
+    click({type:'click',button:0,target:{closest:()=>({href:'https://profitquote.co.uk/dashboard?try=1',hasAttribute:()=>false})},preventDefault:()=>actions.push('prevented')});
     assert.deepEqual(actions,['prevented']);
     resolveIdentity({client_id:'123.456',session_id:'1792000000'});
-    await pending.catch(()=>{});
+    await new Promise(resolve=>setImmediate(resolve));
     assert.deepEqual(actions,['prevented','queued','navigate']);
   }
 });

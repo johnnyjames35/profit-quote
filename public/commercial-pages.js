@@ -22,13 +22,5 @@
     const key = 'pq_landing_visit_' + page;
     if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, '1'); record('page_viewed'); }
   } catch (_) { void record('page_viewed'); }
-  document.querySelectorAll('a[href^="/dashboard?try=1"],a[href^="/dashboard?try=1"]').forEach(link => {
-    link.addEventListener('click', async (event) => {
-      if (event.defaultPrevented) return;
-      if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) { void record('trial_click'); return; }
-      event.preventDefault();
-      try { await record('trial_click'); }
-      finally { location.assign(link.href); }
-    });
-  });
+  // CTA hand-offs are recorded by /public-events.js.
 })();

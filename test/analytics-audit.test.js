@@ -19,7 +19,7 @@ test('commercial landing attribution preserves campaign and search traffic even 
   assert.equal((await landing({search:'?utm_source=LinkedIn'})).event.source,'linkedin');
   assert.equal((await landing({referrer:'https://www.google.co.uk/search?q=test'})).event.source,'google');
   assert.equal((await landing({referrer:'https://google.com.attacker.invalid/'})).event.source,'referral');
-  const blocked=await landing({blocked:true});assert.equal(blocked.event.source,'direct');assert.equal(blocked.links.length,1);
+  const blocked=await landing({blocked:true});assert.equal(blocked.event.source,'direct');assert.equal(blocked.links.length,0,'CTA listener is owned by the shared tracker');
 });
 test('public event cannot impersonate an account and source length cannot reject a visit',async t=>{
   const rows=[];const app=express();app.use(express.json());
