@@ -88,7 +88,7 @@ for(let i=0;i<pages.length;i++){
  ]};
  const links=pages.map((other,j)=>j===i?'':`<a href="/${slugs[j]}">${esc(other.h1)}</a>`).filter(Boolean).join('\n');
  const html=`<!doctype html>
-<html lang="en-GB"><head><script src="/product-analytics.js"></script><script src="/public-events.js"></script>
+<html lang="en-GB"><head><script src="/product-analytics.js"></script><script src="/public-events.js?v=f3423c74d778"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(p.title)}</title><meta name="description" content="${esc(p.description)}">
 <link rel="canonical" href="${url}"><meta name="robots" content="index, follow">
