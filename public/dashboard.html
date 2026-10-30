@@ -2569,7 +2569,7 @@ function updateHomeStats(){
   const ratesSet=!!(currentUser?.day_rate&&currentUser.day_rate>0&&currentUser?.business_name);
   const hasQuotes=quotes.length>0;
   const onboarding=document.getElementById('onboarding-card');
-  if(ratesSet&&hasQuotes){
+  if(currentUser?.guest || (ratesSet&&hasQuotes)){
     if(onboarding) onboarding.style.display='none';
   } else {
     if(onboarding) onboarding.style.display='block';
