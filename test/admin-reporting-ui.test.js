@@ -52,3 +52,16 @@ test('sales funnel exposes explicit reporting periods and refresh metadata', () 
   assert.match(adminHtml, /Europe\/London/);
   assert.doesNotMatch(adminHtml, /clearFunnelEvents\(this\)/);
 });
+
+
+test('funnel distinguishes server cookie counts and guest previews from people and saved quotes', () => {
+  assert.match(adminHtml, /Anonymous Browsers · Server/);
+  assert.match(adminHtml, /not verified people or customers/);
+  assert.match(adminHtml, /Not the GA4 users metric/);
+  assert.match(adminHtml, /Guest Quotes Generated/);
+  assert.match(adminHtml, /retained after signup/);
+  assert.doesNotMatch(adminHtml, /Free Quotes Saved/);
+  const route = fs.readFileSync(path.join(__dirname, '..', 'routes', 'admin.js'), 'utf8');
+  assert.match(route, /COUNT\(\*\)::int AS c FROM events WHERE event_type='anonymous_quote_completed'/);
+  assert.doesNotMatch(route, /COUNT\(\*\)::int AS c FROM quotes WHERE guest_id IS NOT NULL/);
+});
