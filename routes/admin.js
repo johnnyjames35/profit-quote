@@ -39,6 +39,16 @@ router.post('/login', (req, res) => {
   res.json({ token });
 });
 
+router.get('/portfolio-dashboard', requireAdmin, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('Vary','Authorization');
+  const {start,end}=req.query;
+  try { require('../utils/owner-report.cjs').range(start,end); }
+  catch(e) { return res.status(400).json({error:e.message}); }
+  try { res.json(await require('../utils/owner-dashboard').getDashboard({pool:req.app.locals.pool,start,end})); }
+  catch { res.status(503).json({error:'Dashboard temporarily unavailable. Please retry.'}); }
+});
+
 router.get('/users', requireAdmin, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
@@ -311,4 +321,5 @@ router.get('/reporting/live', requireAdmin, async (_req, res) => {
 });
 
 module.exports = router;
+
 

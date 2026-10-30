@@ -256,5 +256,39 @@ async function getLiveSearchReport({ siteUrl: siteUrlOverride, env = process.env
     topPages: aggregateHourlyRows(hourlyPages.rows, effectiveWindowEnd, 1)
   };
 }
+// Private, hostname-scoped dashboard source. Does not change existing scheduled reports.
+async function getOwnerDashboardGoogle({hostname,siteUrl,start,end,previousStart,previousEnd,env=process.env,fetchImpl=fetch}) {
+  const unavailable=(message)=>({status:'unavailable',error:message});
+  let token,config;
+  try { config=loadConfig(env); token=await getAccessToken(config.credentials,fetchImpl); }
+  catch { return {ga4:unavailable('Google reporting authentication unavailable.'),search:unavailable('Google reporting authentication unavailable.')}; }
+  const filter={andGroup:{expressions:[
+    {filter:{fieldName:'hostName',inListFilter:{values:[hostname,'www.'+hostname],caseSensitive:false}}},
+    {notExpression:{filter:{fieldName:'pagePath',stringFilter:{matchType:'FULL_REGEXP',value:'^/(admin|owner-dashboard\\.html)(/|$).*',caseSensitive:false}}}}
+  ]}};
+  async function source(type) {
+    try {
+      const windows=[{startDate:start,endDate:end},{startDate:previousStart,endDate:previousEnd}];
+      const summaries=await Promise.all(windows.map(async window=>{
+        if (type==='ga4') {
+          const data=await googlePost(`${GA4_API_BASE}/properties/${encodeURIComponent(config.propertyId)}:runReport`,{dateRanges:[window],dimensionFilter:filter,metrics:[{name:'totalUsers'},{name:'sessions'},{name:'screenPageViews'},{name:'engagedSessions'}]},token,fetchImpl);
+          const names=['totalUsers','sessions','screenPageViews','engagedSessions'];
+          const validEmpty=!data.rows?.length && data.kind==='analyticsData#runReport' && !!data.metadata?.timeZone;
+          if (!validEmpty && data.metricHeaders?.map(h=>h.name).join(',')!==names.join(',')) throw new Error('Malformed GA report');
+          const vals=names.map((_,i)=>data.rows?.[0]?.metricValues?.[i]?.value??'0');
+          if (vals.some(v=>!/^\d+$/.test(v))) throw new Error('Malformed GA metrics');
+          return {users:Number(vals[0]),sessions:Number(vals[1]),views:Number(vals[2]),engaged:Number(vals[3]),timezone:data.metadata?.timeZone||'Unknown',empty:!data.rows?.length};
+        }
+        const data=await googlePost(`${SEARCH_CONSOLE_API_BASE}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,{...window,dataState:'final',type:'web'},token,fetchImpl);
+        const r=data.rows?.[0];
+        return {clicks:searchMetric(r,0),impressions:searchMetric(r,1),ctr:searchMetric(r,2),position:r?.impressions?searchMetric(r,3):null};
+      }));
+      return {status:'connected',fetchedAt:new Date().toISOString(),timezone:type==='ga4'?summaries[0].timezone:'America/Los_Angeles',current:summaries[0],previous:summaries[1],note:type==='ga4'?'Recorded traffic, not unique people. Consent, blockers and owner activity affect coverage.':'Finalized web-search data only; recent days can be incomplete.'};
+    } catch { return unavailable(type==='ga4'?'GA4 report unavailable.':'Search Console report unavailable.'); }
+  }
+  const [ga4,search]=await Promise.all([source('ga4'),source('search')]);
+  return {ga4,search};
+}
 function clearTokenCache() { cachedToken = null; }
-module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, classifySearchOpportunities, clearTokenCache, validateDate };
+module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, classifySearchOpportunities, clearTokenCache, validateDate, getOwnerDashboardGoogle };
+
