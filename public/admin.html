@@ -430,8 +430,9 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val amber" id="f-guest-starts">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Free Quotes Saved</div>
+          <div class="stat-label">Guest Quotes Generated</div>
           <div class="stat-val amber" id="f-guest-quotes">—</div>
+          <div class="stat-sub">Completed guest previews in the selected period, including repeat generations. Not saved account quotes; retained after signup.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Free → Account Still Present</div>
@@ -483,12 +484,14 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val cyan" id="f-quote-downloads">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Unique Visitors</div>
+          <div class="stat-label">Anonymous Browsers · Server</div>
           <div class="stat-val cyan" id="f-unique-visitors">—</div>
+          <div class="stat-sub">Distinct visitor cookies in the selected period, not verified people or customers. Includes tests; cookie resets and unrecognised bots can inflate this count. Not the GA4 users metric.</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Page Views</div>
+          <div class="stat-label">HTML Views · Server</div>
           <div class="stat-val cyan" id="f-page-views">—</div>
+          <div class="stat-sub">Successful HTML requests in the selected period, including reloads. Not GA4 page views.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Checkout Attempts</div>
@@ -532,7 +535,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         <p class="stat-sub" id="f-tracking-since">Loading tracking coverage...</p>
         <p class="stat-sub" id="f-webhook-status">Loading Stripe webhook receipt...</p>
         <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
-        <p class="stat-sub">Unique Visitors counts anonymous browsers using a 30-day first-party cookie, not identified people. Cookie blocking or different browsers/devices can increase this count. Page Views counts successful HTML requests, including reloads; admin/API traffic, recognised bots and DNT/GPC requests are excluded. Server Checkout Attempts includes authenticated requests, with invalid plans, guest restrictions and provider errors counted as failures. Unconfirmed attempts are retained when no terminal outcome could be stored. Checkout Openings includes older client events as well as new server-verified openings. Older commercial-page events used page names as sources and cannot be reattributed. Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
+        <p class="stat-sub">Anonymous Browsers · Server counts distinct 30-day first-party visitor cookies in the selected period, not identified people or verified prospects. Tests and unrecognised automation can be included. Cookie blocking or different browsers/devices can increase this count. HTML Views · Server counts successful HTML requests, including reloads; admin/API traffic, recognised bots and DNT/GPC requests are excluded. Server Checkout Attempts includes authenticated requests, with invalid plans, guest restrictions and provider errors counted as failures. Unconfirmed attempts are retained when no terminal outcome could be stored. Checkout Openings includes older client events as well as new server-verified openings. Older commercial-page events used page names as sources and cannot be reattributed. Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
         <div id="funnel-bars"></div>
       </div>
 
