@@ -100,7 +100,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c, COALESCE(SUM(CASE plan WHEN 'starter' THEN 19 WHEN 'pro' THEN 29 ELSE 0 END),0)::int AS mrr FROM (SELECT DISTINCT ON(user_id) user_id,plan FROM commercial_subscriptions WHERE status='active' AND period_end>NOW() ORDER BY user_id, CASE plan WHEN 'pro' THEN 0 ELSE 1 END, period_end DESC) active`),
       pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE ${zonedCondition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE guest_id IS NOT NULL AND ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='anonymous_quote_completed' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE converted_user_id IS NOT NULL AND ${zonedCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_started' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND ${legacyCondition('created_at')}`),
