@@ -66,7 +66,7 @@ test('the demonstrated turnover versus profit opportunity answers its query dire
   assert.match(html, /<title>Turnover vs Profit: What’s the Difference\? \| ProfitQuote<\/title>/);
   assert.match(html, /<h1 class="article-h1">Turnover vs Profit: What’s the Difference\?<\/h1>/);
   assert.match(html, /Profit = turnover − business costs/);
-  assert.match(html, /"dateModified": "2026-08-31"/);
+  assert.match(html, /"dateModified": "2026-10-27"/);
 });
 
 test('the builder quote template page targets commercial intent and routes readers into the free product', () => {
