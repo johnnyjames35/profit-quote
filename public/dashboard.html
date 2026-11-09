@@ -806,7 +806,12 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <span class="builder-title" id="builder-title">New Quote</span>
         <span class="edit-mode-badge" id="edit-badge" style="display:none;">Editing</span>
       </div>
-      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;"><span id="draft-save-status" role="status">Your current draft stays on this device. Create an account only to save quotes for later.</span> <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')){ clearBuilderDraft(); resetBuilder(); }" style="color:var(--amber);">Clear &amp; start over</a></div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;"><span id="draft-save-status" role="status">Your current draft stays on this device. Create an account only to save quotes for later.</span> <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')) resetBuilder();" style="color:var(--amber);">Clear &amp; start over</a></div>
+      <div class="card" id="guest-trial-ended" hidden>
+        <div class="card-title">Your seven days of free use have ended</div>
+        <p>Any draft on this device is still available. Choose a paid option when you’re ready to generate a new quote.</p>
+        <button type="button" class="btn-action" onclick="showSubscriptionPrompt()">See pricing options</button>
+      </div>
       <div class="step-dots">
         <div class="dot active" id="dot-1"></div>
         <div class="dot" id="dot-2"></div>
@@ -2038,9 +2043,7 @@ async function initApp(startInBuilder=false){
     document.getElementById('onboarding-card').style.display='none';
     ['nav-issues','nav-setup'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='none';
-    const pill=document.getElementById('trial-pill'); if(pill) pill.textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
-    const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent='Build your first professional quote — no signup needed';
-    if(!currentUser.can_create){ showSubscriptionPrompt(); }
+    const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent=currentUser.trial_active?'Build your first professional quote — no signup needed':'Review your draft or choose how to keep quoting';
     if(startInBuilder || quotes.length===0) switchTab('builder');
   }
   if(!currentUser.guest){
@@ -2098,19 +2101,20 @@ function populateUserUI(){
   document.getElementById('q-profit-target').value=currentUser.profit_target??30;
   const h=new Date().getHours();
   document.getElementById('home-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(currentUser.name?.split(' ')[0]||'there')+' 👋';
-  if(currentUser.guest){
-    const pill=document.getElementById('trial-pill');
-    if(pill) pill.textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
-    return;
-  }
   updateAllowancePill();
 }
 
 function updateAllowancePill(){
+  const endedNotice=document.getElementById('guest-trial-ended');
+  endedNotice.hidden=!(currentUser?.guest&&currentUser.can_create===false);
+  const pill=document.getElementById('trial-pill');
+  if(currentUser?.guest){
+    pill.textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
+    return;
+  }
   const manage=document.getElementById('manage-plan');
   if(manage)manage.style.display=currentUser?.billing_management_plan?'block':'none';
-  const pill=document.getElementById('trial-pill');
-  if(pill&&!currentUser?.guest) pill.textContent=currentUser?.trial_active?'Unlimited trial until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):currentUser?.unlimited?'Unlimited quoting active':currentUser?.billing_plan==='starter'?'Starter · '+Math.max(0,6-currentUser.period_quotes_used)+' of 6 monthly quotes left':(currentUser?.payg_credits||0)+' paid quote credits';
+  if(pill) pill.textContent=currentUser?.trial_active?'Unlimited trial until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):currentUser?.unlimited?'Unlimited quoting active':currentUser?.billing_plan==='starter'?'Starter · '+Math.max(0,6-currentUser.period_quotes_used)+' of 6 monthly quotes left':(currentUser?.payg_credits||0)+' paid quote credits';
 }
 function showSubscriptionPrompt(){
   saveBuilderDraft();
@@ -2710,6 +2714,7 @@ function setRisk(r){
 }
 
 function nextStep(n){
+  if(n===6 && currentUser?.guest && currentUser.can_create===false){showSubscriptionPrompt();return;}
   if(n===2 && currentBuilderStep===1 && !editingQuoteId) trackFunnelEvent('quote_started');
   configureJobScope();
   updateProfitNudges();
@@ -2907,7 +2912,12 @@ async function generateQuote(){
     const saved=await response.json();
     if(!response.ok){
       if(saved.code==='subscription_required'){currentQuoteData=null;nextStep(5);showSubscriptionPrompt();}
-      else if(saved.code==='trial_expired'){nextStep(5);showSubscriptionPrompt();}
+      else if(saved.code==='trial_expired'){
+        Object.assign(currentUser,{trial_active:false,can_create:false});
+        updateAllowancePill();
+        nextStep(5);
+        showSubscriptionPrompt();
+      }
       else {nextStep(5);showToast(saved.error||'Could not generate your quote');}
       return;
     }
@@ -2915,7 +2925,6 @@ async function generateQuote(){
     if(currentUser.guest){currentQuoteData.output_token=saved.output_token;currentQuoteData.reference=saved.reference;currentQuoteData.created_at=saved.created_at;}else{editingQuoteId=editingQuoteId||saved.id;currentQuoteData.id=editingQuoteId;}pendingCreationKey=null;
     Object.assign(currentUser,...['quotes_remaining','quotes_used','subscribed','guest_quotes_remaining','can_create','unlimited','billing_plan','trial_active','trial_ends_at','period_quotes_used','payg_credits'].map(key=>({[key]:saved[key]})));
     updateAllowancePill();
-    if(currentUser.guest) document.getElementById('trial-pill').textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
     document.getElementById('btn-save-quote').textContent=currentUser.guest?'💾 Save quote to free account':'💾 Saved';if(!currentUser.guest)clearBuilderDraft();loadQuotes();
   }catch(error){nextStep(5);showToast('Connection error — try generating again.');return;}
 
