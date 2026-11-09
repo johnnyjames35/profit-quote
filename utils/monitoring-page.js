@@ -24,7 +24,7 @@ function renderPortfolioMonitoringPage(report) {
       ${renderSource('GA4', business.ga4, [['Users', 'users'], ['Sessions', 'sessions']])}
       ${renderSource('Search Console', business.searchConsole, [['Clicks', 'clicks'], ['Impressions', 'impressions'], ['CTR', 'ctr'], ['Average position', 'averagePosition']])}
     </article>`).join('');
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>Cambrian Digital portfolio monitoring</title></head><body><main><h1>Cambrian Digital portfolio monitoring</h1><p>Report date: ${escapeHtml(report.date)}</p><p>Generated at: ${escapeHtml(report.generatedAt)}</p>${businesses}</main></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>Cambrian Digital portfolio monitoring</title></head><body><main><h1>Cambrian Digital portfolio monitoring</h1><p>Report date: ${escapeHtml(report.date)}</p><p>Generated at: ${escapeHtml(report.generatedAt)}</p><p>Recent GA4 and Search Console figures can be incomplete. An OK status confirms the source responded.</p>${businesses}</main></body></html>`;
 }
 
 module.exports = { renderPortfolioMonitoringPage };

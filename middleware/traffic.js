@@ -16,7 +16,7 @@ function source(req) {
 module.exports = function traffic(req, res, next) {
   const path = req.path.toLowerCase();
   if (req.method !== 'GET' || !req.get('accept')?.includes('text/html') ||
-      /^\/(api|admin|monitoring)([/.]|$)/.test(path) ||
+      /^\/(api|admin|monitoring|owner-dashboard)([/.]|$)/.test(path) ||
       /\.[^/]+$/.test(path) && !path.endsWith('.html') ||
       /bot|crawler|spider|slurp|headless|lighthouse|facebookexternalhit/i.test(req.get('user-agent') || '') ||
       req.get('dnt') === '1' || req.get('sec-gpc') === '1') return next();

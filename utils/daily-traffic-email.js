@@ -1,5 +1,6 @@
 const https = require('https');
 const { getDailyTrafficReport } = require('./google-reporting');
+const firstQuoteDates = require('./first-quote-dates');
 const TIME_ZONE = 'Europe/London';
 const CHECK_INTERVAL_MS = 60 * 1000;
 
@@ -20,7 +21,14 @@ function products(env = process.env) { return [
 ]; }
 
 async function funnelForDate(pool, date) {
-  const result = await pool.query(`SELECT event_type, COUNT(*)::int AS count FROM events WHERE created_at >= $1::date AND created_at < $1::date + INTERVAL '1 day' AND event_type = ANY($2) GROUP BY event_type`, [date, ['page_viewed', 'trial_click', 'account_created', 'first_quote', 'subscription_started']]);
+  const inDay = `(created_at AT TIME ZONE 'UTC') >= ($1::date::timestamp AT TIME ZONE 'Europe/London')
+    AND (created_at AT TIME ZONE 'UTC') < (($1::date + 1)::timestamp AT TIME ZONE 'Europe/London')`;
+  const result = await pool.query(`
+    SELECT event_type, COUNT(*)::int AS count FROM events
+    WHERE ${inDay} AND event_type = ANY($2) GROUP BY event_type
+    UNION ALL
+    SELECT 'first_quote', COUNT(*)::int FROM (${firstQuoteDates}) AS first_quotes WHERE ${inDay}
+  `, [date, ['page_viewed', 'trial_click', 'account_created', 'subscription_started']]);
   const values = { visitors: 0, trialClicks: 0, accounts: 0, firstQuotes: 0, paid: 0 };
   const map = { page_viewed: 'visitors', trial_click: 'trialClicks', account_created: 'accounts', first_quote: 'firstQuotes', subscription_started: 'paid' };
   for (const row of result.rows) values[map[row.event_type]] = row.count;
@@ -67,7 +75,7 @@ function reportHtml({ portfolio, date, funnel, previousFunnel, weekFunnel }) {
     <tr><td>Accounts</td><td>${funnel.accounts}</td><td>${pct(funnel.accounts, previousFunnel.accounts)}</td><td>${pct(funnel.accounts, weekFunnel.accounts)}</td></tr>
     <tr><td>First quotes</td><td>${funnel.firstQuotes}</td><td>${pct(funnel.firstQuotes, previousFunnel.firstQuotes)}</td><td>${pct(funnel.firstQuotes, weekFunnel.firstQuotes)}</td></tr>
     <tr><td>Paid</td><td>${funnel.paid}</td><td>${pct(funnel.paid, previousFunnel.paid)}</td><td>${pct(funnel.paid, weekFunnel.paid)}</td></tr></table>
-    <p><strong>Visitor → account:</strong> ${rate(funnel.accounts, funnel.visitors)} · <strong>Account → first quote:</strong> ${rate(funnel.firstQuotes, funnel.accounts)} · <strong>Account → paid:</strong> ${rate(funnel.paid, funnel.accounts)}</p>
+    <p>Each row counts activity on the selected day. First quotes count the first recorded generation for each account still present.</p>
     ${details}<p style="color:#666">GA4 may continue processing. Search Console uses data three days old for completeness. Generated automatically at 8:00 AM UK time.</p>`;
 }
 function sendBrevoEmail(to, subject, htmlContent) { return new Promise((resolve, reject) => { const data = JSON.stringify({ sender: { name: 'Cambrian Digital', email: 'hello@profitquote.co.uk' }, to: [{ email: to }], subject, htmlContent }); const request = https.request({ hostname: 'api.brevo.com', path: '/v3/smtp/email', method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_API_KEY } }, (response) => { response.resume(); response.on('end', () => response.statusCode >= 200 && response.statusCode < 300 ? resolve() : reject(new Error(`Brevo request failed (${response.statusCode})`))); }); request.on('error', reject); request.write(data); request.end(); }); }
