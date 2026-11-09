@@ -239,7 +239,6 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
 .funnel-bar-track { flex: 1; background: var(--navy); border-radius: 6px; height: 34px; position: relative; overflow: hidden; }
 .funnel-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--green)); border-radius: 6px; transition: width 0.4s; }
 .funnel-bar-num { width: 70px; text-align: right; font-family: var(--mono); font-weight: 700; color: var(--white); flex-shrink: 0; }
-.funnel-arrow { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 2px 0; font-family: var(--mono); }
 .report-toolbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   background: var(--navy2); border: 1px solid var(--border); border-radius: 12px;
@@ -438,6 +437,7 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
         <div class="stat-card">
           <div class="stat-label">Free → Account Still Present</div>
           <div class="stat-val green" id="f-guest-conversions">—</div>
+          <div class="stat-sub">Guest sessions started in this period that later converted to an account still present.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">LinkedIn Landing Visits</div>
@@ -457,6 +457,11 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-sub">Created in this period; deleted accounts excluded.</div>
         </div>
         <div class="stat-card">
+          <div class="stat-label">Recorded Successful Signups</div>
+          <div class="stat-val green" id="f-recorded-signups">—</div>
+          <div class="stat-sub">Success events in this period, including retained events for deleted accounts.</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-label">Signup Screen Shown</div>
           <div class="stat-val cyan" id="f-signup-views">—</div>
         </div>
@@ -469,8 +474,9 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
           <div class="stat-val red" id="f-signup-failures">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Saved Quotes</div>
+          <div class="stat-label">Saved Account Quotes</div>
           <div class="stat-val cyan" id="f-quotes">—</div>
+          <div class="stat-sub">Stored quotes linked to an account. Guest previews and older guest-only drafts are excluded.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Quote Starts</div>
@@ -535,7 +541,8 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
       <div class="funnel-card">
         <p class="stat-sub" id="f-tracking-since">Loading tracking coverage...</p>
         <p class="stat-sub" id="f-webhook-status">Loading Stripe webhook receipt...</p>
-        <div class="table-title" style="margin-bottom:20px;">Conversion Funnel</div>
+        <div class="table-title" style="margin-bottom:20px;">Recorded Activity by Stage</div>
+        <p class="stat-sub">These are independent counts. Each stage can include different people and repeat actions.</p>
         <p class="stat-sub">Anonymous Browsers · Server counts distinct 30-day first-party visitor cookies in the selected period, not identified people or verified prospects. Tests and unrecognised automation can be included. Cookie blocking or different browsers/devices can increase this count. HTML Views · Server counts successful HTML requests, including reloads; admin/API traffic, recognised bots and DNT/GPC requests are excluded. Server Checkout Attempts includes authenticated requests, with invalid plans, guest restrictions and provider errors counted as failures. Unconfirmed attempts are retained when no terminal outcome could be stored. Checkout Openings includes older client events as well as new server-verified openings. Older commercial-page events used page names as sources and cannot be reattributed. Saved Quotes count stored records. Generated Quotes include anonymous previews and account quotes, including repeat generations. First Plan Purchases count one-off quote payments and initial paid subscriptions, not renewals. Current MRR counts active £19/£29 subscriptions; manual access and one-off payments are excluded. Account counts exclude deleted accounts. Recorded events can include test activity; older activity before tracking may be incomplete.</p>
         <div id="funnel-bars"></div>
       </div>
@@ -995,10 +1002,11 @@ async function loadFunnel() {
     document.getElementById('f-google').textContent = data.googleVisitors;
     document.getElementById('f-trial-clicks').textContent = data.trialClicks;
     document.getElementById('f-accounts').textContent = data.accountsCreated;
+    document.getElementById('f-recorded-signups').textContent = data.recordedSignups;
     document.getElementById('f-signup-views').textContent = data.signupViews;
     document.getElementById('f-signup-attempts').textContent = data.signupAttempts;
     document.getElementById('f-signup-failures').textContent = data.signupFailures;
-    document.getElementById('f-quotes').textContent = data.totalQuotes;
+    document.getElementById('f-quotes').textContent = data.savedAccountQuotes;
     document.getElementById('f-quote-starts').textContent = data.quoteStarts;
     document.getElementById('f-quote-sends').textContent = data.quoteSends;
     document.getElementById('f-quote-downloads').textContent = data.quoteDownloads;
@@ -1053,23 +1061,21 @@ function renderFunnelBars(data) {
     { label: 'Save Account Prompts', value: data.savePrompts || 0 },
     { label: 'Signup Attempts', value: data.signupAttempts },
     { label: 'New Accounts Still Present', value: data.accountsCreated },
-    { label: 'First Quotes', value: data.firstQuotes },
+    { label: 'First Recorded Quotes (accounts still present)', value: data.firstQuotes },
     { label: 'Checkout Openings', value: data.checkoutStarts || 0 },
     { label: 'Paid Conversions', value: data.paidConversions || 0 }
   ];
 
   const maxVal = Math.max(...steps.map(s => s.value), 1);
 
-  document.getElementById('funnel-bars').innerHTML = steps.map((s, i) => {
+  document.getElementById('funnel-bars').innerHTML = steps.map(s => {
     const pct = (s.value / maxVal) * 100;
-    const arrow = i < steps.length - 1 ? '<div class="funnel-arrow">↓</div>' : '';
     return `<div class="funnel-step">
       <div class="funnel-bar-row">
         <div class="funnel-bar-label">${s.label}</div>
         <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:${pct}%"></div></div>
         <div class="funnel-bar-num">${s.value.toLocaleString()}</div>
       </div>
-      ${arrow}
     </div>`;
   }).join('');
 }

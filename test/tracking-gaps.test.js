@@ -8,7 +8,7 @@ async function fixture(t){
   const billing=require('../routes/billing');app.post('/api/billing/webhook',express.raw({type:'application/json'}),billing.webhook);
   app.use(express.json());app.use(require('../middleware/traffic'));app.use('/api/admin',require('../routes/admin'));app.use('/api/billing',billing.router);app.use('/api/events',require('../routes/events'));
   app.get(['/', '/about.html'],(req,res)=>res.type('html').send('<h1>Tracking fixture</h1>'));
-  app.get('/admin',(req,res)=>res.type('html').send('private'));app.get('/asset.js',(req,res)=>res.type('js').send('void 0;'));
+  app.get(['/admin','/owner-dashboard.html'],(req,res)=>res.type('html').send('private'));app.get('/asset.js',(req,res)=>res.type('js').send('void 0;'));
   const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   t.after(async()=>{await new Promise(r=>server.close(r));await db.close();});
   const base='http://127.0.0.1:'+server.address().port;
@@ -23,7 +23,7 @@ test('first-party visitors dedupe across pages/reloads; page views exclude bots,
   await(await fetch(base+'/about.html',{headers:{...headers,Cookie:cookie,'If-None-Match':first.headers.get('etag')}})).text();
   await(await fetch(base+'/',{headers:{...headers,Cookie:cookie}})).text();
   await(await fetch(base+'/',{headers})).text();
-  for(const [path,extra] of [['/',{DNT:'1'}],['/',{'Sec-GPC':'1'}],['/',{'User-Agent':'Googlebot'}],['/admin',{}],['/asset.js',{}],['/missing',{}]])await(await fetch(base+path,{headers:{...headers,...extra}})).text();
+  for(const [path,extra] of [['/',{DNT:'1'}],['/',{'Sec-GPC':'1'}],['/',{'User-Agent':'Googlebot'}],['/admin',{}],['/owner-dashboard.html',{}],['/asset.js',{}],['/missing',{}]])await(await fetch(base+path,{headers:{...headers,...extra}})).text();
   await new Promise(r=>setTimeout(r,30));
   const data=await funnel('today');assert.equal(data.pageViews,4);assert.equal(data.uniqueVisitors,2);assert.ok(data.trackingSince);
   const rows=(await db.query('SELECT * FROM page_visits ORDER BY id')).rows;

@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { getDailyTrafficReport, getLiveSearchReport } = require('../utils/google-reporting');
+const firstQuoteDates = require('../utils/first-quote-dates');
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
-const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.JWT_SECRET + '_admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_SECRET = process.env.ADMIN_SECRET || (process.env.JWT_SECRET && process.env.JWT_SECRET + '_admin');
 
 function requireAdmin(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token' });
+  if (!token || !ADMIN_SECRET) return res.status(401).json({ error: 'No token' });
   try {
     const decoded = jwt.verify(token, ADMIN_SECRET);
     if (!decoded.admin) return res.status(401).json({ error: 'Not admin' });
@@ -31,7 +32,8 @@ router.use((req,res,next)=>{
 });
 
 router.post('/login', (req, res) => {
-  const { password } = req.body;
+  if (!ADMIN_PASSWORD || !ADMIN_SECRET) return res.status(503).json({ error: 'Admin sign-in is unavailable' });
+  const { password } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Incorrect password' });
   }
@@ -106,8 +108,8 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='page_viewed' AND source='google' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='trial_click' AND ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE ${legacyCondition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='first_quote' AND ${legacyCondition('created_at')}`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM quotes WHERE ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM (${firstQuoteDates}) AS first_quotes WHERE ${legacyCondition('created_at')}`),
+      pool.query(`SELECT COUNT(*)::int AS c, COUNT(*) FILTER (WHERE user_id IS NOT NULL)::int AS account_quotes FROM quotes WHERE ${legacyCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c, COALESCE(SUM(CASE plan WHEN 'starter' THEN 19 WHEN 'pro' THEN 29 ELSE 0 END),0)::int AS mrr FROM (SELECT DISTINCT ON(user_id) user_id,plan FROM commercial_subscriptions WHERE status='active' AND period_end>NOW() ORDER BY user_id, CASE plan WHEN 'pro' THEN 0 ELSE 1 END, period_end DESC) active`),
       pool.query(`SELECT COUNT(*)::int AS c FROM guest_sessions WHERE ${zonedCondition('created_at')}`),
       pool.query(`SELECT COUNT(*)::int AS c FROM events WHERE event_type='anonymous_quote_completed' AND ${legacyCondition('created_at')}`),
@@ -157,8 +159,10 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       googleVisitors: googleVisitors.rows[0].c,
       trialClicks: trialClicks.rows[0].c,
       accountsCreated: accountsCreated.rows[0].c,
+      recordedSignups: count('account_created'),
       firstQuotes: firstQuotes.rows[0].c,
       totalQuotes: totalQuotes.rows[0].c,
+      savedAccountQuotes: totalQuotes.rows[0].account_quotes,
       paidCustomers: count('payg_purchased')+count('subscription_started'),
       activePaidCustomers: activePaidCount,
       guestStarts: guestStarts.rows[0].c,

@@ -34,6 +34,7 @@ function ukCalendarDate() {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 function yesterday() { return shiftDate(ukCalendarDate(), -1); }
+function defaultSearchConsoleDate(date = yesterday()) { return shiftDate(date, -2); }
 function shiftDate(date, days) {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -134,8 +135,10 @@ async function getDailyAggregateSourceReport({ date = yesterday(), hostname: hos
   };
 }
 
-async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate = shiftDate(date, -2), hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
-  validateDate(date); validateDate(searchConsoleDate);
+async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
+  validateDate(date);
+  searchConsoleDate ??= defaultSearchConsoleDate(date);
+  validateDate(searchConsoleDate);
   const config = loadConfig(env);
   const hostname = hostnameOverride || config.hostname;
   const siteUrl = siteUrlOverride || config.siteUrl;
@@ -290,5 +293,5 @@ async function getOwnerDashboardGoogle({hostname,siteUrl,start,end,previousStart
   return {ga4,search};
 }
 function clearTokenCache() { cachedToken = null; }
-module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, classifySearchOpportunities, clearTokenCache, validateDate, getOwnerDashboardGoogle };
+module.exports = { getDailyTrafficReport, getDailyAggregateSourceReport, getLiveSearchReport, classifySearchOpportunities, clearTokenCache, validateDate, getOwnerDashboardGoogle, defaultSearchConsoleDate };
 
