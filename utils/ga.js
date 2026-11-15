@@ -29,7 +29,7 @@ async function sendToGA(event_type, user_id, source, context, parameters = {}) {
           client_id: identity.client_id,
           events: [{
             name: event_type,
-            params: { ...parameters, source: source || 'unknown', session_id:Number(identity.session_id), page_location:identity.page_location, engagement_time_msec:1 }
+            params: { ...parameters, pq_event_source: source || 'unknown', session_id:Number(identity.session_id), page_location:identity.page_location, engagement_time_msec:1 }
           }]
         })
       }

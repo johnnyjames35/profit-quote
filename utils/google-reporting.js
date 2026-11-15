@@ -135,7 +135,7 @@ async function getDailyAggregateSourceReport({ date = yesterday(), hostname: hos
   };
 }
 
-async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, env = process.env, fetchImpl = fetch } = {}) {
+async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate, hostname: hostnameOverride, siteUrl: siteUrlOverride, includeComparisons = false, publicLandings = false, env = process.env, fetchImpl = fetch } = {}) {
   validateDate(date);
   searchConsoleDate ??= defaultSearchConsoleDate(date);
   validateDate(searchConsoleDate);
@@ -149,6 +149,16 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate, ho
   const scRange = { startDate: searchConsoleDate, endDate: searchConsoleDate };
   const scTopRange = { startDate: shiftDate(searchConsoleDate, -29), endDate: searchConsoleDate };
   const dimensionFilter = reportingDimensionFilter(hostname);
+  const hostnameFilter = dimensionFilter.andGroup.expressions[0];
+  const unknownLanding = { fieldName: 'landingPage', inListFilter: { values: ['(not set)', ''] } };
+  if (publicLandings) {
+    dimensionFilter.andGroup.expressions[1] = {
+      notExpression: { filter: { fieldName: 'landingPage', stringFilter: {
+        matchType: 'FULL_REGEXP', value: '^/(admin|dashboard|owner-dashboard|monitoring)([.]html)?(/.*)?$', caseSensitive: false
+      } } }
+    };
+    dimensionFilter.andGroup.expressions.push({ notExpression: { filter: unknownLanding } });
+  }
   const comparisonRanges = {
     sevenDay: {
       current: { startDate: shiftDate(date, -6), endDate: date },
@@ -165,10 +175,17 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate, ho
   };
   const gaSummary = (range) => googlePost(gaUrl, { dateRanges: [range], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl);
   const scSummary = (range) => googlePost(scUrl, range, token, fetchImpl);
+  const unknownSessions = publicLandings
+    ? googlePost(gaUrl, {
+      dateRanges: [gaRange],
+      dimensionFilter: { andGroup: { expressions: [hostnameFilter, { filter: unknownLanding }] } },
+      metrics: [{ name: 'sessions' }]
+    }, token, fetchImpl).then(data => metric(data.rows?.[0], 0), () => null)
+    : null;
   const responses = await Promise.all([
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }] }, token, fetchImpl),
     googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
-    googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
+    googlePost(gaUrl, { dateRanges: [gaRange], dimensionFilter, dimensions: [{ name: publicLandings ? 'landingPage' : 'landingPagePlusQueryString' }], metrics: [{ name: 'sessions' }, { name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 10 }, token, fetchImpl),
     googlePost(scUrl, scRange, token, fetchImpl),
     googlePost(scUrl, { ...scTopRange, dimensions: ['query'], rowLimit: 100 }, token, fetchImpl),
     googlePost(scUrl, { ...scTopRange, dimensions: ['page'], rowLimit: 100 }, token, fetchImpl),
@@ -196,6 +213,10 @@ async function getDailyTrafficReport({ date = yesterday(), searchConsoleDate, ho
     ga4: { date, provisional: true, excludesAdminTraffic: true, users: metric(gaTotals.rows?.[0], 0), sessions: metric(gaTotals.rows?.[0], 1), trafficSources: (gaSources.rows || []).map((row) => ({ source: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })), landingPages: (gaPages.rows || []).map((row) => ({ page: row.dimensionValues?.[0]?.value || '(not set)', sessions: metric(row, 0), users: metric(row, 1) })) },
     searchConsole: { date: searchConsoleDate, clicks: searchMetric(totals, 0), impressions: searchMetric(totals, 1), ctr: searchMetric(totals, 2), averagePosition: searchMetric(totals, 3), averagePositionContext: 'Property-wide impression-weighted average across all queries, pages, devices and countries; it is not a rank for a specific search.', topResultsPeriod: { startDate: scTopRange.startDate, endDate: scTopRange.endDate, days: 30 }, topQueries: topSearchRows(scQueries.rows, 'query'), topPages: topSearchRows(scPages.rows, 'page'), opportunities: classifySearchOpportunities(scQueryPages.rows) }
   };
+  if (publicLandings) {
+    report.ga4.publicLandingsOnly = true;
+    report.ga4.unknownLandingSessions = await unknownSessions;
+  }
   if (includeComparisons) report.comparisons = {
       sevenDay: comparison('7 days', comparisonRanges.sevenDay, ga7, gaPrevious7, sc7, scPrevious7),
       thirtyDay: comparison('30 days', comparisonRanges.thirtyDay, ga30, gaPrevious30, sc30, scPrevious30)

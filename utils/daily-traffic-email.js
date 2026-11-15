@@ -49,9 +49,9 @@ async function loadProduct(product, date) {
   const previousDate = shiftDate(date, -1), weekDate = shiftDate(date, -7);
   try {
     const [report, previous, weekAgo] = await Promise.all([
-      getDailyTrafficReport({ date, searchConsoleDate: shiftDate(date, -2), hostname: product.hostname, siteUrl: product.siteUrl }),
-      getDailyTrafficReport({ date: previousDate, searchConsoleDate: shiftDate(date, -3), hostname: product.hostname, siteUrl: product.siteUrl }),
-      getDailyTrafficReport({ date: weekDate, searchConsoleDate: shiftDate(date, -9), hostname: product.hostname, siteUrl: product.siteUrl })
+      getDailyTrafficReport({ date, searchConsoleDate: shiftDate(date, -2), hostname: product.hostname, siteUrl: product.siteUrl, publicLandings: product.key === 'profitquote' }),
+      getDailyTrafficReport({ date: previousDate, searchConsoleDate: shiftDate(date, -3), hostname: product.hostname, siteUrl: product.siteUrl, publicLandings: product.key === 'profitquote' }),
+      getDailyTrafficReport({ date: weekDate, searchConsoleDate: shiftDate(date, -9), hostname: product.hostname, siteUrl: product.siteUrl, publicLandings: product.key === 'profitquote' })
     ]);
     return { ...product, report, previous, weekAgo, alerts: alertsFor(report, previous, weekAgo) };
   } catch (error) { return { ...product, error: error.message, alerts: [`Reporting connection failed: ${error.message}`] }; }
@@ -62,6 +62,7 @@ function reportHtml({ portfolio, date, funnel, previousFunnel, weekFunnel }) {
     ? `<tr><td><strong>${escapeHtml(item.name)}</strong></td><td colspan="6">Unavailable — ${escapeHtml(item.error)}</td></tr>`
     : `<tr><td><strong>${escapeHtml(item.name)}</strong></td><td>${item.report.ga4.users}</td><td>${item.report.ga4.sessions}</td><td>${pct(item.report.ga4.sessions, item.previous.ga4.sessions)}</td><td>${pct(item.report.ga4.sessions, item.weekAgo.ga4.sessions)}</td><td>${item.report.searchConsole.clicks}</td><td>${item.report.searchConsole.impressions}</td></tr>`).join('');
   const details = portfolio.filter((item) => !item.error).map((item) => `<h3>${escapeHtml(item.name)}</h3>
+    ${item.report.ga4.publicLandingsOnly ? `<p>GA4 sessions start on identified public pages. Unknown landing sessions: ${item.report.ga4.unknownLandingSessions ?? 'Unavailable'}.</p>` : ''}
     <p><strong>Traffic sources</strong></p><table cellpadding="6"><tr><th>Source</th><th>Sessions</th></tr>${rows(item.report.ga4.trafficSources, 'source', 'sessions')}</table>
     <p><strong>Landing pages</strong></p><table cellpadding="6"><tr><th>Page</th><th>Sessions</th></tr>${rows(item.report.ga4.landingPages, 'page', 'sessions')}</table>
     <p><strong>Top search queries</strong></p><table cellpadding="6"><tr><th>Query</th><th>Clicks</th></tr>${rows(item.report.searchConsole.topQueries, 'query', 'clicks')}</table>`).join('');
