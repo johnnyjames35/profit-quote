@@ -120,3 +120,29 @@ test('does not include Search Console hours marked incomplete', async () => {
   assert.equal(result.clicks, 2);
   assert.equal(result.impressions, 20);
 });
+
+test('reports identified public landings and counts unknown landings separately', async () => {
+  clearTokenCache();
+  const requests = [];
+  const fetchImpl = async (url, options) => {
+    if (url.includes('oauth2.googleapis.com')) {
+      return { ok: true, json: async () => ({ access_token: 'test-token', expires_in: 3600 }) };
+    }
+    if (url.includes('analyticsdata.googleapis.com')) requests.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({ rows: [{ metricValues: [{ value: '2' }] }] }) };
+  };
+  const report = await getDailyTrafficReport({ date: '2026-08-12', publicLandings: true, env, fetchImpl });
+  assert.equal(report.ga4.unknownLandingSessions, 2);
+  assert.equal(report.ga4.publicLandingsOnly, true);
+  const [unknown, ...publicReports] = requests;
+  assert.deepEqual(unknown.dimensionFilter.andGroup.expressions[1].filter.inListFilter.values, ['(not set)', '']);
+  for (const request of publicReports) {
+    const [, privateLanding, unknownLanding] = request.dimensionFilter.andGroup.expressions;
+    assert.equal(privateLanding.notExpression.filter.fieldName, 'landingPage');
+    const privatePath = new RegExp(privateLanding.notExpression.filter.stringFilter.value, 'i');
+    for (const path of ['/admin', '/admin.html', '/admin/login', '/dashboard', '/dashboard.html']) assert.match(path, privatePath);
+    assert.doesNotMatch('/how-to-price-labour-correctly.html', privatePath);
+    assert.deepEqual(unknownLanding.notExpression.filter, unknown.dimensionFilter.andGroup.expressions[1].filter);
+  }
+  assert.equal(publicReports[2].dimensions[0].name, 'landingPage');
+});
