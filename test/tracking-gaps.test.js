@@ -37,7 +37,7 @@ test('checkout request ledger records provider and validation failures, reused s
   const user=(await db.query("INSERT INTO users(name,email,password_hash) VALUES('Audit','audit@example.invalid','stub') RETURNING *")).rows[0];
   const token=jwt.sign({id:user.id},process.env.JWT_SECRET),guest=jwt.sign({id:crypto.randomUUID(),guest:true},process.env.JWT_SECRET);
   let fail=true,calls=0,session;
-  app.locals.commercialStripe={prices:{list:async()=>({data:[{id:'price_audit'}]})},checkout:{sessions:{create:async data=>{calls++;if(fail)throw Error('sensitive provider detail');return session={...data,id:'cs_audit',status:'open',url:'https://checkout.stripe.com/audit'};},retrieve:async()=>session}}};
+  app.locals.commercialStripe={prices:{list:async()=>({data:[{id:'price_audit',currency:'gbp',unit_amount:500}]})},checkout:{sessions:{create:async data=>{calls++;if(fail)throw Error('sensitive provider detail');return session={...data,id:'cs_audit',status:'open',url:'https://checkout.stripe.com/audit'};},retrieve:async()=>session}}};
   assert.equal((await post('/api/billing/checkout',{plan:'payg'},'bad')).status,401);
   assert.equal((await post('/api/billing/checkout',{plan:'payg'},token)).status,503);
   assert.equal((await post('/api/billing/checkout',{plan:'invalid'},token)).status,400);

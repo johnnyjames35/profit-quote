@@ -7,7 +7,7 @@ test('authenticated checkout prices, pending-session reuse, verified credits and
  const user=(await db.query("INSERT INTO users(name,email,password_hash,trial_id) VALUES('QA','qa@example.invalid','test',$1) RETURNING *",[trial])).rows[0];
  let queue=Promise.resolve();const pool={query:db.query.bind(db),connect:async()=>{const before=queue;let release;queue=new Promise(r=>release=r);await before;return {query:db.query.bind(db),release};}};
  const sessions=new Map(),calls=[];let seq=0;
- const stripe={prices:{list:async({lookup_keys})=>({data:[{id:lookup_keys[0]}]})},checkout:{sessions:{
+ const stripe={prices:{list:async({lookup_keys})=>({data:[{id:lookup_keys[0],currency:'gbp',unit_amount:500}]})},checkout:{sessions:{
   create:async data=>{calls.push(data);const id='cs_test_'+(++seq),s={id,status:'open',url:'https://checkout.stripe.com/'+id,...data};sessions.set(id,s);return s;},
   retrieve:async id=>sessions.get(id),expire:async id=>{sessions.get(id).status='expired';}
  }}};

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const https = require('https');
 const crypto = require('crypto');
 const {browserTrial,setTrialCookie,access,publicAccess,ipHash}=require('../utils/quote-access');
+const firstQuoteOffer=require('../utils/first-quote-offer');
 const { sendToGA, requestContext } = require('../utils/ga');
 const { isFreeOnboardingOfferActive } = require('../utils/onboarding-offer');
 
@@ -108,11 +109,11 @@ router.post('/register', async (req, res) => {
       else trialId=await browserTrial(client,req,res);
       const result=await client.query(
         `INSERT INTO users (name,email,password_hash,trade,trial_started_at)
-         VALUES ($1,$2,$3,$4,NOW()) RETURNING ${USER_FIELDS}`,
-        [name,email.toLowerCase(),hash,trade||'']
+         VALUES ($1,$2,$3,$4,CASE WHEN $5 THEN NULL ELSE NOW() END) RETURNING ${USER_FIELDS}`,
+        [name,email.toLowerCase(),hash,trade||'',firstQuoteOffer.active()]
       );
       user=result.rows[0];
-      await client.query('UPDATE quote_allowances SET trial_started_at=COALESCE(trial_started_at,NOW()) WHERE id=$1',[trialId]);
+      if(!firstQuoteOffer.active()) await client.query('UPDATE quote_allowances SET trial_started_at=COALESCE(trial_started_at,NOW()) WHERE id=$1',[trialId]);
       user.trial_started_at=(await client.query('UPDATE users SET trial_id=$1,trial_started_at=(SELECT trial_started_at FROM quote_allowances WHERE id=$1) WHERE id=$2 RETURNING trial_started_at',[trialId,user.id])).rows[0].trial_started_at;
       await client.query('INSERT INTO signup_attempts(ip_hash) VALUES($1)',[network]);
       if(guest){
@@ -130,8 +131,8 @@ router.post('/register', async (req, res) => {
     res.json({ token, user });
 
     logEvent(pool, 'account_created', user.id, source, requestContext(req));
-    sendWelcomeEmail(name, email,user.trial_started_at).catch(e => console.error('Welcome email error:', e.message));
-    sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
+    if(user.trial_started_at) sendWelcomeEmail(name, email,user.trial_started_at).catch(e => console.error('Welcome email error:', e.message));
+    if(!firstQuoteOffer.isVerificationEmail(email)) sendNotifyJohnEmail(name, email).catch(e => console.error('Notify email error:', e.message));
 
   } catch(e) {
     res.status(e.status||500).json({ error: e.message });

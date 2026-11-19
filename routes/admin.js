@@ -41,6 +41,18 @@ router.post('/login', (req, res) => {
   res.json({ token });
 });
 
+router.get('/first-quote-refunds', requireAdmin, async (req, res)=>{
+  try{
+    const {rows}=await req.app.locals.pool.query(`
+      SELECT p.payment_intent, p.paid_at, r.reason, r.requested_at
+      FROM first_quote_refund_requests r
+      JOIN commercial_payments p ON p.session_id=r.session_id
+      WHERE p.refunded_at IS NULL
+      ORDER BY r.requested_at, r.session_id LIMIT 100`);
+    res.set('Cache-Control','private, no-store').json({requests:rows});
+  }catch(_){res.status(503).json({error:'Refund requests are temporarily unavailable.'});}
+});
+
 router.get('/portfolio-dashboard', requireAdmin, async (req,res)=>{
   res.set('Cache-Control','private, no-store');
   res.set('Vary','Authorization');

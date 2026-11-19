@@ -2,6 +2,7 @@ const Stripe=require('stripe');
 
 const crypto=require('crypto');
 const {analyticsContext,requestContext}=require('./ga');
+const firstQuoteOffer=require('./first-quote-offer');
 
 const PLANS={payg:{amount:500,name:'ProfitQuote — one quote'},starter:{amount:1900,name:'ProfitQuote Starter — 6 quotes/month'},pro:{amount:2900,name:'ProfitQuote Pro — unlimited quotes'}};
 const PORTAL_CONFIG=process.env.STRIPE_PORTAL_CONFIGURATION||'bpc_1UJKho8466uzy1MNPmxeV3N9';
@@ -29,7 +30,13 @@ async function priceFor(stripe,plan){
 
   const found=await stripe.prices.list({lookup_keys:[key],active:true,limit:1});
 
-  if(found.data.length)return found.data[0].id;
+  if(found.data.length){
+    const price=found.data[0];
+    if(plan==='payg'&&(price.currency!=='gbp'||price.unit_amount!==PLANS.payg.amount||price.recurring)){
+      throw new Error('The configured one-quote price is not £5 GBP.');
+    }
+    return price.id;
+  }
 
   const p=PLANS[plan];
 
@@ -95,8 +102,18 @@ async function fulfil(db,stripe,sessionId,userId){
   if(plan!=='payg')return syncSubscription(db,stripe,typeof session.subscription==='string'?session.subscription:session.subscription.id,user.id);
 
   if(session.mode!=='payment'||session.currency!=='gbp'||session.amount_total!==500||session.line_items?.data?.length!==1||session.line_items.data[0].quantity!==1)throw new Error('Incorrect quote payment');
-  if(session.payment_intent?.latest_charge?.amount_refunded>0)return false;
-  await db.query('INSERT INTO commercial_payments(session_id,user_id,amount,payment_intent) VALUES($1,$2,500,$3) ON CONFLICT DO NOTHING',[session.id,user.id,typeof session.payment_intent==='string'?session.payment_intent:session.payment_intent?.id]);
+  const charge=session.payment_intent?.latest_charge;
+  const intent=typeof session.payment_intent==='string'?session.payment_intent:session.payment_intent?.id;
+  const offer=session.metadata.first_quote_offer==='1';
+  const paidAt=Number.isInteger(charge?.created)?new Date(charge.created*1000):null;
+  if(offer&&(!intent||!paidAt))throw new Error('Waiting for the verified charge');
+  const refunded=charge?.amount_refunded>=500;
+  const creditAvailable=!(charge?.amount_refunded>0);
+  await db.query(`INSERT INTO commercial_payments(session_id,user_id,amount,payment_intent,paid_at,first_quote_offer,credit_available,refunded_at)
+    VALUES($1,$2,500,$3,$4,$5,$6,CASE WHEN $7 THEN NOW() ELSE NULL END)
+    ON CONFLICT (session_id) DO UPDATE SET credit_available=false,
+      refunded_at=COALESCE(commercial_payments.refunded_at,EXCLUDED.refunded_at)
+    WHERE EXCLUDED.refunded_at IS NOT NULL`,[session.id,user.id,intent,paidAt,offer,creditAvailable,refunded]);
   await recordPurchase(db,session.id,user.id,'payg_purchased','payg',session.metadata);
   return true;
 
@@ -163,16 +180,23 @@ async function checkout(req,res){
     }else{
 
       const metadata={app:'profitquote-v2',plan,reference:user.billing_reference};
+      if(plan==='payg'&&firstQuoteOffer.active()&&!(await client.query('SELECT 1 FROM commercial_payments WHERE user_id=$1 LIMIT 1',[user.id])).rows.length){
+        metadata.first_quote_offer='1';
+      }
       const analytics=requestContext(req);
       if(analytics) Object.assign(metadata,{ga_client_id:analytics.client_id,ga_session_id:analytics.session_id,ga_page_location:analytics.page_location});
 
       const session=await stripe.checkout.sessions.create({mode:plan==='payg'?'payment':'subscription',client_reference_id:user.billing_reference,
 
-        ...(user.stripe_customer_id?{customer:user.stripe_customer_id}:{customer_email:user.email}),
+        ...(user.stripe_customer_id?{customer:user.stripe_customer_id}:
+          firstQuoteOffer.isVerificationEmail(user.email)?{}:{customer_email:user.email}),
 
         line_items:[{price:await priceFor(stripe,plan),quantity:1}],metadata,
 
-        ...(plan==='payg'?{}:{subscription_data:{metadata}}),
+        ...(plan==='payg'?{
+          adaptive_pricing:{enabled:false},automatic_tax:{enabled:false},
+          ...(metadata.first_quote_offer?{custom_text:{submit:{message:'First paid quote only: request a refund within seven days of purchase and tell us what did not work.'}}}:{})
+        }:{subscription_data:{metadata}}),
 
         success_url:'https://profitquote.co.uk/dashboard?session_id={CHECKOUT_SESSION_ID}',cancel_url:'https://profitquote.co.uk/dashboard?billing=cancelled',
 
@@ -193,7 +217,9 @@ async function handleEvent(req,event){
 
   const object=event.data.object,db=req.app.locals.pool;
   if(event.type==='charge.refunded'&&object.payment_intent){
-    await db.query('UPDATE commercial_payments SET credit_available=false WHERE payment_intent=$1',[object.payment_intent]);
+    await db.query(`UPDATE commercial_payments SET credit_available=false,
+      refunded_at=CASE WHEN $2>=amount THEN COALESCE(refunded_at,NOW()) ELSE refunded_at END
+      WHERE payment_intent=$1`,[object.payment_intent,object.amount_refunded||0]);
     return true;
   }
   if(object.metadata?.app==='profitquote-v2'&&object.object==='checkout.session')return fulfil(db,stripeFor(req),object.id);

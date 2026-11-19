@@ -3,6 +3,8 @@ const crypto=require('crypto');
 const auth=require('../middleware/auth');
 const {access,publicAccess,MONTHLY_LINK,UUID}=require('../utils/quote-access');
 const router=express.Router();
+const firstQuoteOffer=require('../utils/first-quote-offer');
+router.get('/offer',(_req,res)=>res.set('Cache-Control','no-store').json({paid_first:firstQuoteOffer.active()}));
 // Keep recognising existing subscriptions while new checkouts use the commercial v2 plans.
 const PRICES=new Set(['price_1TZX0w8466uzy1MNeVvWz2Ew','price_1UHgUj8466uzy1MNcCnTWJbi']);
 const PAYMENT_LINKS=new Set(['plink_1TZX128466uzy1MNZEoilqdL','plink_1UHgWz8466uzy1MNDtQyGajQ']);
@@ -26,6 +28,20 @@ router.get('/status',auth,async(req,res)=>{
   catch(e){res.status(e.status||500).json({error:e.message});}
 });
 router.post('/checkout',auth,require('../utils/checkout-tracking'));
+router.get('/first-quote-refund',auth,async(req,res)=>{
+  if(req.user.guest)return res.status(403).json({error:'Sign in to see your refund options.'});
+  try {
+    res.set('Cache-Control','no-store').json(await firstQuoteOffer.refundStatus(req.app.locals.pool,req.user.id));
+  } catch (_) { res.status(503).json({error:'Refund status is temporarily unavailable.'}); }
+});
+router.post('/first-quote-refund',auth,async(req,res)=>{
+  if(req.user.guest)return res.status(403).json({error:'Sign in to request a refund.'});
+  try {
+    res.set('Cache-Control','no-store').json(await firstQuoteOffer.requestRefund(req.app.locals.pool,req.user.id,req.body?.reason));
+  } catch (error) {
+    res.status(error.status||503).json({error:error.status?error.message:'Could not record your request. Please try again.'});
+  }
+});
 router.post('/confirm',auth,async(req,res)=>{
   if(req.user.guest)return res.status(403).json({error:'Sign in first.'});
   try{

@@ -457,6 +457,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
   <h2>Choose how you keep quoting</h2>
   <p id="plan-explanation">Your saved quotes stay available and your current draft is kept here.</p>
   <button type="button" class="btn-next" onclick="startSubscription('payg')">Pay £5 — one quote</button>
+  <p id="first-quote-guarantee" hidden>First paid quote only. If it did not help you price the job, request your £5 back in Settings within seven days of purchase. Tell us briefly what did not work.</p>
   <button type="button" class="btn-next" onclick="startSubscription('starter')">Starter £19/month — 6 quotes</button>
   <button type="button" class="btn-next" onclick="startSubscription('pro')">Pro £29/month — unlimited</button>
   <p>No setup fee. Subscriptions renew monthly until cancelled. Starter includes 6 new quotes per billing month, without rollover. Saving a new quote uses one allowance; viewing and downloading it do not.</p>
@@ -514,7 +515,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
       <div class="auth-divider">or</div>
       <div class="login-switch" style="margin-top:0;">No account yet?</div>
-      <button class="btn-trial" onclick="startGuest()">Use free for 7 days — no signup</button>
+      <button class="btn-trial" id="start-quoting" onclick="openQuoteOffer()">Use free for 7 days — no signup</button>
       <div class="auth-trial-note">No card. No commitment. Cancel anytime.</div>
     </div>
   </div>
@@ -1318,6 +1319,15 @@ textarea.field-input{resize:vertical;min-height:80px;}
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Upgrade whenever you’re ready to keep quoting and save your work.</p>
         <a href="#" onclick="event.preventDefault();showSubscriptionPrompt()" style="display:block;text-align:center;background:var(--amber);color:var(--black);font-weight:800;padding:13px;border-radius:10px;text-decoration:none;font-size:0.9rem;">Choose £5 / £19 / £29 →</a>
         <button id="manage-plan" style="display:none;margin:12px auto" onclick="startSubscription(currentUser.billing_management_plan)">Manage or cancel subscription</button>
+        <section id="first-quote-refund" hidden aria-label="First quote refund">
+          <p id="first-quote-refund-status" role="status"></p>
+          <form id="first-quote-refund-form" hidden onsubmit="sendFirstQuoteRefund(event)">
+            <label for="first-quote-refund-reason">What didn’t work with your first paid quote?</label>
+            <textarea id="first-quote-refund-reason" class="setup-input" required minlength="3" maxlength="500" aria-describedby="first-quote-refund-hint"></textarea>
+            <p id="first-quote-refund-hint">A short explanation is enough. Leave out customer and payment details.</p>
+            <button class="btn-action" type="submit">Request my £5 refund</button>
+          </form>
+        </section>
       </div>
       <button class="btn-prev" onclick="appBack()">← Back</button>
     </div>
@@ -1890,8 +1900,27 @@ if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; wind
 
 const resetTokenFromUrl = urlParams.get('reset');
 
-if(resetTokenFromUrl){ showReset(resetTokenFromUrl); }
-else if(urlParams.get('login')==='1'){ showLogin(); } else if(token){ initApp(true); } else { startGuest(); }
+let paidFirstOffer = false;
+async function loadQuoteOffer(){
+  try{
+    const res=await fetch(API+'/api/billing/offer');
+    if(res.ok) paidFirstOffer=(await res.json()).paid_first===true;
+  }catch(_){ /* Existing signed-in customers can still reach their workspace. */ }
+  document.getElementById('first-quote-guarantee').hidden=!paidFirstOffer;
+  if(paidFirstOffer) document.getElementById('start-quoting').textContent='Start with one quote for £5';
+  if(resetTokenFromUrl){showReset(resetTokenFromUrl);return;}
+  if(urlParams.get('login')==='1'){showLogin();return;}
+  if(token){initApp(true);return;}
+  if(paidFirstOffer){openQuoteOffer();return;}
+  startGuest();
+}
+function openQuoteOffer(){
+  if(!paidFirstOffer){startGuest();return;}
+  sessionStorage.setItem(UPGRADE_PLAN_KEY,'payg');
+  showRegister();
+  document.querySelector('#register-screen .login-sub').textContent='Create an account to pay £5 for your first quote. No subscription.';
+}
+void loadQuoteOffer();
 
 function showLogin(){
   closeSubscriptionPrompt();
@@ -2122,6 +2151,37 @@ function showSubscriptionPrompt(){
   document.getElementById('plan-explanation').textContent=selected?'You chose '+UPGRADE_PLAN_LABELS[selected]+'. Select that option below to continue to payment. Your draft is kept here.':currentUser?.billing_plan==='starter'?'Upgrade to Pro for £10 more per month and keep quoting without limits. Stripe shows any adjustment before you confirm. Your saved quotes stay available.':'Your saved quotes stay available and your current draft is kept here. Choose an option to continue.';
   document.getElementById('subscription-dialog').showModal();
 }
+function showFirstQuoteRefund(data){
+  document.getElementById('first-quote-refund').hidden=data.status==='unavailable';
+  document.getElementById('first-quote-refund-form').hidden=!data.eligible;
+  document.getElementById('first-quote-refund-status').textContent={
+    available:'Request a refund within seven days of your first paid quote.',
+    requested:'Refund requested. We’ll review it and return eligible payments to the original payment method.',
+    refunded:'Your first paid quote was refunded.',
+    expired:'The seven-day first-quote refund period has ended.'
+  }[data.status]||'';
+}
+async function loadFirstQuoteRefund(){
+  if(!currentUser||currentUser.guest)return;
+  try {
+    const response=await fetch(API+'/api/billing/first-quote-refund',{headers:{Authorization:'Bearer '+token}});
+    if(response.ok) showFirstQuoteRefund(await response.json());
+  } catch (_) { /* Billing options remain usable if the refund status cannot load. */ }
+}
+async function sendFirstQuoteRefund(event){
+  event.preventDefault();
+  const button=event.currentTarget.querySelector('button[type="submit"]');
+  const input=document.getElementById('first-quote-refund-reason');
+  button.disabled=true;
+  try {
+    const response=await fetch(API+'/api/billing/first-quote-refund',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({reason:input.value})});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Could not record your refund request.');
+    input.value='';
+    showFirstQuoteRefund(data);
+  }catch(error){document.getElementById('first-quote-refund-status').textContent=error.message;}
+  finally{button.disabled=false;}
+}
 async function startSubscription(plan='pro'){
   if(!Object.hasOwn(UPGRADE_PLAN_LABELS,plan)) return;
   if(currentUser?.guest){sessionStorage.setItem(UPGRADE_PLAN_KEY,plan);showGuestSignup(plan);return;}
@@ -2223,6 +2283,7 @@ history.replaceState({...appRoute(),depth:0},'');
 updateBackButtons();
 
 function switchTab(tab){
+  if(tab==='setup') void loadFirstQuoteRefund();
   if(tab!=='builder'&&document.getElementById('sec-builder')?.classList.contains('active')&&currentBuilderStep<6) saveBuilderDraft();
   ['home','quotes','builder','issues','setup'].forEach(t=>{
     document.getElementById('sec-'+t)?.classList.remove('active');

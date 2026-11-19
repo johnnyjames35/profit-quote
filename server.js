@@ -1,4 +1,5 @@
 require('dotenv').config();
+process.env.PROFITQUOTE_PAID_FIRST ??= '1';
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

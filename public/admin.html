@@ -341,6 +341,13 @@ tbody td { padding: 14px 18px; font-size: 0.875rem; vertical-align: middle; }
     </div>
 
     <div id="view-users">
+      <details class="table-card" ontoggle="if(this.open) loadFirstQuoteRefunds()">
+        <summary>First-quote refund requests</summary>
+        <p>Review the explanation and issue eligible refunds to the original payment method in Stripe. This list updates when Stripe confirms the refund.</p>
+        <button type="button" class="refresh-btn" onclick="loadFirstQuoteRefunds()">Refresh requests</button>
+        <p id="first-quote-refunds-status" role="status"></p>
+        <ul id="first-quote-refunds-list"></ul>
+      </details>
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">Total Signups</div>
@@ -678,6 +685,24 @@ function showTab(tab) {
   document.getElementById('tab-reporting-btn').classList.toggle('active', tab === 'reporting');
   if (tab === 'funnel') loadFunnel();
   if (tab === 'reporting' && !window.reportingLoaded) loadReporting();
+}
+
+async function loadFirstQuoteRefunds() {
+  const list=document.getElementById('first-quote-refunds-list');
+  const status=document.getElementById('first-quote-refunds-status');
+  list.replaceChildren();
+  status.textContent='Loading requests…';
+  try{
+    const res=await fetch(API+'/api/admin/first-quote-refunds',{headers:{Authorization:'Bearer '+adminToken}});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Could not load refund requests.');
+    status.textContent=data.requests.length?'':'No pending refund requests.';
+    for(const item of data.requests){
+      const row=document.createElement('li');
+      row.textContent=new Date(item.requested_at).toLocaleDateString('en-GB')+' · '+item.payment_intent+' · '+item.reason;
+      list.append(row);
+    }
+  }catch(error){status.textContent=error.message;}
 }
 
 async function readAdminJson(res) {

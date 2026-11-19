@@ -114,6 +114,14 @@ CREATE TABLE IF NOT EXISTS commercial_payments (
  amount INTEGER NOT NULL, credit_available BOOLEAN NOT NULL DEFAULT TRUE,
  payment_intent TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+ALTER TABLE commercial_payments ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+ALTER TABLE commercial_payments ADD COLUMN IF NOT EXISTS first_quote_offer BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE commercial_payments ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMPTZ;
+CREATE TABLE IF NOT EXISTS first_quote_refund_requests (
+ session_id TEXT PRIMARY KEY REFERENCES commercial_payments(session_id) ON DELETE CASCADE,
+ reason TEXT NOT NULL CHECK (char_length(reason) BETWEEN 3 AND 500),
+ requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS commercial_usage (
  id BIGSERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  subscription_id TEXT NOT NULL, period_start TIMESTAMPTZ NOT NULL,

@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const firstQuoteOffer = require('./first-quote-offer');
 const LIMIT = 3;
 const MONTHLY_LINK = 'https://buy.stripe.com/14AcMZf5F4L453h8MQc3m0x';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -67,6 +68,7 @@ async function access(db, user, lock=false) {
 }
 
 async function startGuestTrial(db,guestId){
+  if(firstQuoteOffer.active()) return false;
   // One statement keeps the clock and its funnel event atomic even without a transaction.
   await db.query(`WITH started AS (
     UPDATE quote_allowances SET trial_started_at=NOW()
@@ -76,7 +78,7 @@ async function startGuestTrial(db,guestId){
     SELECT 'anonymous_free_use_started','guest',jsonb_build_object('guest_id',$1::text) FROM started`,[guestId]);
 }
 
-function limitError(guest=false){return Object.assign(new Error(guest?'Your seven days of free use have ended. Choose £5 per quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'trial_expired':'subscription_required'});}
+function limitError(guest=false){return Object.assign(new Error(guest&&!firstQuoteOffer.active()?'Your seven days of free use have ended. Choose £5 per quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).':'Choose £5 for one quote, £19/month Starter (6 quotes), or £29/month Pro (unlimited).'),{status:402,code:guest?'trial_expired':'subscription_required'});}
 async function consume(db,a,user){
   if(!a.can_create) throw limitError(user.guest);
   if(user.guest){await db.query('UPDATE quote_allowances SET used=used+1 WHERE id=$1',[a.trial_id]);return;}
@@ -91,5 +93,5 @@ async function consume(db,a,user){
 function publicAccess(a){return {quotes_used:a.used,quotes_remaining:a.remaining,subscribed:a.subscribed,
   can_create:a.can_create,unlimited:a.unlimited,billing_plan:a.plan,billing_management_plan:a.management_plan,trial_active:a.trial_active,trial_ends_at:a.trial_ends_at,
   period_quotes_used:a.period_used,payg_credits:a.credits,period_ends_at:a.subscription?.period_end||null,
-  subscription_required:!a.can_create};}
+  subscription_required:!a.can_create,paid_first_offer:firstQuoteOffer.active()};}
 module.exports={LIMIT,MONTHLY_LINK,UUID,digest,ipHash,browserTrial,setTrialCookie,access,startGuestTrial,consume,limitError,publicAccess};
