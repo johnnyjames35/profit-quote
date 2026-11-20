@@ -1899,6 +1899,7 @@ const urlToken = urlParams.get('token');
 if(urlToken){ localStorage.setItem('pq_token', urlToken); token = urlToken; window.history.replaceState({}, '', '/dashboard'); }
 
 const resetTokenFromUrl = urlParams.get('reset');
+let directQuotePurchase = urlParams.get('buy') === 'payg' && !urlToken && !resetTokenFromUrl && urlParams.get('login') !== '1';
 
 let paidFirstOffer = false;
 async function loadQuoteOffer(){
@@ -1911,6 +1912,7 @@ async function loadQuoteOffer(){
   if(resetTokenFromUrl){showReset(resetTokenFromUrl);return;}
   if(urlParams.get('login')==='1'){showLogin();return;}
   if(token){initApp(true);return;}
+  if(directQuotePurchase){showGuestSignup('payg');return;}
   if(paidFirstOffer){openQuoteOffer();return;}
   startGuest();
 }
@@ -2033,7 +2035,7 @@ async function doRegister(){
       err.textContent=data.error||'Registration failed.';
       err.style.display='block';
       trackFunnelEvent('signup_failed');
-      btn.textContent='Create Account →';
+      btn.textContent=directQuotePurchase?'Create Account & Continue →':'Create Account →';
       btn.disabled=false;
       return;
     }
@@ -2048,7 +2050,7 @@ async function doRegister(){
     err.textContent='Connection error.';
     err.style.display='block';
     trackFunnelEvent('signup_failed');
-    btn.textContent='Create Account →';
+    btn.textContent=directQuotePurchase?'Create Account & Continue →':'Create Account →';
     btn.disabled=false;
   }
 }
@@ -2056,10 +2058,16 @@ async function doRegister(){
 async function initApp(startInBuilder=false){
   try{
     const res=await fetch(API+'/api/auth/me',{headers:{Authorization:'Bearer '+token}});
-    if(!res.ok){ doLogout(); if(urlParams.get('login')!=='1')await startGuest(); return; }
+    if(!res.ok){
+      doLogout();
+      if(directQuotePurchase) showGuestSignup('payg');
+      else if(urlParams.get('login')!=='1') await startGuest();
+      return;
+    }
     currentUser=await res.json();
     window.pqAnalytics?.account(currentUser, token);
   }catch(e){ doLogout(); return; }
+  if(currentUser.guest && directQuotePurchase){showGuestSignup('payg');return;}
   document.getElementById('login-screen').style.display='none';
   document.getElementById('register-screen').style.display='none';
   document.getElementById('forgot-screen').style.display='none';
@@ -2084,7 +2092,14 @@ async function initApp(startInBuilder=false){
     if(new URLSearchParams(window.location.search).get('subscribe')==='1'){switchTab('setup');showSubscriptionPrompt();}
     refreshQuoteAccess();
     if(new URLSearchParams(window.location.search).get('billing')==='returned'){switchTab('builder');showSubscriptionPrompt();refreshQuoteAccess(true);}
-    if(pendingUpgradePlan()) showSubscriptionPrompt();
+    if(directQuotePurchase){
+      directQuotePurchase=false;
+      urlParams.delete('buy');
+      const search=urlParams.toString();
+      history.replaceState(history.state,'',location.pathname+(search?'?'+search:'')+location.hash);
+      sessionStorage.setItem(UPGRADE_PLAN_KEY,'payg');
+      await startSubscription('payg',true);
+    }else if(pendingUpgradePlan()) showSubscriptionPrompt();
   }
   BUILDER_STEP_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
@@ -2182,10 +2197,10 @@ async function sendFirstQuoteRefund(event){
   }catch(error){document.getElementById('first-quote-refund-status').textContent=error.message;}
   finally{button.disabled=false;}
 }
-async function startSubscription(plan='pro'){
+async function startSubscription(plan='pro',sameTab=false){
   if(!Object.hasOwn(UPGRADE_PLAN_LABELS,plan)) return;
   if(currentUser?.guest){sessionStorage.setItem(UPGRADE_PLAN_KEY,plan);showGuestSignup(plan);return;}
-  const checkout=window.open('','_blank');
+  const checkout=sameTab?null:window.open('','_blank');
   try{
     const response=await fetch(API+'/api/billing/checkout',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({plan})});
     const data=await response.json();
@@ -2194,7 +2209,11 @@ async function startSubscription(plan='pro'){
     if(data.subscribed){checkout?.close();await refreshQuoteAccess(true);return;}
     trackFunnelEvent('checkout_started');
     if(checkout) checkout.location.href=data.url; else window.location.href=data.url;
-  }catch(error){checkout?.close();showToast(error.message);}
+  }catch(error){
+    checkout?.close();
+    if(sameTab) showSubscriptionPrompt();
+    showToast(error.message);
+  }
 }
 async function refreshQuoteAccess(showMessage=false){
   if(!currentUser||currentUser.guest) return;
