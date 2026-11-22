@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
 const express=require('express'),jwt=require('jsonwebtoken'),https=require('node:https'),{EventEmitter}=require('node:events'),{PGlite}=require('@electric-sql/pglite');
-test('anonymous seven-day create/send/export, Save-only account gate, expiry, identity and funnel',async(t)=>{
+test('three guest quotes, retry, concurrent limit, output, account gate and admin funnel',async(t)=>{
  process.env.JWT_SECRET='anonymous-test-only';process.env.BREVO_API_KEY='stub';delete process.env.GA_API_SECRET;
  const sent=[];let failEmail=false;const original=https.request;
  https.request=(options,cb)=>{const req=new EventEmitter();let body='';req.write=b=>body+=b;req.end=()=>{const res=new EventEmitter();res.statusCode=failEmail?503:201;cb(res);if(!failEmail)sent.push(JSON.parse(body));queueMicrotask(()=>res.emit('end'));};return req;};
@@ -15,11 +15,17 @@ test('anonymous seven-day create/send/export, Save-only account gate, expiry, id
  const call=(url,body,token,method='POST',cookie)=>fetch(base+'/api/'+url,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...(cookie?{Cookie:cookie}:{})},...(body?{body:JSON.stringify(body)}:{})});
  const start=await call('guest/start',{browser_id:'fresh-anonymous-browser'});assert.equal(start.status,200);
  const cookie=start.headers.get('set-cookie').split(';')[0],guest=(await start.json()).token;
- const before=await(await call('auth/me',null,guest,'GET')).json();assert.equal(before.trial_active,true);assert.equal(before.quotes_remaining,null);
+ const before=await(await call('auth/me',null,guest,'GET')).json();assert.equal(before.trial_active,false);assert.equal(before.quotes_remaining,3);
  assert.equal((await db.query('SELECT * FROM users')).rows.length,0);
  const quote={creation_key:crypto.randomUUID(),customer_name:'Test Customer',customer_email:'test@example.invalid',job_description:'Fit sockets',total:1234,quote_data:{customer_email:'test@example.invalid',labour:900,mats:334,total:1234}};
- let output;
- for(let i=0;i<13;i++){const response=await call('quotes/preview',quote,guest);assert.equal(response.status,200);output=await response.json();}
+ const firstOutput=await (await call('quotes/preview',quote,guest)).json();
+ assert.equal(firstOutput.quotes_remaining,2);
+ const attempts=await Promise.all(Array.from({length:3},()=>call('quotes/preview',{...quote,creation_key:crypto.randomUUID()},guest)));
+ assert.deepEqual(attempts.map(r=>r.status).sort(),[200,200,402]);
+ const output=await(await call('quotes/preview',quote,guest)).json();
+ assert.equal(output.reference,firstOutput.reference);
+ assert.equal(output.quotes_remaining,0);
+ assert.equal((await call('quotes/preview',{...quote,total:1235},guest)).status,409);
  assert.equal((await db.query('SELECT * FROM quotes')).rows.length,0,'generation creates no saved quote');
  assert.equal((await call('quotes',quote,guest)).status,403);
  assert.deepEqual(await(await call('quotes',null,guest,'GET')).json(),[]);
@@ -38,20 +44,20 @@ test('anonymous seven-day create/send/export, Save-only account gate, expiry, id
  for(const event_type of ['quote_started','save_prompt_shown','signup_screen_viewed','signup_attempted'])assert.equal((await call('events/funnel',{event_type},guest)).status,200);
  const admin=jwt.sign({admin:true},process.env.JWT_SECRET+'_admin');
  const funnel=await(await call('admin/funnel?period=today',null,admin,'GET')).json();
- assert.equal(funnel.anonymousFreeStarts,2);assert.equal(funnel.anonymousQuoteStarts,1);assert.equal(funnel.anonymousQuoteCompletions,13);assert.equal(funnel.anonymousQuoteSends,1);assert.equal(funnel.savePrompts,1);assert.equal(funnel.signupAttempts,1);
- // Register while active: original clock survives and exact quote is saved once.
+ assert.equal(funnel.anonymousFreeStarts,2);assert.equal(funnel.anonymousQuoteStarts,1);assert.equal(funnel.anonymousQuoteCompletions,3);assert.equal(funnel.anonymousQuoteSends,1);assert.equal(funnel.savePrompts,1);assert.equal(funnel.signupAttempts,1);
+ // Registration preserves the existing account trial rules and saves the exact quote once.
  const reg=await call('auth/register',{name:'Test Tradesperson',email:'tester@example.invalid',password:'test-only-password',guest_token:guest,browser_id:'fresh-anonymous-browser'},null,'POST',cookie);assert.equal(reg.status,200);
  const account=await reg.json();
- const after=await(await call('auth/me',null,account.token,'GET')).json();assert.equal(after.trial_ends_at,before.trial_ends_at);
+ const after=await(await call('auth/me',null,account.token,'GET')).json();assert.equal(after.trial_active,true);
  assert.equal((await call('quotes/send-email',{output_token:output.output_token},guest)).status,401,'converted session revoked');
  const save=await(await call('quotes',{...quote,output_token:output.output_token},account.token)).json();const repeat=await(await call('quotes',quote,account.token)).json();assert.equal(save.id,repeat.id);
  const library=await(await call('quotes',null,account.token,'GET')).json();assert.equal(library.length,1);assert.equal(Number(library[0].total),1234);assert.deepEqual(library[0].quote_data,quote.quote_data);
- const afterSave=await(await call('admin/funnel?period=today',null,admin,'GET')).json();assert.equal(afterSave.quoteCompletions,13,'Save does not double-count anonymous completion');
+ const afterSave=await(await call('admin/funnel?period=today',null,admin,'GET')).json();assert.equal(afterSave.quoteCompletions,3,'Save does not double-count anonymous completion');
  const otherId=jwt.verify(other,process.env.JWT_SECRET).id;
  await db.query("UPDATE quote_allowances SET trial_started_at=NOW()-INTERVAL '7 days' WHERE id=(SELECT trial_id FROM guest_sessions WHERE id=$1)",[otherId]);
- assert.equal((await call('quotes/preview',quote,other)).status,402,'expiry enforced by server');
- assert.equal((await call('quotes/send-email',{output_token:output.output_token},other)).status,402);
+ assert.equal((await call('quotes/preview',quote,other)).status,200,'guest allowance does not depend on the account trial clock');
+ assert.equal((await call('quotes/send-email',{output_token:output.output_token},other)).status,403);
  const restarted=(await(await call('guest/start',{browser_id:'other-anonymous-browser'})).json()).token;
- assert.equal((await call('quotes/preview',quote,restarted)).status,402,'restart cannot reset trial');
+ assert.equal((await call('quotes/preview',quote,restarted)).status,200,'same request can be replayed after restart');
  assert.equal((await db.query("SELECT * FROM events WHERE event_type='anonymous_free_use_started'")).rows.length,2,'start event recorded once per trial');
 });

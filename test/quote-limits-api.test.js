@@ -12,7 +12,7 @@ const {PGlite}=require('@electric-sql/pglite');
 for (const billingPlan of [
   {name:'legacy £49',price:'price_1TZX0w8466uzy1MNeVvWz2Ew',link:'plink_1TZX128466uzy1MNZEoilqdL'},
   {name:'current £37',price:'price_1UHgUj8466uzy1MNcCnTWJbi',link:'plink_1UHgWz8466uzy1MNDtQyGajQ'}
-]) test('guest preview, seven-day trial, legacy signed billing and saved-only output — '+billingPlan.name,async(t)=>{
+]) test('guest preview, account trial, legacy signed billing and saved-only output — '+billingPlan.name,async(t)=>{
   process.env.JWT_SECRET='limits-test-only';process.env.STRIPE_WEBHOOK_SECRET='webhook-test-only';delete process.env.GA_API_SECRET;
   const original=https.request;const sent=[];
   https.request=(options,cb)=>{const r=new EventEmitter();let body='';r.write=x=>body+=x;r.end=()=>{sent.push(JSON.parse(body));const res=new EventEmitter();res.statusCode=201;cb(res);queueMicrotask(()=>res.emit('end'));};return r;};
@@ -32,7 +32,7 @@ for (const billingPlan of [
   const browser='browser-for-limit-tests';
   const guestResponse=await request('/api/guest/start',{browser_id:browser});assert.equal(guestResponse.status,200);
   const cookie=guestResponse.headers.get('set-cookie').split(';')[0];const guest=(await guestResponse.json()).token;
-  const firstBody=quote();const preview=await (await request('/api/quotes/preview',firstBody,guest,cookie)).json();assert.equal(preview.quotes_remaining,null);
+  const firstBody=quote();const preview=await (await request('/api/quotes/preview',firstBody,guest,cookie)).json();assert.equal(preview.quotes_remaining,2);
   assert.equal((await request('/api/quotes',firstBody,guest,cookie)).status,403);
   const reg=await request('/api/auth/register',{name:'User one',email:'first@example.invalid',password:'test-password',guest_token:guest,browser_id:browser},null,cookie);assert.equal(reg.status,200);
   const account=await reg.json();const token=account.token;

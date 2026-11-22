@@ -356,6 +356,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
 .ai-loading{text-align:center;padding:28px;color:var(--muted);font-size:0.875rem;}
 .quote-output-header{border-bottom:2px solid var(--amber);padding-bottom:12px;margin-bottom:14px;}
 .quote-output-logo{font-size:1.1rem;font-weight:900;color:var(--white);letter-spacing:-0.02em;}
+.guest-mode .quote-output-logo{display:none;}
 .quote-output-logo span{color:var(--amber);}
 .quote-builder-details{font-size:0.78rem;color:var(--muted);margin-top:4px;line-height:1.6;}
 .profit-badge{display:inline-block;background:var(--amber);color:var(--black);font-size:0.9rem;font-weight:800;padding:6px 16px;border-radius:20px;margin-top:8px;}
@@ -515,7 +516,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
       <div class="auth-divider">or</div>
       <div class="login-switch" style="margin-top:0;">No account yet?</div>
-      <button class="btn-trial" id="start-quoting" onclick="openQuoteOffer()">Use free for 7 days — no signup</button>
+      <button class="btn-trial" id="start-quoting" onclick="openQuoteOffer()">Try three free quotes — no signup</button>
       <div class="auth-trial-note">No card. No commitment. Cancel anytime.</div>
     </div>
   </div>
@@ -559,7 +560,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       <div class="login-logo"><div class="login-logo-icon">£</div><span class="login-logo-text">Profit<span>Quote</span></span></div>
       <div class="login-title">Create your free account</div>
       <div class="login-sub">Save and retrieve your quotes — no card needed</div>
-      <div id="quote-signup-prompt" class="login-sub" style="display:none;">Your quote is ready. Create a free account to save this quote and access it later. Your quote will stay here while you register.<br><button type="button" class="btn-action" onclick="backToGuestQuote()">Back to my quote</button></div>
+      <div id="quote-signup-prompt" class="login-sub" style="display:none;">Your quote is ready. Create a free account for branded quotes and quote history. Your quote will stay here while you register.<br><button type="button" class="btn-action" onclick="backToGuestQuote()">Back to my quote</button></div>
       <div class="login-err" id="reg-err"></div>
       <div class="lfield"><label>Your Name</label><input type="text" id="reg-name" placeholder="e.g. Dave Morris"></div>
       <div class="lfield"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.co.uk"></div>
@@ -809,7 +810,7 @@ textarea.field-input{resize:vertical;min-height:80px;}
       </div>
       <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin:-6px 0 10px;"><span id="draft-save-status" role="status">Your current draft stays on this device. Create an account only to save quotes for later.</span> <a href="#" onclick="event.preventDefault(); if(confirm('Clear this quote and start over?')) resetBuilder();" style="color:var(--amber);">Clear &amp; start over</a></div>
       <div class="card" id="guest-trial-ended" hidden>
-        <div class="card-title">Your seven days of free use have ended</div>
+        <div class="card-title">You’ve used your three free guest quotes</div>
         <p>Any draft on this device is still available. Choose a paid option when you’re ready to generate a new quote.</p>
         <button type="button" class="btn-action" onclick="showSubscriptionPrompt()">See pricing options</button>
       </div>
@@ -1908,20 +1909,13 @@ async function loadQuoteOffer(){
     if(res.ok) paidFirstOffer=(await res.json()).paid_first===true;
   }catch(_){ /* Existing signed-in customers can still reach their workspace. */ }
   document.getElementById('first-quote-guarantee').hidden=!paidFirstOffer;
-  if(paidFirstOffer) document.getElementById('start-quoting').textContent='Start with one quote for £5';
   if(resetTokenFromUrl){showReset(resetTokenFromUrl);return;}
   if(urlParams.get('login')==='1'){showLogin();return;}
   if(token){initApp(true);return;}
   if(directQuotePurchase){showGuestSignup('payg');return;}
-  if(paidFirstOffer){openQuoteOffer();return;}
   startGuest();
 }
-function openQuoteOffer(){
-  if(!paidFirstOffer){startGuest();return;}
-  sessionStorage.setItem(UPGRADE_PLAN_KEY,'payg');
-  showRegister();
-  document.querySelector('#register-screen .login-sub').textContent='Create an account to pay £5 for your first quote. No subscription.';
-}
+function openQuoteOffer(){startGuest();}
 void loadQuoteOffer();
 
 function showLogin(){
@@ -2080,7 +2074,7 @@ async function initApp(startInBuilder=false){
     document.getElementById('onboarding-card').style.display='none';
     ['nav-issues','nav-setup'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
     const out=document.querySelector('[onclick="doLogout()"]'); if(out) out.style.display='none';
-    const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent=currentUser.trial_active?'Build your first professional quote — no signup needed':'Review your draft or choose how to keep quoting';
+    const greeting=document.getElementById('home-greeting'); if(greeting) greeting.textContent=currentUser.can_create?'Build a free quote — no signup needed':'Review your draft or choose how to keep quoting';
     if(startInBuilder || quotes.length===0) switchTab('builder');
   }
   if(!currentUser.guest){
@@ -2153,7 +2147,7 @@ function updateAllowancePill(){
   endedNotice.hidden=!(currentUser?.guest&&currentUser.can_create===false);
   const pill=document.getElementById('trial-pill');
   if(currentUser?.guest){
-    pill.textContent=currentUser.trial_active?'Free use until '+new Date(currentUser.trial_ends_at).toLocaleDateString('en-GB'):'Free use ended';
+    pill.textContent=(currentUser.quotes_remaining||0)+' of 3 free guest quotes left';
     return;
   }
   const manage=document.getElementById('manage-plan');
@@ -2352,7 +2346,7 @@ function filterQuotes(){
 function renderQuotes(){
   const el=document.getElementById('quotes-list');
   if(currentUser?.guest){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Keep your quotes in one place</div><p>Create a free account to save your quotes and find them here later. No card needed. Your free-use period keeps its original end date.</p><button class="btn-action" onclick="showGuestSignup()">Create free account →</button></div>';
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Keep your quotes in one place</div><p>Create a free account to save your quotes and find them here later. No card needed.</p><button class="btn-action" onclick="showGuestSignup()">Create free account →</button></div>';
     return;
   }
   if(!filteredQuotes.length){
@@ -2992,13 +2986,13 @@ async function generateQuote(){
     const saved=await response.json();
     if(!response.ok){
       if(saved.code==='subscription_required'){currentQuoteData=null;nextStep(5);showSubscriptionPrompt();}
-      else if(saved.code==='trial_expired'){
-        Object.assign(currentUser,{trial_active:false,can_create:false});
+      else if(saved.code==='guest_limit'){
+        Object.assign(currentUser,{quotes_remaining:0,can_create:false});
         updateAllowancePill();
         nextStep(5);
         showSubscriptionPrompt();
       }
-      else {nextStep(5);showToast(saved.error||'Could not generate your quote');}
+      else {if(response.status===409)pendingCreationKey=null;nextStep(5);showToast(saved.error||'Could not generate your quote');}
       return;
     }
     window.pqAnalytics?.quoteResult(saved);

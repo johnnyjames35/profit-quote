@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 
 router.put('/', auth, async (req, res) => {
+  if(req.user.guest) return res.status(403).json({error:'Create an account to use this feature.',code:'account_required'});
   const numberInRange = (value, fallback, min, max) => {
     const number = Number(value);
     return Number.isFinite(number) && number >= min && number <= max ? number : fallback;

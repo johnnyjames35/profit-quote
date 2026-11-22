@@ -2,6 +2,7 @@ const router=require('express').Router();
 const crypto=require('crypto');
 const jwt=require('jsonwebtoken');
 const auth=require('../middleware/auth');
+const firstQuoteOffer=require('../utils/first-quote-offer');
 const {browserTrial,digest,ipHash,access,startGuestTrial,publicAccess}=require('../utils/quote-access');
 router.post('/start',async(req,res)=>{
   const browserId=String(req.body?.browser_id||'');
@@ -25,7 +26,12 @@ router.post('/start',async(req,res)=>{
     }else{
       await client.query("UPDATE guest_sessions SET expires_at=NOW()+INTERVAL '30 days' WHERE id=$1",[id]);
     }
-    await startGuestTrial(client,id);
+    if(firstQuoteOffer.active()){
+      await client.query(`INSERT INTO events(event_type,source,meta)
+        SELECT 'anonymous_free_use_started','guest',jsonb_build_object('guest_id',$1::text,'trial_id',$2::text)
+        WHERE NOT EXISTS (SELECT 1 FROM events WHERE event_type='anonymous_free_use_started' AND meta->>'trial_id'=$2::text)
+          AND EXISTS (SELECT 1 FROM quote_allowances WHERE id=$2::uuid AND trial_started_at IS NULL)`,[id,existing?.trial_id||trial]);
+    }else await startGuestTrial(client,id);
     await client.query('COMMIT');
     res.set('Cache-Control','no-store').json({token:jwt.sign({id,guest:true},process.env.JWT_SECRET,{expiresIn:'30d'})});
   }catch(e){await client.query('ROLLBACK');res.status(e.status||500).json({error:e.message});}

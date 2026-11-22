@@ -123,8 +123,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 async function anonymousOutput(req) {
-  const a=await access(req.app.locals.pool,req.user);
-  if(!a.can_create) throw limitError(true);
+  await access(req.app.locals.pool,req.user);
   let signed;
   try{signed=jwt.verify(req.body?.output_token,process.env.JWT_SECRET);}
   catch{throw Object.assign(new Error('Generate this quote again before sending or downloading it.'),{status:400});}
@@ -137,27 +136,52 @@ async function anonymousOutput(req) {
 }
 function guestReference(date,id){
   const day=new Date(date).toLocaleDateString('en-GB',{timeZone:'Europe/London'}).split('/');
-  return 'PQ-'+day[0]+day[1]+day[2].slice(-2)+'-'+id.replaceAll('-','').slice(0,8).toUpperCase();
+  return 'Q-'+day[0]+day[1]+day[2].slice(-2)+'-'+id.replaceAll('-','').slice(0,8).toUpperCase();
 }
 router.post('/preview',auth,async(req,res)=>{
   if(!req.user.guest) return res.status(400).json({error:'Use your account quote builder.'});
+  const client=await req.app.locals.pool.connect();
   try{
-    const a=await access(req.app.locals.pool,req.user);
-    if(!a.can_create) throw limitError(true);
     const quote={...req.body};delete quote.output_token;delete quote.id;
     if(!Number.isFinite(Number(quote.total))||Number(quote.total)<0||Number(quote.total)>10000000||!quote.quote_data) return res.status(400).json({error:'Check the quote figures and generate again.'});
-    quote.created_at=new Date().toISOString();
-    quote.reference=guestReference(quote.created_at,crypto.randomUUID());
     quote.customer_email=quote.customer_email||quote.quote_data.customer_email||'';
-    const output_token=jwt.sign({purpose:'anonymous-quote',guest_id:req.user.id,quote},process.env.JWT_SECRET,{expiresIn:Math.max(1,Math.floor((new Date(a.trial_ends_at)-Date.now())/1000))});
-    await req.app.locals.pool.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_quote_completed','guest',$1)",[JSON.stringify({guest_id:req.user.id})]);
-    void sendToGA('anonymous_quote_completed',null,'guest',requestContext(req));
-    res.set('Cache-Control','no-store').json({output_token,reference:quote.reference,created_at:quote.created_at,...publicAccess(a),analytics_event:'anonymous_quote_completed'});
-  }catch(e){res.status(e.status||500).json({error:e.message,code:e.code});}
+    const key=UUID.test(quote.creation_key||'')?quote.creation_key:null;
+    const fingerprint=crypto.createHash('sha256').update(JSON.stringify(quote)).digest('hex');
+    await client.query('BEGIN');
+    const a=await access(client,req.user,true);
+    const previous=key && (await client.query(
+      "SELECT meta FROM events WHERE event_type='anonymous_quote_completed' AND meta->>'trial_id'=$1 AND meta->>'creation_key'=$2 LIMIT 1",
+      [a.trial_id,key]
+    )).rows[0]?.meta;
+    if(previous && previous.fingerprint!==fingerprint){
+      throw Object.assign(new Error('The quote changed. Generate again to use the updated figures.'),{status:409});
+    }
+    if(previous){
+      quote.created_at=previous.created_at;
+      quote.reference=previous.reference;
+    }else{
+      await consume(client,a,req.user);
+      a.used++;
+      a.remaining--;
+      a.can_create=a.remaining>0;
+      quote.created_at=new Date().toISOString();
+      quote.reference=guestReference(quote.created_at,crypto.randomUUID());
+      await client.query("INSERT INTO events(event_type,source,meta) VALUES('anonymous_quote_completed','guest',$1)",[JSON.stringify({
+        guest_id:req.user.id,trial_id:a.trial_id,creation_key:key,fingerprint,created_at:quote.created_at,reference:quote.reference
+      })]);
+    }
+    const output_token=jwt.sign({purpose:'anonymous-quote',guest_id:req.user.id,quote},process.env.JWT_SECRET,{expiresIn:'30d'});
+    await client.query('COMMIT');
+    if(!previous) void sendToGA('anonymous_quote_completed',null,'guest',requestContext(req));
+    res.set('Cache-Control','no-store').json({output_token,reference:quote.reference,created_at:quote.created_at,...publicAccess(a),analytics_event:previous?null:'anonymous_quote_completed'});
+  }catch(e){
+    await client.query('ROLLBACK');
+    res.status(e.status||500).json({error:e.message,code:e.code});
+  }finally{client.release();}
 });
 // PDF output uses the same HTML/CSS as Print, with server-verified quote data only.
 async function sendPDF(req,res,quote){
-  const user=req.user.guest?{name:'Guest'}:(await req.app.locals.pool.query('SELECT name,business_name,phone,contact_email,town FROM users WHERE id=$1',[req.user.id])).rows[0];
+  const user=req.user.guest?{guest:true}:(await req.app.locals.pool.query('SELECT name,business_name,phone,contact_email,town FROM users WHERE id=$1',[req.user.id])).rows[0];
   if(!user) return res.status(404).json({error:'User not found.'});
   const pdf=await renderPDF(quotationDocument.render(quote,user));
   res.set({'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="'+quotationDocument.filename(quote)+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}).send(pdf);
@@ -204,7 +228,7 @@ router.post('/send-email', auth, async (req, res) => {
   if (!Number.isFinite(Number(total)) || Number(total) < 0 || Number(total) > 10000000) return res.status(400).json({ error: 'The quote total is invalid.' });
     const recent = await pool.query("SELECT COUNT(*)::int AS c FROM events WHERE event_type='quote_sent' AND (user_id=$1 OR ($2::text IS NOT NULL AND meta->>'guest_id'=$2)) AND created_at >= NOW() - INTERVAL '1 hour'", [req.user.guest?null:req.user.id,req.user.guest?req.user.id:null]);
     if (recent.rows[0].c >= 10) return res.status(429).json({ error: 'Hourly email limit reached. Please try again later.' });
-    const userResult = req.user.guest?{rows:[{name:'Your tradesperson',business_name:saved.rows[0].quote_data?.businessName,phone:saved.rows[0].quote_data?.businessPhone}]}:await pool.query('SELECT name,business_name,phone,contact_email,email FROM users WHERE id=$1', [req.user.id]);
+    const userResult = req.user.guest?{rows:[{name:'Your tradesperson'}]}:await pool.query('SELECT name,business_name,phone,contact_email,email FROM users WHERE id=$1', [req.user.id]);
     if (!userResult.rows.length) return res.status(404).json({ error: 'User not found.' });
     const user = userResult.rows[0];
     const businessName = String(user.business_name || user.name || 'ProfitQuote customer').slice(0, 100);
