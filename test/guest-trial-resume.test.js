@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
 const express=require('express'),jwt=require('jsonwebtoken'),{PGlite}=require('@electric-sql/pglite');
 
-test('cached migrated guest starts its unused trial once through auth/me; expiry stays enforced',async(t)=>{
+test('cached migrated guest keeps its spent allowance across migration and redeploy',async(t)=>{
   process.env.JWT_SECRET='guest-resume-test-only';
   const db=new PGlite();await db.exec(fs.readFileSync('schema.sql','utf8'));
   const pool={query:db.query.bind(db),connect:async()=>({query:db.query.bind(db),release(){}})};
@@ -15,9 +15,9 @@ test('cached migrated guest starts its unused trial once through auth/me; expiry
   const token=jwt.sign({id,guest:true},process.env.JWT_SECRET,{expiresIn:'1h'});
   const call=(route,body)=>fetch('http://127.0.0.1:'+server.address().port+'/api/'+route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
   const first=await(await call('auth/me')).json();
-  assert.equal(first.trial_active,true);assert.equal(first.can_create,true);assert.equal(first.quotes_remaining,null);
+  assert.equal(first.trial_active,false);assert.equal(first.can_create,false);assert.equal(first.quotes_remaining,0);
   const quote={customer_name:'Test Customer',total:8500,quote_data:{total:8500}};
-  assert.equal((await call('quotes/preview',quote)).status,200,'cached token can generate without restarting its guest session');
+  assert.equal((await call('quotes/preview',quote)).status,402,'cached token cannot reset the allowance');
   assert.equal((await(await call('auth/me')).json()).trial_ends_at,first.trial_ends_at);
   await db.exec(fs.readFileSync('schema.sql','utf8'));
   assert.equal((await(await call('auth/me')).json()).trial_ends_at,first.trial_ends_at,'redeploy does not renew a started trial');

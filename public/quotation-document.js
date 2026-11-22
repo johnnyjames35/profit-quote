@@ -4,6 +4,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
 function render(currentQuoteData,currentUser){
   const escapeHtml=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const guest=currentUser?.guest===true;
   const customerName=escapeHtml(currentQuoteData.customer_name||'Customer');
   // Prioritise business_name from settings over personal name
   const bizName=escapeHtml(currentUser?.business_name||currentUser?.name||'');
@@ -50,7 +51,7 @@ function render(currentQuoteData,currentUser){
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Quotation — ${bizName}</title>
+<title>Quotation${guest?'':' — '+bizName}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:13px;line-height:1.5;}
@@ -100,11 +101,12 @@ function render(currentQuoteData,currentUser){
     body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .page{padding:20px 28px;}
   }
+${guest?'.badge{background:transparent;color:#222;padding-left:0}.total-label{color:#fff}.reassurance{border-left-color:#777}':''}
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="header">
+  ${guest?'':`<div class="header">
     <div>
       <div class="brand">Profit<span>Quote</span></div>
       <div class="brand-sub">Profit Protection Software</div>
@@ -113,7 +115,7 @@ function render(currentQuoteData,currentUser){
       <div class="biz-name">${bizName}</div>
       <div class="biz-contact">${contactParts.join('<br>')}</div>
     </div>
-  </div>
+  </div>`}
 
   <div class="badge">Quotation</div>
   <div class="meta">
@@ -153,7 +155,7 @@ function render(currentQuoteData,currentUser){
   <div class="reassurance">This quotation has been carefully prepared to include the agreed scope of work and all identified materials and labour requirements.</div>
   ${clientSupplyNote}
 
-  <div class="sign-section">
+  ${guest?'':`<div class="sign-section">
     <div class="sign-block">
       <div class="sign-title">Customer Acceptance</div>
       <div class="sign-line">Signature <div class="sign-underline"></div></div>
@@ -168,7 +170,7 @@ function render(currentQuoteData,currentUser){
 
   <div class="footer">
     <span class="shield">🛡</span> Generated with ProfitQuote — Profit Protection Software for Tradespeople — profitquote.co.uk
-  </div>
+  </div>`}
 </div>
 </body>
 </html>`;

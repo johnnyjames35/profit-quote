@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 
 router.get('/', auth, async (req, res) => {
+  if(req.user.guest) return res.status(403).json({error:'Create an account to use this feature.',code:'account_required'});
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -13,6 +14,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
+  if(req.user.guest) return res.status(403).json({error:'Create an account to use this feature.',code:'account_required'});
   const { issue_type, description, extra_hours, extra_materials, hourly_rate, total_extra, variation_data } = req.body;
   try {
     const pool = req.app.locals.pool;
