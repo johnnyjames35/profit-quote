@@ -73,14 +73,27 @@ const {EventEmitter}=require('node:events');
     let response=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers,body:JSON.stringify({output_token:quote.output_token+'x'})});assert.equal(response.status,400);
     const other=await(await fetch(base+'/api/guest/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({browser_id:'other-pdf-test'})})).json();
     response=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers:{...headers,Authorization:'Bearer '+other.token},body:JSON.stringify({output_token:quote.output_token})});assert.equal(response.status,403);
+    // Generate two more independent guest quotes and verify that each produces a PDF.
+    for(let number=2;number<=3;number++){
+      const nextQuote={...quote,creation_key:require('node:crypto').randomUUID(),customer_name:'Guest Customer '+number};
+      response=await fetch(base+'/api/quotes/preview',{method:'POST',headers,body:JSON.stringify(nextQuote)});
+      assert.equal(response.status,200,'guest quote '+number+' should be free');
+      const output=await response.json();
+      assert.equal(output.quotes_remaining,3-number);
+      const pdfResponse=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers,body:JSON.stringify({output_token:output.output_token})});
+      assert.equal(pdfResponse.status,200,'guest quote '+number+' should download without an account');
+      assert.equal(Buffer.from(await pdfResponse.arrayBuffer()).subarray(0,5).toString(),'%PDF-');
+    }
+    response=await fetch(base+'/api/quotes/preview',{method:'POST',headers,body:JSON.stringify({...quote,creation_key:require('node:crypto').randomUUID()})});
+    assert.equal(response.status,402,'a fourth guest quote must be blocked');
+    assert.equal((await db.query('SELECT * FROM users')).rows.length,0);
+    assert.equal((await db.query('SELECT * FROM quotes')).rows.length,0);
     const jwt=require('jsonwebtoken'),legacy={...quote};delete legacy.reference;delete legacy.created_at;
     const legacyToken=jwt.sign({purpose:'anonymous-quote',guest_id:jwt.verify(auth,process.env.JWT_SECRET).id,quote:legacy},process.env.JWT_SECRET,{expiresIn:3600});
     const legacyExport=async()=>await(await fetch(base+'/api/quotes/preview/export',{method:'POST',headers,body:JSON.stringify({output_token:legacyToken})})).json();
     const legacyOne=await legacyExport();assert.match(legacyOne.reference,/^Q-/);assert.equal((await legacyExport()).reference,legacyOne.reference);
     const long={...legacyOne,quote_data:{...legacyOne.quote_data,scopeTasks:Array.from({length:130},(_,i)=>'Scope item '+(i+1)+': inspect fittings and complete installation safely.')}};
     const {renderPDF}=require('../utils/quotation-pdf'),doc=require('../public/quotation-document');fs.writeFileSync(path.join(out,'long-quotation.pdf'),await renderPDF(doc.render(long,{guest:true})));
-    const guestId=jwt.verify(auth,process.env.JWT_SECRET).id;
-    await db.query("UPDATE quote_allowances SET used=3 WHERE id=(SELECT trial_id FROM guest_sessions WHERE id=$1)",[guestId]);
     response=await fetch(base+'/api/quotes/preview/pdf',{method:'POST',headers,body:JSON.stringify({output_token:quote.output_token})});assert.equal(response.status,200);
     await page.goto(base+'/');
     await page.getByRole('link',{name:'Check the profit on your next job →',exact:true}).first().click();
@@ -96,6 +109,6 @@ const {EventEmitter}=require('node:events');
     await page.locator('#subscription-dialog').waitFor({state:'visible'});
     assert.equal(await page.locator('#step-5').isVisible(),true,'expired guests stay on their draft when choosing how to continue');
     fs.writeFileSync(path.join(out,'guest-desktop-verification.json'),JSON.stringify({total,reference:quote.reference,filename:download.suggestedFilename(),pdfBytes:bytes.length,pdfPopups:0,repeatDownload:true,reloadRecovery:true,failureRetry:true,print:true,saveRequiresAccount:true,tamperingRejected:true,crossGuestRejected:true,legacyReferenceStable:true,downloadAfterLimit:true},null,2));
-    console.log('PASS: desktop guest create, direct PDF, repeat/reload, failure, Print, Save gate, tampering, cross-guest and legacy draft');
+    console.log('PASS: three free guest quotes and PDFs, fourth blocked, repeat/reload, Print, Save gate, tampering, cross-guest and legacy draft');
   }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));await db.close();https.request=originalRequest;}
 })().catch(e=>{console.error(e);process.exitCode=1;});
