@@ -24,7 +24,8 @@ const publicSearchPages = [
   'how-to-calculate-profit-margin.html',
   'quote-vs-estimate.html',
   'stop-underquoting-jobs.html',
-  '25-costs-tradespeople-forget.html'
+  '25-costs-tradespeople-forget.html',
+  'employment-law-changes-cost-of-employing-staff.html'
 ];
 
 test('every public search landing page is included in GA4 measurement', () => {
